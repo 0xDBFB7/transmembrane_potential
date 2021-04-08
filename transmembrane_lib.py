@@ -178,7 +178,8 @@ def convolve_output(input, cell, dt):
 
     #scipy signal automatically chooses an FFT-based method
     #not sure why I'm clipping to half, and I'm not entirely sure if that's valid.
-    return (convolve(cell.step_response,input) * dt)[0:len(cell.t)]
+    #cell.t
+    return (convolve(cell.step_response,input) * dt)[0:len(input)]
 
 
 def total_waveform_energy(input,dt):
