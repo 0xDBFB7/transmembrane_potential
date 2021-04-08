@@ -147,7 +147,7 @@ def delta_transmembrane_unit_step(t, cell):
     tau_1 = tau_1_f(b_1, b_2, b_3)
     tau_2 = tau_2_f(b_1, b_2, b_3)
 
-    # a9d, Kotnik 1998, unit ramp function response
+    # a9d, Kotnik 1998, unit step function response
     delta_phi_m_t = (a_3 / b_3) * ustep(t)
     phisub1 = (a_1 / (2.0 * b_1)) - (a_3 / (2.0 * b_3))
     phisub2 = ((a_1 * b_2) /  (2.0 * b_1)) - a_2 + ((a_3 * b_2) / (2.0 * b_3))
