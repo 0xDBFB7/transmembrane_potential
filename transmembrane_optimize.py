@@ -8,14 +8,15 @@ import pickle
 
 t0 = 0
 tstop = 50e-6
-dt = 100e-9
+dt = 50e-9
 t = np.linspace(t0, tstop, int(tstop/dt))
 
 host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
 
 virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
-input = np.ones_like(t)
+#input = np.ones_like(t)
+input = np.sin(t)
 input[0:(len(input)//100)] = 0
 input[(len(input)//2):-1] = 0
 
@@ -36,7 +37,8 @@ def cost_function(input):
     # plt.plot(np.arange(len(output)) * dt,input)
     # plt.plot(np.arange(len(output)) * dt,convolve_output(input, host_cell, dt) * 1e6)
     # plt.show()
-    return (host_cell_output / virus_output )
+    print((host_cell_output / virus_output))
+    return (host_cell_output / virus_output ) # put a total energy limit here?
 
 
 # x0 = np.ones_like(t)
@@ -51,7 +53,8 @@ filename = 'globalsave.pkl'
 try:
     dill.load_session(filename)
 except:
-    ideal_values = tubthumper(cost_function, x0, niter=100, minimizer_kwargs=minimizer_kwargs, disp=True, niter_success=5)["x"]
+    ideal_values = minimize(cost_function, x0, method="CG", options={"disp":True}).x
+    #ideal_values = tubthumper(cost_function, x0, niter=100, minimizer_kwargs=minimizer_kwargs, disp=True, niter_success=5)["x"]
     dill.dump_session(filename)
 
 
@@ -64,4 +67,4 @@ plt.show()
 
 
 
-# x = minimize(cost_function, x0, options={"disp":True}).x
+#
