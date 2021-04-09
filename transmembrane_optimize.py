@@ -8,7 +8,7 @@ import pickle
 import os
 
 t0 = 0
-tstop = 1e-6
+tstop = 5e-6
 dt = 2e-9
 t = np.linspace(t0, tstop, int(tstop/dt))
 
@@ -39,9 +39,9 @@ output = convolve_output(input, host_cell, dt) * 1e6
 def cost_function(input):
     # print(np.max(input))
 
-    host_cell_output =np.linalg.norm(convolve_output(input, host_cell, dt) * 1e6)
+    host_cell_output =np.max(convolve_output(input, host_cell, dt) * 1e6)
     # host_cell_output = np.sum(host_cell_output[host_cell_output > 0])
-    virus_output = np.linalg.norm(convolve_output(input, virus, dt) * 1e6)
+    virus_output = np.max(convolve_output(input, virus, dt) * 1e6)
     # virus_output = np.sum(virus_output[virus_output > 0])
 
 
