@@ -35,22 +35,25 @@ output = convolve_output(input, host_cell, dt) * 1e6
 # plt.plot(t, input)
 
 
-def cost_function(input):
-    # print(np.max(input))
+# def cost_function(input):
+#     # print(np.max(input))
+#
+#     host_cell_output = np.sum(convolve_output(input, host_cell, dt) * 1e6)
+#     virus_output = np.sum(convolve_output(input, virus, dt) * 1e6)
+#
+#
+#     # print(host_cell_output, virus_output)
+#     # plt.plot(np.arange(len(output)) * dt,input)
+#     # plt.plot(np.arange(len(output)) * dt,convolve_output(input, host_cell, dt) * 1e6)
+#     # plt.show()
+#
+#
+#     print((host_cell_output / virus_output))
+#     return (host_cell_output / virus_output) + (1.0 - total_waveform_energy(input,dt)) # put a total energy limit here?
 
-    host_cell_output = np.sum(convolve_output(input, host_cell, dt) * 1e6)
-    virus_output = np.sum(convolve_output(input, virus, dt) * 1e6)
+# def cost_function(input):
 
-
-    # print(host_cell_output, virus_output)
-    # plt.plot(np.arange(len(output)) * dt,input)
-    # plt.plot(np.arange(len(output)) * dt,convolve_output(input, host_cell, dt) * 1e6)
-    # plt.show()
-
-
-    print((host_cell_output / virus_output))
-    return (host_cell_output / virus_output) + (1.0 - total_waveform_energy(input,dt)) # put a total energy limit here?
-
+    # return (host_cell_output / virus_output)) # put a total energy limit here?
 
 # x0 = np.ones_like(t)
 x0 = input
@@ -92,11 +95,11 @@ virus_fft = np.fft.fft(virus.step_response / np.linalg.norm(virus.step_response)
 freq = np.fft.fftfreq(n,dt)
 
 plt.figure()
-plt.plot(freq, virus_fft/host_cell_fft)
+plt.plot(freq, virus_fft-host_cell_fft)
 plt.show()
-
 plt.figure()
-shaped_pulse = np.fft.ifft(virus_fft/host_cell_fft)
+
+shaped_pulse = np.fft.ifft(virus_fft-host_cell_fft)
 shaped_dt = dt*(len(t) / len(shaped_pulse)) # to get high freq res, need a large fft n; but this messes up the timestep
 # shaped_pulse = shaped_pulse[0:len(shaped_pulse) //3]
 shaped_pulse -= np.min(np.real(shaped_pulse)) #add a DC offset
