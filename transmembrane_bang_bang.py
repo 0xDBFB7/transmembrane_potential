@@ -8,8 +8,8 @@ import pickle
 import os
 
 t0 = 0
-tstop = 5e-6
-dt = 1e-9
+tstop = 1e-6
+dt = 0.1e-9
 t = np.linspace(t0, tstop, int(tstop/dt))
 
 host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
@@ -34,16 +34,31 @@ input = np.zeros_like(t)
 # print(total_waveform_energy(output,dt))
 
 # plt.plot(t, input)
+output = np.zeros_like(t)
+
 
 
 for i in range(0, len(t)):
 
+    options = np.array([0.00001, -1, 1])
+    ratios = np.zeros(3)
 
-    host_cell_output = (convolve_output(input, host_cell, dt) * 1e6)
-    virus_output = (convolve_output(input, virus, dt) * 1e6)
+    for op_idx,opt in enumerate(options):
+        input[i] = opt
+        host_cell_output = abs((convolve_output(input, host_cell, dt) * 1e6)[i])
+        virus_output = abs((convolve_output(input, virus, dt) * 1e6)[i])
+        # if(host_cell_output
+
+        # ratios[op_idx] = virus_output / host_cell_output
+
+    print(ratios)
+
+    input[i] = options[np.argsort(ratios)][-1]
 
 
+# plt.plot(t, input)
 
+    # output = [i]
 
     # print(host_cell_output, virus_output)
     # plt.plot(np.arange(len(output)) * dt,input)
@@ -78,6 +93,8 @@ for i in range(0, len(t)):
 #     dill.dump_session(filename)
 
 # you may not like it, but this is the ideal
+
+ideal_values = input
 
 plt.plot(t, ideal_values)
 plt.plot(t, convolve_output(ideal_values, host_cell, dt) * 1e6)
