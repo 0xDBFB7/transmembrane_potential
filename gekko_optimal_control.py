@@ -2,7 +2,13 @@ from gekko import GEKKO
 import numpy as np
 import matplotlib.pyplot as plt
 
+from transmembrane_lib import *
 
+t = np.array([0])
+
+host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, t)
+
+virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
 
 """
@@ -28,43 +34,105 @@ left and the input terms, Fa(s), are on the right.  Make sure there are only pos
 
 where u is the input function,
 
-now, gekko wants it in first order, so we have to substitute:
+now, gekko wants it in first order, so we have to substitute (Convert to a System of DEs)
+http://www.math.utah.edu/~gustafso/2250systems-de.pdf
 http://www.sharetechnote.com/html/DE_HigherOrderDEtoFirstOrderDE.html
-https://math.stackexchange.com/questions/1120984/
-
 https://math.berkeley.edu/~zworski/128/psol12.pdf
 
+https://math.stackexchange.com/questions/1120984/
 
+(reworked because I found the notation confusing (u3 should be the third derivative!))
+
+u0 = u
+u1 = u'
+u2 = u''
+u3 = u'''
+
+      x0 = x
+x0' = x1 = x'
+x1' = x2 = x'' =
+
+    R*a1 x + R*a2 x' + R*a3 x'' = (b1 u' + b2 u'' + b3 u''')
+    x'' = (b1 u' + b2 u'' + b3 u''' - R*a1 x + R*a2 x') / R*a3
+    x2 = (b1 u1 + b2 u2 + b3 u3 - R*a1 x0 + R*a2 x1) / R*a3
 
 """
 
 
-
 m = GEKKO() # initialize gekko
 nt = 101
-m.time = np.linspace(0,2,nt)
+m.time = np.linspace(0,1,nt)
 # Variables
-x1 = m.Var(value=1)
-x2 = m.Var(value=0)
-u = m.Var(value=0,lb=-1,ub=1)
-p = np.zeros(nt) # mark final time point
-p[-1] = 1.0
-final = m.Param(value=p)
+x0_v = m.Var()
+x1_v = m.Var()
+x2_v = m.Var()
+
+# x0_h = m.Var(value=1)
+# x1_h = m.Var()
+# x2_h = m.Var()
+
+t = m.Param(value=m.time)
+
+# int_h = m.Var()
+
+
+u0 = m.Var()
+u1 = m.Var()
+u2 = m.Var()
+u3 = m.Var()
+
+# p = np.zeros(nt) # mark final time point
+# p[-1] = 1.0
+
+a1_v = m.Const(virus.a_1)
+a2_v = m.Const(virus.a_2)
+a3_v = m.Const(virus.a_3)
+b1_v = m.Const(virus.b_1)
+b2_v = m.Const(virus.b_2)
+b3_v = m.Const(virus.b_3)
+R_v = m.Const(virus.R)
+
+
+a1_h = m.Const(host_cell.a_1)
+a2_h = m.Const(host_cell.a_2)
+a3_h = m.Const(host_cell.a_3)
+b1_h = m.Const(host_cell.b_1)
+b2_h = m.Const(host_cell.b_2)
+b3_h = m.Const(host_cell.b_3)
+R_h = m.Const(host_cell.R)
+
+
 # Equations
-m.Equation(x1.dt()==u)
-m.Equation(x2.dt()==0.5*x1**2)
-
-integral()
-abs2()
+m.Equation(u1==u0.dt())
+m.Equation(u2==u1.dt())
+m.Equation(u3==u2.dt())
 
 
-m.Obj(x2*final) # Objective function
-m.options.IMODE = 6 # optimal control mode
-m.solve(disp=False) # solve
+
+#
+# m.Equation(x1_v==x0_v.dt())
+# m.Equation(x2_v==((b1_v*u1 + b2_v*u2 + b3_v*u3 - R_v*a1_v*x0_v + R_v*a2_v*x1_v) / R_v*a3_v))
+# #
+# m.Equation(x1_h==x0_h.dt())
+# m.Equation(x2_h==((b1_h*u1 + b2_h*u2 + b3_h*u3 - R_h*a1_h*x0_h + R_h*a2_h*x1_h) / R_h*a3_h))
+
+# m.Equation(int_h==m.integral(x2_h))
+
+m.Equation(u0 == m.sin(t))
+
+# integral()
+# abs2()
+
+# m.Obj(-x2_v + x2_h) # Objective function
+# m.options.IMODE = 6 # optimal control mode
+
+m.options.IMODE = 4 # dynamic simulation
+
+m.solve(disp=True) # solve
 plt.figure(1) # plot results
-plt.plot(m.time,x1.value,'k-',label=r'$x_1$')
-plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
-plt.plot(m.time,u.value,'r--',label=r'$u$')
+# plt.plot(m.time,x1.value,'k-',label=r'$x_1$')
+# plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
+plt.plot(m.time,u0.value,'r--',label=r'$u$')
 plt.legend(loc='best')
 plt.xlabel('Time')
 plt.ylabel('Value')
