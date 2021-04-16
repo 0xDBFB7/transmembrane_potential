@@ -133,25 +133,39 @@ m.Equation(x2_h == (R_h*a1_h*u2 + R_h*a2_h*u1 + R_h*a3_h*u0 - b2_h*x1_h - b3_h*x
 #
 # int_h = m.Var()
 # m.Equation(int_h==m.integral(x0_h**2.0))
-m.Equation(m.integral(m.abs2(x0_h))==end)
+# m.Equation(m.integral(m.abs2(x0_h))==end)
 
 
 # integral()
 # abs2()
 
-m.Obj(-m.integral(m.abs2(x0_v))) # Objective function
+m.Obj(-m.integral(m.abs2(x0_v)) + m.integral(m.abs2(x0_h))) # Objective function
 m.options.IMODE = 6 # optimal control mode
 
 # m.options.IMODE = 4 # dynamic simulation
 
 m.solve(disp=True) # solve
+
+
+virus_output = np.array(x0_v.value)
+host_output = np.array(x0_h.value)
+
+print(virus_output)
+
+print(np.max(virus_output) / np.max(host_output))
+
+
 plt.figure(1) # plot results
 # plt.plot(m.time,x1.value,'k-',label=r'$x_1$')
 # plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
-plt.plot(m.time,np.array(x0_v.value)*1e6,'b',label=r'$x0_v*1e6$')
-plt.plot(m.time,np.array(x0_h.value)*1e6,'r',label=r'$x0_h*1e6$')
-plt.plot(m.time,u0.value,'g',label=r'$u$')
+plt.plot(m.time,virus_output,'b',label=r'$x0_v$')
+plt.plot(m.time,host_output,'r',label=r'$x0_h$')
 plt.legend(loc='best')
 plt.xlabel('Time')
 plt.ylabel('Value')
+plt.figure(2) # plot results
+plt.plot(m.time,u0.value,'g',label=r'$u$')
+
+
+
 plt.show()
