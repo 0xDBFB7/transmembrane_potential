@@ -149,6 +149,7 @@ plt.figure(1) # plot results
 # plt.plot(m.time,x1.value,'k-',label=r'$x_1$')
 # plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
 plt.plot(m.time,np.array(x0_v.value)*1e6,'b',label=r'$x0_v*1e6$')
+plt.plot(m.time,np.array(x0_h.value)*1e6,'b',label=r'$x0_v*1e6$')
 plt.plot(m.time,u0.value,'r',label=r'$u$')
 plt.legend(loc='best')
 plt.xlabel('Time')
