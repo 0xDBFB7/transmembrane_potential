@@ -77,12 +77,9 @@ x0_v = m.Var(value=0)
 x1_v = m.Var()
 x2_v = m.Var()
 
-# m.fix_initial(x0_v,val=0)
-# m.fix_initial(x1_v,val=0)
-
-# x0_h = m.Var(value=0)
-# x1_h = m.Var()
-# x2_h = m.Var()
+x0_h = m.Var(value=0)
+x1_h = m.Var()
+x2_h = m.Var()
 
 t = m.Param(value=m.time)
 
@@ -91,15 +88,14 @@ t = m.Param(value=m.time)
 u0 = m.Var()
 
 # m.Equation(u0 == m.sin(t)) # for simulation
-m.Equation(u0 == m.exp(-(((t-(end/2.0))**2.0)/(2.0*((0.1e-4)**2.0))))) # for simulation
+# m.Equation(u0 == m.exp(-(((t-(end/2.0))**2.0)/(2.0*((0.1e-4)**2.0))))) # for simulation
 
 
 u1 = m.Var()
 m.Equation(u1==u0.dt())
 u2 = m.Var()
 m.Equation(u2==u1.dt())
-# u3 = m.Var()
-# m.Equation(u3==u2.dt())
+
 
 # p = np.zeros(nt) # mark final time point
 # p[-1] = 1.0
@@ -130,22 +126,23 @@ m.Equation(x2_v==x1_v.dt())
 m.Equation(x2_v == (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v)
 # #
 
-# m.Equation(x1_h==x0_h.dt())
-# m.Equation(x2_h==x1_h.dt())
-# m.Equation(x2_h == (R_h*a1_h*u2 + R_h*a2_h*u1 + R_h*a3_h*u0 - b2_h*x1_h - b3_h*x0_h)/b1_h)
+m.Equation(x1_h==x0_h.dt())
+m.Equation(x2_h==x1_h.dt())
+m.Equation(x2_h == (R_h*a1_h*u2 + R_h*a2_h*u1 + R_h*a3_h*u0 - b2_h*x1_h - b3_h*x0_h)/b1_h)
 
-
+#
 # int_h = m.Var()
-# m.Equation(int_h==m.integral(x0_h))
+# m.Equation(int_h==m.integral(x0_h**2.0))
+m.Equation(m.integral(m.abs2(x0_h))==end)
 
 
 # integral()
 # abs2()
 
-# m.Obj(-x0_v*1e7 + int_h*1e7) # Objective function
-# m.options.IMODE = 6 # optimal control mode
+m.Obj(-x0_v) # Objective function
+m.options.IMODE = 6 # optimal control mode
 
-m.options.IMODE = 4 # dynamic simulation
+# m.options.IMODE = 4 # dynamic simulation
 
 m.solve(disp=True) # solve
 plt.figure(1) # plot results
