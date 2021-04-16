@@ -69,8 +69,9 @@ docs: "In all simulation modes (IMODE=1,4,7), the number of equations must equal
 
 
 m = GEKKO() # initialize gekko
-nt = 101
-end = 1e-4
+m.options.MAX_ITER = 100000
+nt = 401
+end = 1e-5
 m.time = np.linspace(0,end,nt)
 # Variables
 x0_v = m.Var(value=0)
@@ -123,23 +124,25 @@ R_h = m.Const(host_cell.R)
 # m.Equation(x0_v == (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v  - x2_v*b1_v)/b3_v)
 m.Equation(x1_v==x0_v.dt())
 m.Equation(x2_v==x1_v.dt())
-m.Equation(x2_v == (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v)
+m.Equation(x2_v == (R_v*1e6*a1_v*u2 + R_v*1e6*a2_v*u1 + R_v*1e6*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v)
 # #
 
 m.Equation(x1_h==x0_h.dt())
 m.Equation(x2_h==x1_h.dt())
-m.Equation(x2_h == (R_h*a1_h*u2 + R_h*a2_h*u1 + R_h*a3_h*u0 - b2_h*x1_h - b3_h*x0_h)/b1_h)
+m.Equation(x2_h == (R_h*1e6*a1_h*u2 + R_h*1e6*a2_h*u1 + R_h*1e6*a3_h*u0 - b2_h*x1_h - b3_h*x0_h)/b1_h)
 
 #
 # int_h = m.Var()
 # m.Equation(int_h==m.integral(x0_h**2.0))
+# m.Equation(t==m.vsum(m.abs2(u0)))
+
 # m.Equation(m.integral(m.abs2(x0_h))==end)
-
-
+# m.Equation(m.vsum(m.abs2(u0))==0.1)
+# m.Equation(m.integral(m.abs2(u0))==0.1)
 # integral()
 # abs2()
 
-m.Obj(-m.integral(m.abs2(x0_v)) + m.integral(m.abs2(x0_h))) # Objective function
+m.Obj(-m.integral(m.abs2(x0_v))) # Objective function
 m.options.IMODE = 6 # optimal control mode
 
 # m.options.IMODE = 4 # dynamic simulation
