@@ -20,17 +20,18 @@ For convenience, let's convert the Kotnik equation to standard DE form.
 per https://lpsa.swarthmore.edu/Representations/SysRepTransformations/TF2SDE.html
 
 originally (mistakenly) used A6c (1998). Switched to eq 8, (multiplied by R, eq 10).
+also missed switching the top and bottom: the top goes with the input terms (right) and the bottom with the output.
 
 H(s)= (R*X(s)) / U(s) = (R a1 s^2 + R a2 s + R a3) / (b1 s^2 + b2 s + b3)
 
 "Solution: Separate the equation so that the output terms, X(s), are on the
 left and the input terms, Fa(s), are on the right.  Make sure there are only positive powers of s."
 
-(R a1 s^2 + R a2 s + R a3) X(s) = (b1 s^2 + b2 s + b3) U(s)
+(b1 s^2 + b2 s + b3) X(s) = (R a1 s^2 + R a2 s + R a3) U(s)
 
 "Now take the inverse Laplace Transform (so multiplications by "s" in the Laplace domain are replaced by derivatives in time)."
 
-(R*a1 x'' + R*a2 x' + R*a3 x) = (b1 u'' + b2 u' + b3 u)
+b1 x'' + b2 x' + b3 x = R a1 u'' + R a2 u' + R a3 u
 
 where u is the input function,
 
@@ -52,9 +53,9 @@ u3 = u'''
 x0' = x1 = x'
 x1' = x2 = x'' =
 
-    (R*a1 x'' + R*a2 x' + R*a3 x) = (b1 u'' + b2 u' + b3 u)
-    x'' = (b1 u'' + b2 u' + b3 u - R*a2 x' - R*a3 x) / R*a1
-    x2 = (b1 u2 + b2 u1 + b3 u - R*a2 x1 - R*a3 x) / R*a1
+    b1 x'' + b2 x' + b3 x = R a1 u'' + R a2 u' + R a3 u
+    x''  = (R a1 u'' + R a2 u' + R a3 u - b2 x' - b3 x)/b1
+    x2  = (R*a1*u2 + R*a2*u1 + R*a3*u0 - b2*x1 - b3*x0)/b1
 
 docs: "In all simulation modes (IMODE=1,4,7), the number of equations must equal the number of variables."
 
@@ -69,27 +70,29 @@ docs: "In all simulation modes (IMODE=1,4,7), the number of equations must equal
 
 m = GEKKO() # initialize gekko
 nt = 101
-m.time = np.linspace(0,1e-6,nt)
+end = 1e-4
+m.time = np.linspace(0,end,nt)
 # Variables
-x0_v = m.Var()
+x0_v = m.Var(value=0)
 x1_v = m.Var()
 x2_v = m.Var()
 
 # m.fix_initial(x0_v,val=0)
 # m.fix_initial(x1_v,val=0)
 
-# x0_h = m.Var(value=1)
+# x0_h = m.Var(value=0)
 # x1_h = m.Var()
 # x2_h = m.Var()
 
 t = m.Param(value=m.time)
 
-# int_h = m.Var()
 
 
 u0 = m.Var()
 
-m.Equation(u0 == m.sin(t)) # for simulation
+# m.Equation(u0 == m.sin(t)) # for simulation
+m.Equation(u0 == m.exp(-(((t-(end/2.0))**2.0)/(2.0*((0.1e-4)**2.0))))) # for simulation
+
 
 u1 = m.Var()
 m.Equation(u1==u0.dt())
@@ -121,21 +124,25 @@ R_h = m.Const(host_cell.R)
 
 # Equations
 
+# m.Equation(x0_v == (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v  - x2_v*b1_v)/b3_v)
 m.Equation(x1_v==x0_v.dt())
-m.Equation(x2_v == ((b1_v*u2 + b2_v*u1 + b3_v*u0 - R_v*a2_v*x1_v - R_v*a3_v*x0_v) / R_v*a1_v))
+m.Equation(x2_v==x1_v.dt())
+m.Equation(x2_v == (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v)
 # #
 
-# m.Equation(x0_h==(((b1_h*u1 + b2_h*u2 + b3_h*u3) - R_h*a2_h*x1_h - R_h*a3_h*x2_h) / R_h*a1_h))
 # m.Equation(x1_h==x0_h.dt())
-# m.Equation(x2_h==((b1_h*u1 + b2_h*u2 + b3_h*u3 - R_h*a1_h*x0_h - R_h*a2_h*x1_h) / R_h*a3_h))
+# m.Equation(x2_h==x1_h.dt())
+# m.Equation(x2_h == (R_h*a1_h*u2 + R_h*a2_h*u1 + R_h*a3_h*u0 - b2_h*x1_h - b3_h*x0_h)/b1_h)
 
+
+# int_h = m.Var()
 # m.Equation(int_h==m.integral(x0_h))
 
 
 # integral()
 # abs2()
 
-# m.Obj(-x0_v + int_h) # Objective function
+# m.Obj(-x0_v*1e7 + int_h*1e7) # Objective function
 # m.options.IMODE = 6 # optimal control mode
 
 m.options.IMODE = 4 # dynamic simulation
@@ -144,7 +151,8 @@ m.solve(disp=True) # solve
 plt.figure(1) # plot results
 # plt.plot(m.time,x1.value,'k-',label=r'$x_1$')
 # plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
-plt.plot(m.time,u0.value,'r--',label=r'$u$')
+plt.plot(m.time,np.array(x0_v.value)*1e6,'b',label=r'$x0_v*1e6$')
+plt.plot(m.time,u0.value,'r',label=r'$u$')
 plt.legend(loc='best')
 plt.xlabel('Time')
 plt.ylabel('Value')
