@@ -132,13 +132,15 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
 
     adouble x0 = initial_states[ 0 ];
     e[ 0 ] = x0;
+    adouble u0 = initial_states[ 3 ];
+    e[ 1 ] = u0;
     // adouble xf = final_states[ 0 ];
 
     adouble Q;
     // Compute the integral to be constrained
 
     Q = integrate(integrand, xad, iphase, workspace);
-    e[ 1 ] = Q;
+    e[ 2 ] = Q;
 }
 
 
@@ -157,12 +159,12 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
   derivatives[ 3 ] = u1;
   derivatives[ 4 ] = u2;
 
-   // adouble x0    = states[ 0 ];
-   // adouble x1    = states[ 1 ];
+   adouble x0    = states[ 0 ];
+   adouble x1    = states[ 1 ];
    //
    // // adouble x2_v    = states[ 2 ];
-   // derivatives[ 0 ] = x1; // m.Equation(x1_v==x0_v.dt())
-   // derivatives[ 1 ] = ((C->R*C->a1*u2 + C->R*C->a2*u1 + C->R*C->a3*u0 - C->b2*x1 - C->b3*x0)/C->b1);
+   derivatives[ 0 ] = x1; // m.Equation(x1_v==x0_v.dt())
+   derivatives[ 1 ] = ((C->R*C->a1*u2 + C->R*C->a2*u1 + C->R*C->a3*u0 - C->b2*x1 - C->b3*x0)/C->b1);
    // m.Equation(x2_v==x1_v.dt()) // x2_v = (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v);
 
 
@@ -203,7 +205,7 @@ int main(void)
 
     problem.phases(1).nstates   		= 5;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 2;
+    problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
     int nnodes    			             = 50;
     problem.phases(1).nodes         << nnodes;
@@ -239,10 +241,11 @@ int main(void)
     problem.phases(1).bounds.upper.controls << control_bounds;
 
     double x0_initial_value = 0.0;
+    double u0_initial_value = 0.0;
     double u0_integral_constraint = 1.0;
 
-    problem.phases(1).bounds.lower.events << x0_initial_value, u0_integral_constraint; //2
-    problem.phases(1).bounds.upper.events << x0_initial_value, u0_integral_constraint;
+    problem.phases(1).bounds.lower.events << x0_initial_value, u0_initial_value, u0_integral_constraint; //2
+    problem.phases(1).bounds.upper.events << x0_initial_value, u0_initial_value, u0_integral_constraint;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
@@ -383,8 +386,7 @@ int main(void)
 ///////////  Plot some results if desired (requires gnuplot) ///////////////
 ////////////////////////////////////////////////////////////////////////////
 
-    plot(t,x0.normalized(),problem.name, "time (s)", "states", "x y z s b");
-    plot(t,u0.normalized(),problem.name, "time (s)", "states", "x y z s b");
-    plot(t,u2,problem.name, "time (s)", "states", "x y z s b");
+    plot(t,x0.normalized(),problem.name, "time (s)", "states", "x0");
+    plot(t,u0.normalized(),problem.name, "time (s)", "states", "u0");
 
 }
