@@ -204,6 +204,8 @@ double normalized_gaussian_pulse(double t){
     return exp(-((t*t)/(2.0*(sigma*sigma))));
 }
 
+#define TEST 0
+
 int main(void)
 {
 
@@ -331,39 +333,44 @@ int main(void)
     ///////////////////       Do a test run       //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    // int test_nnodes = 200;
-    // MatrixXd initial_test_state    =  zeros(problem.phases(1).nstates,1);
-    // MatrixXd test_parameters    =  ones(0,1);
-    // MatrixXd test_state_trajectory    =  zeros(problem.phases(1).nstates,test_nnodes);
-    // MatrixXd test_time_vector =  linspace(0.0,1e-8,test_nnodes);
-    // MatrixXd test_controls = test_time_vector.unaryExpr(&normalized_gaussian_pulse);
-    // MatrixXd test_controls_derivative_1 = zeros(problem.phases(1).ncontrols,test_nnodes);
-    // MatrixXd test_controls_derivative_2 = zeros(problem.phases(1).ncontrols,test_nnodes);
-    //
-    // for (int i=1;i<test_nnodes-1;i++){ //take first gaussian derivative, central differences
-    //     test_controls_derivative_1(i)=(test_controls(i+1)-test_controls(i-1))/2;
-    // }
-    // for (int i=1;i<test_nnodes-1;i++){ //take second gaussian derivative (since u2 is our control, not u0!)
-    //     test_controls_derivative_2(i)=(test_controls_derivative_1(i+1)-test_controls_derivative_1(i-1))/2;
-    // }
-    //
-    //
-    // //in the twoburn.cxx example, rk4_propagate takes a NULL.
-    // unique_ptr<Workspace> workspace_up{ new Workspace{problem, algorithm,solution} };
-    //
-    // rk4_propagate( dae,
-    //     test_controls_derivative_2,
-    //     test_time_vector,
-    //     initial_test_state,
-    //     test_parameters,
-    //     problem,
-    //     1,
-    //     test_state_trajectory,
-    //     workspace_up.get());
-    //
-    // plot(test_time_vector,test_state_trajectory.row(0).normalized(),problem.name, "time (s)", "states", "x y z s b");
-    // plot(test_time_vector,test_state_trajectory.row(5).normalized(),problem.name, "time (s)", "states", "x y z s b");
-    // plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
+    if(TEST){
+        int test_nnodes = 200;
+        double test_end_time = 1e-8;
+        MatrixXd initial_test_state    =  zeros(problem.phases(1).nstates,1);
+        MatrixXd test_parameters    =  ones(0,1);
+        MatrixXd test_state_trajectory    =  zeros(problem.phases(1).nstates,test_nnodes);
+        MatrixXd test_time_vector =  linspace(0.0,test_end_time,test_nnodes);
+        MatrixXd test_controls = test_time_vector.unaryExpr(&normalized_gaussian_pulse);
+
+        MatrixXd test_controls_derivative_1 = zeros(problem.phases(1).ncontrols,test_nnodes);
+        MatrixXd test_controls_derivative_2 = zeros(problem.phases(1).ncontrols,test_nnodes);
+
+        for (int i=1;i<test_nnodes-1;i++){ //take first gaussian derivative, central differences
+            test_controls_derivative_1(i)=(test_controls(i+1)-test_controls(i-1))/(2.0*(test_end_time/test_nnodes));
+        }
+        for (int i=1;i<test_nnodes-1;i++){ //take second gaussian derivative (since u2 is our control, not u0!)
+            test_controls_derivative_2(i)=(test_controls_derivative_1(i+1)-test_controls_derivative_1(i-1))/(2.0*(test_end_time/test_nnodes));
+        }
+
+
+        //in the twoburn.cxx example, rk4_propagate takes a NULL.
+        unique_ptr<Workspace> workspace_up{ new Workspace{problem, algorithm,solution} };
+
+        rk4_propagate( dae,
+            test_controls_derivative_2,
+            test_time_vector,
+            initial_test_state,
+            test_parameters,
+            problem,
+            1,
+            test_state_trajectory,
+            workspace_up.get());
+
+        plot(test_time_vector,test_state_trajectory.row(0),problem.name, "time (s)", "states", "x y z s b");
+        plot(test_time_vector,test_state_trajectory.row(5),problem.name, "time (s)", "states", "x y z s b");
+        plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
+        return 0;
+    }
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Now call PSOPT to solve the problem   /////////////////
