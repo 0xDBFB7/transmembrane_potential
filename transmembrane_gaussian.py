@@ -19,6 +19,8 @@ host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, t)
 
 virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
+print(epsilon_0)
+
 print(f"Host cell {host_cell.tau_1}, {host_cell.tau_2}")
 print(f"virus {virus.tau_1}, {virus.tau_2}")
 

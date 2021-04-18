@@ -1,51 +1,20 @@
 #include "psopt.h"
 
+const double epsilon_0 = 8.854e-12;
 
-// struct Cell{
-//     extracellular_conductivity: float // S/m
-//     extracellular_permittivity: float // relative
-//     intracellular_conductivity: float // S/m
-//     intracellular_permittivity: float // relative
-//     membrane_conductivity: float // S/m
-//     membrane_permittivity: float // relative
-//     cell_diameter: float // meters
-//     membrane_thickness: float
-//
-//     t: np.ndarray
-//
-//     def __post_init__(self):
-//         e_o = self.extracellular_permittivity * epsilon_0 // S/m
-//         e_i = self.intracellular_permittivity * epsilon_0 //S/m
-//         e_m = self.membrane_permittivity * epsilon_0 //S/m
-//         R = self.cell_diameter / 2.0
-//         self.R = R
-//
-//         l_o = self.extracellular_conductivity // S/m
-//         l_i = self.intracellular_conductivity //S/m
-//         l_m = self.membrane_conductivity //S/m
-//
-//         d = self.membrane_thickness
-//         // epsilon_0
-//
-//         sub1 = (3.0 * (R*R) - 3.0 * d * R + (d*d))
-//         sub2 = (3.0 * d * R - d*d)
-//
-//         self.a_1 = 3.0 * d * l_o * ((l_i * (sub1)) + l_m*(sub2)) //eq.9a
-//         self.a_2 = 3.0 * d * ((l_i * e_o + l_o * e_i) * sub1 + (l_m * e_o + l_o * e_m) * sub2)
-//         self.a_3 = 3.0 * d * e_o * (e_i * (sub1) + e_m * sub2)
-//
-//         self.b_1 = 2.0 * (R*R*R) * (l_m +     2.0*l_o) * (l_m + 0.5 * l_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (l_m - l_o) * (l_i - l_m)
-//
-//         self.b_2 = 2.0 * (R*R*R) * (l_i * (0.5 * e_m + e_o) + l_m * (0.5*e_i + 2.0*e_m + 2*e_o) + l_o * (e_i + 2.0 * e_m)) + (2.0 * ((R-d)*(R-d)*(R-d))
-//         * (l_i * (e_m - e_o) + l_m * (e_i - 2.0*e_m + e_o) - l_o * (e_i - e_m))) // is this truly a multiply, or a cross?
-//
-//         self.b_3 = 2.0 * (R*R*R) * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (e_m - e_o) * (e_i - e_m)
-//
-//         self.tau_1 = tau_1_f(self.b_1, self.b_2, self.b_3)
-//         self.tau_2 = tau_2_f(self.b_1, self.b_2, self.b_3)
-// }
+
 
 struct Cell{
+    double extracellular_conductivity; // S/m
+    double extracellular_permittivity; // relative
+    double intracellular_conductivity; // S/m
+    double intracellular_permittivity; // relative
+    double membrane_conductivity; // S/m
+    double membrane_permittivity; // relative
+    double cell_diameter;  // meters
+    double membrane_thickness;
+
+
     double a1 = 0;
     double a2 = 0;
     double a3 = 0;
@@ -54,7 +23,51 @@ struct Cell{
     double b3 = 0;
     double R = 0;
 
+
+    double tau_1;
+    double tau_2;
+
+
+    void init();
+
 };
+
+void Cell::init(){
+    double e_o = extracellular_permittivity * epsilon_0; // S/m
+    double e_i = intracellular_permittivity * epsilon_0; //S/m
+    double e_m = membrane_permittivity * epsilon_0; //S/m
+    R = cell_diameter / 2.0;
+    // double selfR = R;
+
+    double l_o = extracellular_conductivity; // S/m
+    double l_i = intracellular_conductivity; //S/m
+    double l_m = membrane_conductivity; //S/m
+
+    double d = membrane_thickness;
+    // epsilon_0
+
+    double sub1 = (3.0 * (R*R) - 3.0 * d * R + (d*d));
+    double sub2 = (3.0 * d * R - d*d);
+
+    a1 = 3.0 * d * l_o * ((l_i * (sub1)) + l_m*(sub2)); //eq.9a
+    a2 = 3.0 * d * ((l_i * e_o + l_o * e_i) * sub1 + (l_m * e_o + l_o * e_m) * sub2);
+    a3 = 3.0 * d * e_o * (e_i * (sub1) + e_m * sub2);
+
+    b1 = 2.0 * (R*R*R) * (l_m +     2.0*l_o) * (l_m + 0.5 * l_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (l_m - l_o) * (l_i - l_m);
+
+    b2 = 2.0 * (R*R*R) * (l_i * (0.5 * e_m + e_o) + l_m * (0.5*e_i + 2.0*e_m + 2*e_o) + l_o * (e_i + 2.0 * e_m)) + (2.0 * ((R-d)*(R-d)*(R-d))
+    * (l_i * (e_m - e_o) + l_m * (e_i - 2.0*e_m + e_o) - l_o * (e_i - e_m))); // is this truly a multiply, or a cross?
+
+    b3 = 2.0 * (R*R*R) * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (e_m - e_o) * (e_i - e_m);
+
+    // tau_1 = tau_1_f(b1, b2, b3); //yes, this is correct; only b's involved.
+    // tau_2 = tau_2_f(b1, b2, b3);
+}
+
+
+
+Cell* virus;
+Cell* host;
 
 
 // typedef struct {
@@ -134,11 +147,11 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
     e[ 0 ] = x0;
     adouble u0 = initial_states[ 3 ];
     e[ 1 ] = u0;
+
     // adouble xf = final_states[ 0 ];
 
-    adouble Q;
     // Compute the integral to be constrained
-
+    adouble Q;
     Q = integrate(integrand, xad, iphase, workspace);
     e[ 2 ] = Q;
 }
@@ -147,10 +160,11 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
 
 void dae(adouble* derivatives, adouble* path, adouble* states,
          adouble* controls, adouble* parameters, adouble& time,
-         adouble* xad, int iphase, Workspace* workspace)
-{
+         adouble* xad, int iphase, Workspace* workspace){
 
-   Cell* C = (Cell*) workspace->user_data;
+   // vector<Cell * > cells = (vector<Cell * >) workspace->user_data;
+   // Cell virus = (Cell) cells[0];
+
 
   //https://mathoverflow.net/a/87902/176668
   adouble u0   = states[ 3 ];
@@ -164,14 +178,8 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
    //
    // // adouble x2_v    = states[ 2 ];
    derivatives[ 0 ] = x1; // m.Equation(x1_v==x0_v.dt())
-   derivatives[ 1 ] = ((C->R*C->a1*u2 + C->R*C->a2*u1 + C->R*C->a3*u0 - C->b2*x1 - C->b3*x0)/C->b1);
+   derivatives[ 1 ] = ((virus->R*virus->a1*u2 + virus->R*virus->a2*u1 + virus->R*virus->a3*u0 - virus->b2*x1 - virus->b3*x0)/virus->b1);
    // m.Equation(x2_v==x1_v.dt()) // x2_v = (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v);
-
-
-
-
-
-
 
    // path[ 0 ] = //path constraint unused here
 }
@@ -213,25 +221,25 @@ int main(void)
     psopt_level2_setup(problem, algorithm);
 
 
-////////////////////////////////////////////////////////////////////////////
-///////////////////  Enter problem bounds information //////////////////////
-////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////////////  Enter problem bounds information //////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
-   Cell* C = new Cell;
 
-   problem.user_data = (void*) C;
+    virus = new Cell{0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9};
+    virus->init();
 
-   C->R = 2.5e-08;
-   C->a1 = 6.432310760399999e-26;
-   C->a2 = 9.285518060383809e-33;
-   C->a3 = 2.1565599125773642e-41;
-   C->b1 = 4.288219640035286e-26;
-   C->b2 = 1.2813155432469974e-32;
-   C->b3 = 4.0548483601145834e-41;
+    host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9};
+    host->init();
 
-   double control_bounds = 1e9;
+    // cells.push_back(virus);
+    // cells.push_back(host);
 
-   double output_bounds = 1e9;
+    // problem.user_data = (void *) cells;
+
+    double control_bounds = 1e9;
+
+    double output_bounds = 1e9;
 
     problem.phases(1).bounds.lower.states << -output_bounds, -output_bounds*100, -output_bounds*100, -control_bounds, -control_bounds; //fix bounds!
     problem.phases(1).bounds.upper.states << output_bounds, output_bounds*100, output_bounds*100, control_bounds, control_bounds; //fix bounds!
@@ -258,9 +266,9 @@ int main(void)
 
 
 
-////////////////////////////////////////////////////////////////////////////
-///////////////////  Register problem functions  ///////////////////////////
-////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////////////  Register problem functions  ///////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
 
     problem.integrand_cost 	= &integrand_cost;
@@ -269,9 +277,9 @@ int main(void)
     problem.events 		      = &events;
     problem.linkages		      = &linkages;
 
-////////////////////////////////////////////////////////////////////////////
-///////////////////  Define & register initial guess ///////////////////////
-////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////////////  Define & register initial guess ///////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
 
     int ncontrols                       = problem.phases(1).ncontrols;
@@ -299,9 +307,9 @@ int main(void)
     problem.phases(1).guess.time           = time_guess;
 
 
-////////////////////////////////////////////////////////////////////////////
-///////////////////  Enter algorithm options  //////////////////////////////
-////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////////////  Enter algorithm options  //////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     algorithm.nlp_iter_max                = 1000;
     algorithm.nlp_tolerance               = 1.e-9;
     algorithm.nlp_method                  = "IPOPT";
@@ -349,15 +357,15 @@ int main(void)
     plot(test_time_vector,test_state_trajectory.row(0).normalized(),problem.name, "time (s)", "states", "x y z s b");
     plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
 
-////////////////////////////////////////////////////////////////////////////
-///////////////////  Now call PSOPT to solve the problem   /////////////////
-////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////////////  Now call PSOPT to solve the problem   /////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     psopt(solution, problem, algorithm);
 
-////////////////////////////////////////////////////////////////////////////
-///////////  Extract relevant variables from solution structure   //////////
-////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////  Extract relevant variables from solution structure   //////////
+    ////////////////////////////////////////////////////////////////////////////
 
 
     MatrixXd states    = solution.get_states_in_phase(1);
@@ -370,9 +378,9 @@ int main(void)
 
     MatrixXd u2 = controls.row(0);
 
-////////////////////////////////////////////////////////////////////////////
-///////////  Save solution data to files if desired ////////////////////////
-////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////  Save solution data to files if desired ////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     // Save(x,"x.dat");
     // Save(y,"y.dat");
@@ -382,9 +390,9 @@ int main(void)
     // Save(t,"t.dat");
 
 
-////////////////////////////////////////////////////////////////////////////
-///////////  Plot some results if desired (requires gnuplot) ///////////////
-////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ///////////  Plot some results if desired (requires gnuplot) ///////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     plot(t,x0.normalized(),problem.name, "time (s)", "states", "x0");
     plot(t,u0.normalized(),problem.name, "time (s)", "states", "u0");
