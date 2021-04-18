@@ -118,10 +118,9 @@ adouble integrand_cost(adouble* states, adouble* controls,
                        int iphase, Workspace* workspace)
 {
 
-    // Constants* C = (Constants*) workspace->user_data;
 
 
-    return  0;
+    return -(states[ 0 ]*states[ 0 ]) + (states[ 5 ]*states[ 5 ]);
 }
 
 
@@ -143,17 +142,21 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
             adouble* parameters,adouble& t0, adouble& tf, adouble* xad,
             int iphase, Workspace* workspace){
 
-    adouble x0 = initial_states[ 0 ];
-    e[ 0 ] = x0;
     adouble u0 = initial_states[ 3 ];
-    e[ 1 ] = u0;
+    e[ 0 ] = u0;
+
+    adouble x0 = initial_states[ 0 ];
+    e[ 1 ] = x0;
+
+    adouble x0_h = initial_states[ 5 ];
+    e[ 2 ] = x0_h;
 
     // adouble xf = final_states[ 0 ];
 
     // Compute the integral to be constrained
     adouble Q;
     Q = integrate(integrand, xad, iphase, workspace);
-    e[ 2 ] = Q;
+    e[ 3 ] = Q;
 }
 
 
@@ -162,26 +165,30 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
          adouble* controls, adouble* parameters, adouble& time,
          adouble* xad, int iphase, Workspace* workspace){
 
-   // vector<Cell * > cells = (vector<Cell * >) workspace->user_data;
-   // Cell virus = (Cell) cells[0];
+    // vector<Cell * > cells = (vector<Cell * >) workspace->user_data;
+    // Cell virus = (Cell) cells[0];
+
+    //https://mathoverflow.net/a/87902/176668
+    adouble u0   = states[ 3 ];
+    adouble u1   = states[ 4 ];
+    adouble u2 = controls[ 0 ];
+    derivatives[ 3 ] = u1;
+    derivatives[ 4 ] = u2;
+
+    adouble x0_v    = states[ 0 ];
+    adouble x1_v    = states[ 1 ];
+
+    derivatives[ 0 ] = x1_v; // m.Equation(x1_v_v==x0_v_v.dt())
+    derivatives[ 1 ] = ((virus->R*virus->a1*u2 + virus->R*virus->a2*u1 + virus->R*virus->a3*u0 - virus->b2*x1_v - virus->b3*x0_v)/virus->b1);
 
 
-  //https://mathoverflow.net/a/87902/176668
-  adouble u0   = states[ 3 ];
-  adouble u1   = states[ 4 ];
-  adouble u2 = controls[ 0 ];
-  derivatives[ 3 ] = u1;
-  derivatives[ 4 ] = u2;
+    adouble x0_h    = states[ 5 ];
+    adouble x1_h    = states[ 6 ];
 
-   adouble x0    = states[ 0 ];
-   adouble x1    = states[ 1 ];
-   //
-   // // adouble x2_v    = states[ 2 ];
-   derivatives[ 0 ] = x1; // m.Equation(x1_v==x0_v.dt())
-   derivatives[ 1 ] = ((virus->R*virus->a1*u2 + virus->R*virus->a2*u1 + virus->R*virus->a3*u0 - virus->b2*x1 - virus->b3*x0)/virus->b1);
-   // m.Equation(x2_v==x1_v.dt()) // x2_v = (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v);
+    derivatives[ 5 ] = x1_h; // m.Equation(x1_v==x0_v.dt())
+    derivatives[ 6 ] = ((host->R*host->a1*u2 + host->R*host->a2*u1 + host->R*host->a3*u0 - host->b2*x1_h - host->b3*x0_h)/host->b1);
 
-   // path[ 0 ] = //path constraint unused here
+    // path[ 0 ] = //path constraint unused here
 }
 
 static std::string eigentoString(const Eigen::MatrixXd& mat){
@@ -211,11 +218,11 @@ int main(void)
     psopt_level1_setup(problem);
 
 
-    problem.phases(1).nstates   		= 5;
+    problem.phases(1).nstates   		= 7;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 3;
+    problem.phases(1).nevents   		= 4;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 50;
+    int nnodes    			             = 30;
     problem.phases(1).nodes         << nnodes;
 
     psopt_level2_setup(problem, algorithm);
@@ -237,12 +244,12 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double control_bounds = 1e9;
+    double control_bounds = 1;
 
-    double output_bounds = 1e9;
-
-    problem.phases(1).bounds.lower.states << -output_bounds, -output_bounds*100, -output_bounds*100, -control_bounds, -control_bounds; //fix bounds!
-    problem.phases(1).bounds.upper.states << output_bounds, output_bounds*100, output_bounds*100, control_bounds, control_bounds; //fix bounds!
+    double output_bounds = 1.0e-2;
+    //bounds are questionable.
+    problem.phases(1).bounds.lower.states << -output_bounds, -output_bounds, -output_bounds, -control_bounds, -control_bounds, -output_bounds, -output_bounds;
+    problem.phases(1).bounds.upper.states << output_bounds, output_bounds, output_bounds, control_bounds, control_bounds, output_bounds, output_bounds;
 
 
     problem.phases(1).bounds.lower.controls << -control_bounds;
@@ -252,8 +259,8 @@ int main(void)
     double u0_initial_value = 0.0;
     double u0_integral_constraint = 1.0;
 
-    problem.phases(1).bounds.lower.events << x0_initial_value, u0_initial_value, u0_integral_constraint; //2
-    problem.phases(1).bounds.upper.events << x0_initial_value, u0_initial_value, u0_integral_constraint;
+    problem.phases(1).bounds.lower.events << u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
+    problem.phases(1).bounds.upper.events << u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
@@ -262,7 +269,7 @@ int main(void)
     problem.phases(1).bounds.upper.StartTime    = 0.0;
 
     problem.phases(1).bounds.lower.EndTime      = 1e-10;
-    problem.phases(1).bounds.upper.EndTime      = 3.0;
+    problem.phases(1).bounds.upper.EndTime      = 5.0;
 
 
 
@@ -311,51 +318,52 @@ int main(void)
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     algorithm.nlp_iter_max                = 1000;
-    algorithm.nlp_tolerance               = 1.e-9;
+    algorithm.nlp_tolerance               = 1.e-5;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
     algorithm.collocation_method          = "trapezoidal";
     algorithm.mesh_refinement             = "automatic";
 
+    algorithm.ode_tolerance             = 1.e-7;//increases mesh refinement depth
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////       Do a test run       //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    int test_nnodes = 200;
-    MatrixXd initial_test_state    =  zeros(problem.phases(1).nstates,1);
-    MatrixXd test_parameters    =  ones(0,1);
-    MatrixXd test_state_trajectory    =  zeros(problem.phases(1).nstates,test_nnodes);
-    MatrixXd test_time_vector =  linspace(0.0,1e-8,test_nnodes);
-    MatrixXd test_controls = test_time_vector.unaryExpr(&normalized_gaussian_pulse);
-    MatrixXd test_controls_derivative_1 = zeros(problem.phases(1).ncontrols,test_nnodes);
-    MatrixXd test_controls_derivative_2 = zeros(problem.phases(1).ncontrols,test_nnodes);
-
-    for (int i=1;i<test_nnodes-1;i++){ //take first gaussian derivative, central differences
-        test_controls_derivative_1(i)=(test_controls(i+1)-test_controls(i-1))/2;
-    }
-    for (int i=1;i<test_nnodes-1;i++){ //take second gaussian derivative (since u2 is our control, not u0!)
-        test_controls_derivative_2(i)=(test_controls_derivative_1(i+1)-test_controls_derivative_1(i-1))/2;
-    }
-
-
-    //in the twoburn.cxx example, rk4_propagate takes a NULL.
-    unique_ptr<Workspace> workspace_up{ new Workspace{problem, algorithm,solution} };
-
-    rk4_propagate( dae,
-        test_controls_derivative_2,
-        test_time_vector,
-        initial_test_state,
-        test_parameters,
-        problem,
-        1,
-        test_state_trajectory,
-        workspace_up.get());
-
-    // std::cout << eigentoString(test_state_trajectory) + "\n";
-    plot(test_time_vector,test_state_trajectory.row(0).normalized(),problem.name, "time (s)", "states", "x y z s b");
-    plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
+    // int test_nnodes = 200;
+    // MatrixXd initial_test_state    =  zeros(problem.phases(1).nstates,1);
+    // MatrixXd test_parameters    =  ones(0,1);
+    // MatrixXd test_state_trajectory    =  zeros(problem.phases(1).nstates,test_nnodes);
+    // MatrixXd test_time_vector =  linspace(0.0,1e-8,test_nnodes);
+    // MatrixXd test_controls = test_time_vector.unaryExpr(&normalized_gaussian_pulse);
+    // MatrixXd test_controls_derivative_1 = zeros(problem.phases(1).ncontrols,test_nnodes);
+    // MatrixXd test_controls_derivative_2 = zeros(problem.phases(1).ncontrols,test_nnodes);
+    //
+    // for (int i=1;i<test_nnodes-1;i++){ //take first gaussian derivative, central differences
+    //     test_controls_derivative_1(i)=(test_controls(i+1)-test_controls(i-1))/2;
+    // }
+    // for (int i=1;i<test_nnodes-1;i++){ //take second gaussian derivative (since u2 is our control, not u0!)
+    //     test_controls_derivative_2(i)=(test_controls_derivative_1(i+1)-test_controls_derivative_1(i-1))/2;
+    // }
+    //
+    //
+    // //in the twoburn.cxx example, rk4_propagate takes a NULL.
+    // unique_ptr<Workspace> workspace_up{ new Workspace{problem, algorithm,solution} };
+    //
+    // rk4_propagate( dae,
+    //     test_controls_derivative_2,
+    //     test_time_vector,
+    //     initial_test_state,
+    //     test_parameters,
+    //     problem,
+    //     1,
+    //     test_state_trajectory,
+    //     workspace_up.get());
+    //
+    // plot(test_time_vector,test_state_trajectory.row(0).normalized(),problem.name, "time (s)", "states", "x y z s b");
+    // plot(test_time_vector,test_state_trajectory.row(5).normalized(),problem.name, "time (s)", "states", "x y z s b");
+    // plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Now call PSOPT to solve the problem   /////////////////
@@ -373,7 +381,8 @@ int main(void)
     MatrixXd t         = solution.get_time_in_phase(1);
 
 
-    MatrixXd x0 = states.row(0);
+    MatrixXd x0_v = states.row(0);
+    MatrixXd x0_h = states.row(5);
     MatrixXd u0 = states.row(3);
 
     MatrixXd u2 = controls.row(0);
@@ -382,19 +391,19 @@ int main(void)
     ///////////  Save solution data to files if desired ////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    // Save(x,"x.dat");
-    // Save(y,"y.dat");
-    // Save(z, "z.dat");
-    // Save(theta,"theta.dat");
-    // Save(phi, "phi.dat");
-    // Save(t,"t.dat");
+    Save(x0_v,"x0_v.dat");
+    Save(x0_h,"x0_h.dat");
+    Save(u0, "u0.dat");
+    Save(u2, "u2.dat");
+
 
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////  Plot some results if desired (requires gnuplot) ///////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    plot(t,x0.normalized(),problem.name, "time (s)", "states", "x0");
-    plot(t,u0.normalized(),problem.name, "time (s)", "states", "u0");
+    plot(t,x0_v*1e7,problem.name, "time (s)", "states", "x0_v");
+    plot(t,x0_h*1e7,problem.name, "time (s)", "states", "x0_h");
+    plot(t,u0,problem.name, "time (s)", "states", "u0");
 
 }
