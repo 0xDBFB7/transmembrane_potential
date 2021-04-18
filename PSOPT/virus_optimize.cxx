@@ -131,15 +131,14 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
             int iphase, Workspace* workspace){
 
     adouble x0 = initial_states[ 0 ];
+    e[ 0 ] = x0;
     // adouble xf = final_states[ 0 ];
 
     adouble Q;
-
     // Compute the integral to be constrained
-    Q = integrate(integrand, xad, iphase, workspace);
 
-    // e[ 0 ] = x0;
-    // e[ 1 ] = Q;
+    Q = integrate(integrand, xad, iphase, workspace);
+    e[ 1 ] = Q;
 }
 
 
@@ -150,14 +149,6 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
 {
 
    Cell* C = (Cell*) workspace->user_data;
-
-   // double a1_v = C->a1_v;
-   // double a2_v = C->a2_v;
-   // double a3_v = C->a3_v;
-   // double b1_v = C->b1_v;
-   // double b2_v = C->b2_v;
-   // double b3_v = C->b3_v;
-   // double
 
   //https://mathoverflow.net/a/87902/176668
   adouble u0   = states[ 3 ];
@@ -174,14 +165,6 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
    derivatives[ 1 ] = ((C->R*C->a1*u2 + C->R*C->a2*u1 + C->R*C->a3*u0 - C->b2*x1 - C->b3*x0)/C->b1);
    // m.Equation(x2_v==x1_v.dt()) // x2_v = (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v);
 
-
-
-   // double a1_h = C->a1_h;
-   // double a2_h = C->a2_h;
-   // double a3_h = C->a3_h;
-   // double b1_h = C->b1_h;
-   // double b2_h = C->b2_h;
-   // double b3_h = C->b3_h;
 
 
 
@@ -220,7 +203,7 @@ int main(void)
 
     problem.phases(1).nstates   		= 5;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 0; //2
+    problem.phases(1).nevents   		= 2;
     problem.phases(1).npath         = 0;
     int nnodes    			             = 50;
     problem.phases(1).nodes         << nnodes;
@@ -244,19 +227,22 @@ int main(void)
    C->b2 = 1.2813155432469974e-32;
    C->b3 = 4.0548483601145834e-41;
 
+   double control_bounds = 500;
 
-    problem.phases(1).bounds.lower.states << -1e9, -1e9, -1e9, -1e9, -1e9; //fix bounds!
-    problem.phases(1).bounds.upper.states << 1e9, 1e9, 1e9, 1e9, 1e9; //fix bounds!
+   double output_bounds = 1e-6;
+
+    problem.phases(1).bounds.lower.states << -output_bounds, -output_bounds*100, -output_bounds*100, -control_bounds, -control_bounds; //fix bounds!
+    problem.phases(1).bounds.upper.states << output_bounds, output_bounds*100, output_bounds*100, control_bounds, control_bounds; //fix bounds!
 
 
-    problem.phases(1).bounds.lower.controls << -100;
-    problem.phases(1).bounds.upper.controls << 100;
+    problem.phases(1).bounds.lower.controls << -control_bounds;
+    problem.phases(1).bounds.upper.controls << control_bounds;
 
-    // double x0_initial_value = 0.0;
-    // double u0_integral_constraint = 1.0;
+    double x0_initial_value = 0.0;
+    double u0_integral_constraint = 0.0;
 
-    // problem.phases(1).bounds.lower.events << x0_initial_value, u0_integral_constraint; //2
-    // problem.phases(1).bounds.upper.events << x0_initial_value, u0_integral_constraint;
+    problem.phases(1).bounds.lower.events << x0_initial_value, u0_integral_constraint; //2
+    problem.phases(1).bounds.upper.events << x0_initial_value, u0_integral_constraint;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
@@ -335,10 +321,10 @@ int main(void)
     MatrixXd test_controls_derivative_1 = zeros(problem.phases(1).ncontrols,test_nnodes);
     MatrixXd test_controls_derivative_2 = zeros(problem.phases(1).ncontrols,test_nnodes);
 
-    for (int i=1;i<test_nnodes-1;i++){ //first gaussian derivative
+    for (int i=1;i<test_nnodes-1;i++){ //take first gaussian derivative, central differences
         test_controls_derivative_1(i)=(test_controls(i+1)-test_controls(i-1))/2;
     }
-    for (int i=1;i<test_nnodes-1;i++){ //second gaussian derivative (since u2 is our control, not u0!)
+    for (int i=1;i<test_nnodes-1;i++){ //take second gaussian derivative (since u2 is our control, not u0!)
         test_controls_derivative_2(i)=(test_controls_derivative_1(i+1)-test_controls_derivative_1(i-1))/2;
     }
 
@@ -360,54 +346,45 @@ int main(void)
     plot(test_time_vector,test_state_trajectory.row(0).normalized(),problem.name, "time (s)", "states", "x y z s b");
     plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
 
-// ////////////////////////////////////////////////////////////////////////////
-// ///////////////////  Now call PSOPT to solve the problem   /////////////////
-// ////////////////////////////////////////////////////////////////////////////
-//
-//     psopt(solution, problem, algorithm);
-//
-// ////////////////////////////////////////////////////////////////////////////
-// ///////////  Extract relevant variables from solution structure   //////////
-// ////////////////////////////////////////////////////////////////////////////
-//
-//
-//     MatrixXd states    = solution.get_states_in_phase(1);
-//     MatrixXd controls  = solution.get_controls_in_phase(1);
-//     MatrixXd t         = solution.get_time_in_phase(1);
-//
-//
-//     MatrixXd x = states.row(0);
-//     MatrixXd y = states.row(1);
-//     MatrixXd z = states.row(2);
-//
-//     MatrixXd theta = controls.row(0);
-//     MatrixXd phi   = controls.row(1);
-//
-// ////////////////////////////////////////////////////////////////////////////
-// ///////////  Save solution data to files if desired ////////////////////////
-// ////////////////////////////////////////////////////////////////////////////
-//
-//     // Save(x,"x.dat");
-//     // Save(y,"y.dat");
-//     // Save(z, "z.dat");
-//     // Save(theta,"theta.dat");
-//     // Save(phi, "phi.dat");
-//     // Save(t,"t.dat");
-//
-//
-// ////////////////////////////////////////////////////////////////////////////
-// ///////////  Plot some results if desired (requires gnuplot) ///////////////
-// ////////////////////////////////////////////////////////////////////////////
-//
-// 	 plot(t,states,problem.name, "time (s)", "states", "x y z");
-//
-//     plot(t,controls,problem.name, "time (s)", "controls", "theta phi");
-//
-//
-// 	 plot(t,states,problem.name, "time (s)", "states", "x y z",
-//                            "pdf", "geodesic_states.pdf");
-//
-//     plot(t,controls,problem.name, "time (s)", "controls", "theta phi",
-//                            "pdf", "geodesic_controls.pdf");
+////////////////////////////////////////////////////////////////////////////
+///////////////////  Now call PSOPT to solve the problem   /////////////////
+////////////////////////////////////////////////////////////////////////////
+
+    psopt(solution, problem, algorithm);
+
+////////////////////////////////////////////////////////////////////////////
+///////////  Extract relevant variables from solution structure   //////////
+////////////////////////////////////////////////////////////////////////////
+
+
+    MatrixXd states    = solution.get_states_in_phase(1);
+    MatrixXd controls  = solution.get_controls_in_phase(1);
+    MatrixXd t         = solution.get_time_in_phase(1);
+
+
+    MatrixXd x0 = states.row(0);
+    MatrixXd u0 = states.row(3);
+
+    MatrixXd u2 = controls.row(0);
+
+////////////////////////////////////////////////////////////////////////////
+///////////  Save solution data to files if desired ////////////////////////
+////////////////////////////////////////////////////////////////////////////
+
+    // Save(x,"x.dat");
+    // Save(y,"y.dat");
+    // Save(z, "z.dat");
+    // Save(theta,"theta.dat");
+    // Save(phi, "phi.dat");
+    // Save(t,"t.dat");
+
+
+////////////////////////////////////////////////////////////////////////////
+///////////  Plot some results if desired (requires gnuplot) ///////////////
+////////////////////////////////////////////////////////////////////////////
+
+    plot(t,x0.normalized(),problem.name, "time (s)", "states", "x y z s b");
+    plot(t,u0.normalized(),problem.name, "time (s)", "states", "x y z s b");
+    plot(t,u2,problem.name, "time (s)", "states", "x y z s b");
 
 }
