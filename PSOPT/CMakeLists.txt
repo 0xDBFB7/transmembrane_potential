@@ -1,4 +1,10 @@
 cmake_minimum_required (VERSION 3.10)
+
+#set(CXX_ASAN_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined -fsanitize=leak ")
+
+#set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror -fopenmp\
+# -foffload=-lm -Wno-unused-parameter ${CXX_ASAN_FLAGS} -g --coverage")
+
 project(virus_optimize LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/psopt-5.0.0/cmake)

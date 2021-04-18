@@ -17,7 +17,7 @@ host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, t)
 # small_host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 2.5e-6, 5e-9, t)
 # host_cell = small_host_cell
 
-virus = Cell(0.3, 80, 0.005, 30, 1e-8, 80, 50e-9, 14e-9, t)
+virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
 print(f"Host cell {host_cell.tau_1}, {host_cell.tau_2}")
 print(f"virus {virus.tau_1}, {virus.tau_2}")
@@ -28,6 +28,8 @@ def normalized_gaussian_pulse(t,fwhm):
     sigma = fwhm/2.355
     return np.exp(-((t**2.0)/(2.0*(sigma**2.0))))
 
+
+print(virus.__dict__)
 
 input = np.zeros_like(t)
 # input = np.sin(t)
