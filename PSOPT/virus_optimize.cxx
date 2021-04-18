@@ -166,8 +166,6 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
   derivatives[ 3 ] = u1;
   derivatives[ 4 ] = u2;
 
-
-
    adouble x0    = states[ 0 ];
    adouble x1    = states[ 1 ];
 
@@ -191,6 +189,12 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
 
 
    // path[ 0 ] = //path constraint unused here
+}
+
+static std::string eigentoString(const Eigen::MatrixXd& mat){
+    std::stringstream ss;
+    ss << mat;
+    return ss.str();
 }
 
 double normalized_gaussian_pulse(double t){
@@ -239,10 +243,6 @@ int main(void)
    C->b1 = 4.288219640035286e-26;
    C->b2 = 1.2813155432469974e-32;
    C->b3 = 4.0548483601145834e-41;
-
-   // C->V = 900.00; // Speed in km/h
-   // C->a = 6384.0; // Earth's semi-major axis in km
-   // C->b = 6353.0; // Earth's semi-minor axis in km
 
 
     problem.phases(1).bounds.lower.states << -1e9, -1e9, -1e9, -1e9, -1e9; //fix bounds!
@@ -314,7 +314,7 @@ int main(void)
 ///////////////////  Enter algorithm options  //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
     algorithm.nlp_iter_max                = 1000;
-    algorithm.nlp_tolerance               = 1.e-4;
+    algorithm.nlp_tolerance               = 1.e-9;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
@@ -326,25 +326,27 @@ int main(void)
     ///////////////////       Do a test run       //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    int test_nnodes = 200;
     MatrixXd initial_test_state    =  zeros(problem.phases(1).nstates,1);
-    MatrixXd test_parameters    =  zeros(1,nnodes);
-    MatrixXd test_state_trajectory    =  zeros(problem.phases(1).nstates,nnodes);
-    MatrixXd test_time_vector =  linspace(0.0,1e-8,nnodes);
+    MatrixXd test_parameters    =  ones(0,1);
+    MatrixXd test_state_trajectory    =  zeros(problem.phases(1).nstates,test_nnodes);
+    MatrixXd test_time_vector =  linspace(0.0,1e-8,test_nnodes);
     MatrixXd test_controls = test_time_vector.unaryExpr(&normalized_gaussian_pulse);
-    MatrixXd test_controls_derivative_1 = zeros(problem.phases(1).ncontrols,nnodes);
-    MatrixXd test_controls_derivative_2 = zeros(problem.phases(1).ncontrols,nnodes);
+    MatrixXd test_controls_derivative_1 = zeros(problem.phases(1).ncontrols,test_nnodes);
+    MatrixXd test_controls_derivative_2 = zeros(problem.phases(1).ncontrols,test_nnodes);
 
-    for (int i=1;i<nnodes-1;i++){ //first gaussian derivative
+    for (int i=1;i<test_nnodes-1;i++){ //first gaussian derivative
         test_controls_derivative_1(i)=(test_controls(i+1)-test_controls(i-1))/2;
     }
-    for (int i=1;i<nnodes-1;i++){ //second gaussian derivative (since u2 is our control, not u0!)
+    for (int i=1;i<test_nnodes-1;i++){ //second gaussian derivative (since u2 is our control, not u0!)
         test_controls_derivative_2(i)=(test_controls_derivative_1(i+1)-test_controls_derivative_1(i-1))/2;
     }
 
 
     //in the twoburn.cxx example, rk4_propagate takes a NULL.
     unique_ptr<Workspace> workspace_up{ new Workspace{problem, algorithm,solution} };
-    rk4_propagate( &dae,
+
+    rk4_propagate( dae,
         test_controls_derivative_2,
         test_time_vector,
         initial_test_state,
@@ -354,8 +356,8 @@ int main(void)
         test_state_trajectory,
         workspace_up.get());
 
-
-    plot(test_time_vector,test_state_trajectory,problem.name, "time (s)", "states", "x y z s b");
+    // std::cout << eigentoString(test_state_trajectory) + "\n";
+    plot(test_time_vector,test_state_trajectory.row(0).normalized(),problem.name, "time (s)", "states", "x y z s b");
     plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
 
 // ////////////////////////////////////////////////////////////////////////////
