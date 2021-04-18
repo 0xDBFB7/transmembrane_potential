@@ -157,12 +157,12 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
   derivatives[ 3 ] = u1;
   derivatives[ 4 ] = u2;
 
-   adouble x0    = states[ 0 ];
-   adouble x1    = states[ 1 ];
-
-   // adouble x2_v    = states[ 2 ];
-   derivatives[ 0 ] = x1; // m.Equation(x1_v==x0_v.dt())
-   derivatives[ 1 ] = ((C->R*C->a1*u2 + C->R*C->a2*u1 + C->R*C->a3*u0 - C->b2*x1 - C->b3*x0)/C->b1);
+   // adouble x0    = states[ 0 ];
+   // adouble x1    = states[ 1 ];
+   //
+   // // adouble x2_v    = states[ 2 ];
+   // derivatives[ 0 ] = x1; // m.Equation(x1_v==x0_v.dt())
+   // derivatives[ 1 ] = ((C->R*C->a1*u2 + C->R*C->a2*u1 + C->R*C->a3*u0 - C->b2*x1 - C->b3*x0)/C->b1);
    // m.Equation(x2_v==x1_v.dt()) // x2_v = (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v);
 
 
@@ -227,9 +227,9 @@ int main(void)
    C->b2 = 1.2813155432469974e-32;
    C->b3 = 4.0548483601145834e-41;
 
-   double control_bounds = 500;
+   double control_bounds = 1e9;
 
-   double output_bounds = 1e-6;
+   double output_bounds = 1e9;
 
     problem.phases(1).bounds.lower.states << -output_bounds, -output_bounds*100, -output_bounds*100, -control_bounds, -control_bounds; //fix bounds!
     problem.phases(1).bounds.upper.states << output_bounds, output_bounds*100, output_bounds*100, control_bounds, control_bounds; //fix bounds!
@@ -239,7 +239,7 @@ int main(void)
     problem.phases(1).bounds.upper.controls << control_bounds;
 
     double x0_initial_value = 0.0;
-    double u0_integral_constraint = 0.0;
+    double u0_integral_constraint = 1.0;
 
     problem.phases(1).bounds.lower.events << x0_initial_value, u0_integral_constraint; //2
     problem.phases(1).bounds.upper.events << x0_initial_value, u0_integral_constraint;
@@ -274,8 +274,8 @@ int main(void)
     int ncontrols                       = problem.phases(1).ncontrols;
     int nstates                         = problem.phases(1).nstates;
 
-    MatrixXd u_guess    =  zeros(ncontrols,nnodes);
-    MatrixXd x_guess    =  zeros(nstates,nnodes);
+    MatrixXd u_guess    =  ones(ncontrols,nnodes);
+    MatrixXd x_guess    =  ones(nstates,nnodes);
     MatrixXd time_guess =  linspace(0.0,3.0,nnodes);
 
     //
