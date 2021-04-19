@@ -3,6 +3,15 @@
 const double epsilon_0 = 8.854e-12;
 
 
+#define u0_state 0
+#define u1_state 1
+
+#define x0_v_state 2
+#define x1_v_state 3
+
+#define x0_h_state 4
+#define x1_h_state 5
+
 
 struct Cell{
     double extracellular_conductivity; // S/m
@@ -105,7 +114,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
 
 
-    return -(states[ 0 ]*states[ 0 ]) + (states[ 5 ]*states[ 5 ]);
+    return -(states[ x0_v_state ]*states[ x0_v_state ]) + (states[ x0_h_state ]*states[ x0_h_state ]);
 }
 
 
@@ -118,7 +127,7 @@ adouble integrand( adouble* states, adouble* controls, adouble* parameters,
 {
     //integrand from isoperimetric.cxx
     adouble g;
-    adouble u0 = states[ 3 ];
+    adouble u0 = states[ u0_state ];
     g = u0*u0;
     return g;
 }
@@ -127,31 +136,32 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
             adouble* parameters,adouble& t0, adouble& tf, adouble* xad,
             int iphase, Workspace* workspace){
 
-    adouble u0 = initial_states[ 3 ];
+    adouble u0 = initial_states[ u0_state ];
     e[ 0 ] = u0;
+    adouble u1 = initial_states[ u1_state ];
+    e[ 1 ] = u1;
 
-    adouble x0 = initial_states[ 0 ];
-    e[ 1 ] = x0;
+    adouble x0 = initial_states[ x0_v_state ];
+    e[ 2 ] = x0;
 
-    adouble x0_h = initial_states[ 5 ];
-    e[ 2 ] = x0_h;
+    adouble x0_h = initial_states[ x0_h_state ];
+    e[ 3 ] = x0_h;
 
-    // adouble xf = final_states[ 0 ];
+    adouble x1 = initial_states[ x1_v_state ];
+    e[ 4 ] = x1;
 
+    adouble x1_h = initial_states[ x1_h_state ];
+    e[ 5 ] = x1_h;
+
+    // adouble u0_f = final_states[ 3 ];
+    // e[ 3 ] = u0_f;
     // Compute the integral to be constrained
     adouble Q;
     Q = integrate(integrand, xad, iphase, workspace);
-    e[ 3 ] = Q;
+    e[ 6 ] = Q;
 }
 
-#define u0_state 3
-#define u1_state 4
 
-#define x0_v_state 0
-#define x1_v_state 1
-
-#define x0_h_state 5
-#define x1_h_state 6
 
 void dae(adouble* derivatives, adouble* path, adouble* states,
          adouble* controls, adouble* parameters, adouble& time,
@@ -170,8 +180,8 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     adouble x0_v    = states[ x0_v_state ];
     adouble x1_v    = states[ x1_v_state ];
 
-    derivatives[ 0 ] = x1_v; // m.Equation(x1_v_v==x0_v_v.dt())
-    derivatives[ 1 ] = ((virus->R*virus->a1*u2 + virus->R*virus->a2*u1 + virus->R*virus->a3*u0 - virus->b2*x1_v - virus->b3*x0_v)/virus->b1);
+    derivatives[ x0_v_state ] = x1_v; // m.Equation(x1_v_v==x0_v_v.dt())
+    derivatives[ x1_v_state ] = ((virus->R*virus->a1*u2 + virus->R*virus->a2*u1 + virus->R*virus->a3*u0 - virus->b2*x1_v - virus->b3*x0_v)/virus->b1);
 
 
     adouble x0_h    = states[ x0_h_state ];
@@ -212,9 +222,9 @@ int main(void)
     psopt_level1_setup(problem);
 
 
-    problem.phases(1).nstates   		= 7;
+    problem.phases(1).nstates   		= 6;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 4;
+    problem.phases(1).nevents   		= 7;
     problem.phases(1).npath         = 0;
     int nnodes    			             = 30;
     problem.phases(1).nodes         << nnodes;
@@ -238,19 +248,19 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1e-3;
+    double end_time = 1.0;
 
-    double control_bounds = 10;
+    double control_bounds = 2;
 
-    double output_bounds = 5.0e-3;
-    double derivative_scaling = 1.0/(1e-11); //highest permissible derivative value - gets very high!
+    double output_bounds = 1e-3;
+    double derivative_scaling = 1.0/(1e-4); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = derivative_scaling*derivative_scaling;
 
     //there is no state 2!
 
     //bounds are questionable.
-    problem.phases(1).bounds.lower.states << -output_bounds, -output_bounds*derivative_scaling, -output_bounds*second_derivative_scaling, -control_bounds, -control_bounds*derivative_scaling, -output_bounds, -output_bounds*derivative_scaling;
-    problem.phases(1).bounds.upper.states << output_bounds, output_bounds*derivative_scaling, output_bounds*second_derivative_scaling, control_bounds, control_bounds*derivative_scaling, output_bounds, output_bounds*derivative_scaling;
+    problem.phases(1).bounds.lower.states << -control_bounds, -control_bounds*derivative_scaling, -output_bounds, -output_bounds*derivative_scaling,  -output_bounds, -output_bounds*derivative_scaling;
+    problem.phases(1).bounds.upper.states << control_bounds, control_bounds*derivative_scaling, output_bounds, output_bounds*derivative_scaling, output_bounds, output_bounds*derivative_scaling;
 
 
     problem.phases(1).bounds.lower.controls << -control_bounds * second_derivative_scaling;
@@ -258,10 +268,11 @@ int main(void)
 
     double x0_initial_value = 0.0;
     double u0_initial_value = 0.0;
-    double u0_integral_constraint = end_time*end_time*end_time;
+    // double u0_integral_constraint = end_time/2.0;
+    double u0_integral_constraint = 1.0;
 
-    problem.phases(1).bounds.lower.events << u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
-    problem.phases(1).bounds.upper.events << u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
+    problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
+    problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
@@ -318,16 +329,19 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 1000;
-    algorithm.nlp_tolerance               = 1.e-7;
+    algorithm.nlp_iter_max                = 2000;
+    algorithm.nlp_tolerance               = 1.e-4;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
-    algorithm.collocation_method          = "trapezoidal";
+    // algorithm.collocation_method          = "trapezoidal";
     algorithm.mesh_refinement             = "automatic";
+    // algorithm.mr_max_iterations = 15;
+    // algorithm.mr_M1 = 30;
+    algorithm.ode_tolerance             = 1.e-4;//increases mesh refinement depth
 
-    algorithm.ode_tolerance             = 1.e-7;//increases mesh refinement depth
-
+    // algorithm.ipopt_linear_solver = "ma";
+    // algorithm.ipopt_linear_solver = "paradiso";
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////       Do a test run       //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -365,8 +379,8 @@ int main(void)
             test_state_trajectory,
             workspace_up.get());
 
-        plot(test_time_vector,test_state_trajectory.row(0),problem.name, "time (s)", "states", "x0_v");
-        plot(test_time_vector,test_state_trajectory.row(5),problem.name, "time (s)", "states", "x0_h");
+        plot(test_time_vector,test_state_trajectory.row(x0_v_state),problem.name, "time (s)", "states", "x0_v");
+        plot(test_time_vector,test_state_trajectory.row(x0_h_state),problem.name, "time (s)", "states", "x0_h");
         plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
         return 0;
     }
@@ -387,10 +401,10 @@ int main(void)
     MatrixXd t         = solution.get_time_in_phase(1);
 
 
-    MatrixXd x0_v = states.row(0);
-    MatrixXd x0_h = states.row(5);
-    MatrixXd u0 = states.row(3);
-
+    MatrixXd x0_v = states.row(x0_v_state);
+    MatrixXd x0_h = states.row(x0_h_state);
+    MatrixXd u0 = states.row(u0_state);
+    MatrixXd u1 = states.row(u1_state);
     MatrixXd u2 = controls.row(0);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -411,5 +425,7 @@ int main(void)
     plot(t,x0_v,problem.name, "time (s)", "states", "x0_v");
     plot(t,x0_h,problem.name, "time (s)", "states", "x0_h");
     plot(t,u0,problem.name, "time (s)", "states", "u0");
+    plot(t,u1,problem.name, "time (s)", "states", "u1");
+    plot(t,u2,problem.name, "time (s)", "states", "u2");
 
 }
