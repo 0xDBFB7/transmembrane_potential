@@ -268,8 +268,8 @@ int main(void)
     problem.phases(1).bounds.upper.states << control_bounds, derivative_scaling, output_bounds, derivative_scaling, output_bounds, derivative_scaling;
 
 
-    problem.phases(1).bounds.lower.controls << -inf;
-    problem.phases(1).bounds.upper.controls << inf;
+    problem.phases(1).bounds.lower.controls << -second_derivative_scaling;
+    problem.phases(1).bounds.upper.controls << second_derivative_scaling;
 
     double x0_initial_value = 0.0;
     double u0_initial_value = 0.0;
