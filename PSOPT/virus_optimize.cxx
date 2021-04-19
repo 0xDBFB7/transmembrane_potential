@@ -24,8 +24,8 @@ struct Cell{
     double R = 0;
 
 
-    double tau_1;
-    double tau_2;
+    // double tau_1;
+    // double tau_2;
 
 
     void init();
@@ -69,21 +69,6 @@ void Cell::init(){
 Cell* virus;
 Cell* host;
 
-
-// typedef struct {
-//     double a1_v;
-//     double a2_v;
-//     double a3_v;
-//     double b1_v;
-//     double b2_v;
-//     double b3_v;
-//     double a1_h;
-//     double a2_h;
-//     double a3_h;
-//     double b1_h;
-//     double b2_h;
-//     double b3_h;
-// } Constants;
 
 
 
@@ -159,7 +144,14 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
     e[ 3 ] = Q;
 }
 
+#define u0_state 3
+#define u1_state 4
 
+#define x0_v_state 0
+#define x1_v_state 1
+
+#define x0_h_state 5
+#define x1_h_state 6
 
 void dae(adouble* derivatives, adouble* path, adouble* states,
          adouble* controls, adouble* parameters, adouble& time,
@@ -169,24 +161,24 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     // Cell virus = (Cell) cells[0];
 
     //https://mathoverflow.net/a/87902/176668
-    adouble u0   = states[ 3 ];
-    adouble u1   = states[ 4 ];
+    adouble u0   = states[ u0_state ];
+    adouble u1   = states[ u1_state ];
     adouble u2 = controls[ 0 ];
-    derivatives[ 3 ] = u1;
-    derivatives[ 4 ] = u2;
+    derivatives[ u0_state ] = u1;
+    derivatives[ u1_state ] = u2;
 
-    adouble x0_v    = states[ 0 ];
-    adouble x1_v    = states[ 1 ];
+    adouble x0_v    = states[ x0_v_state ];
+    adouble x1_v    = states[ x1_v_state ];
 
     derivatives[ 0 ] = x1_v; // m.Equation(x1_v_v==x0_v_v.dt())
     derivatives[ 1 ] = ((virus->R*virus->a1*u2 + virus->R*virus->a2*u1 + virus->R*virus->a3*u0 - virus->b2*x1_v - virus->b3*x0_v)/virus->b1);
 
 
-    adouble x0_h    = states[ 5 ];
-    adouble x1_h    = states[ 6 ];
+    adouble x0_h    = states[ x0_h_state ];
+    adouble x1_h    = states[ x1_h_state ];
 
-    derivatives[ 5 ] = x1_h; // m.Equation(x1_v==x0_v.dt())
-    derivatives[ 6 ] = ((host->R*host->a1*u2 + host->R*host->a2*u1 + host->R*host->a3*u0 - host->b2*x1_h - host->b3*x0_h)/host->b1);
+    derivatives[ x0_h_state ] = x1_h; // m.Equation(x1_v==x0_v.dt())
+    derivatives[ x1_h_state ] = ((host->R*host->a1*u2 + host->R*host->a2*u1 + host->R*host->a3*u0 - host->b2*x1_h - host->b3*x0_h)/host->b1);
 
     // path[ 0 ] = //path constraint unused here
 }
@@ -238,7 +230,7 @@ int main(void)
     virus = new Cell{0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9};
     virus->init();
 
-    host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9};
+    host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
     // cells.push_back(virus);
@@ -246,20 +238,27 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double control_bounds = 1;
+    double end_time = 1e-3;
 
-    double output_bounds = 1.0e-2;
+    double control_bounds = 10;
+
+    double output_bounds = 5.0e-4;
+    double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
+    double second_derivative_scaling = derivative_scaling*derivative_scaling;
+
+    //there is no state 2!
+
     //bounds are questionable.
-    problem.phases(1).bounds.lower.states << -output_bounds, -output_bounds, -output_bounds, -control_bounds, -control_bounds, -output_bounds, -output_bounds;
-    problem.phases(1).bounds.upper.states << output_bounds, output_bounds, output_bounds, control_bounds, control_bounds, output_bounds, output_bounds;
+    problem.phases(1).bounds.lower.states << -output_bounds, -output_bounds*derivative_scaling, -output_bounds*second_derivative_scaling, -control_bounds, -control_bounds*derivative_scaling, -output_bounds, -output_bounds*derivative_scaling;
+    problem.phases(1).bounds.upper.states << output_bounds, output_bounds*derivative_scaling, output_bounds*second_derivative_scaling, control_bounds, control_bounds*derivative_scaling, output_bounds, output_bounds*derivative_scaling;
 
 
-    problem.phases(1).bounds.lower.controls << -control_bounds;
-    problem.phases(1).bounds.upper.controls << control_bounds;
+    problem.phases(1).bounds.lower.controls << -control_bounds * second_derivative_scaling;
+    problem.phases(1).bounds.upper.controls << control_bounds * second_derivative_scaling;
 
     double x0_initial_value = 0.0;
     double u0_initial_value = 0.0;
-    double u0_integral_constraint = 1.0;
+    double u0_integral_constraint = end_time*end_time*end_time;
 
     problem.phases(1).bounds.lower.events << u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
     problem.phases(1).bounds.upper.events << u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
@@ -271,7 +270,7 @@ int main(void)
     problem.phases(1).bounds.upper.StartTime    = 0.0;
 
     problem.phases(1).bounds.lower.EndTime      = 1e-10;
-    problem.phases(1).bounds.upper.EndTime      = 5.0;
+    problem.phases(1).bounds.upper.EndTime      = end_time;
 
 
 
@@ -296,7 +295,7 @@ int main(void)
 
     MatrixXd u_guess    =  ones(ncontrols,nnodes);
     MatrixXd x_guess    =  ones(nstates,nnodes);
-    MatrixXd time_guess =  linspace(0.0,3.0,nnodes);
+    MatrixXd time_guess =  linspace(0.0,end_time/2.0,nnodes);
 
     //
     // u_guess << linspace(theta0,thetaf,nnodes),
@@ -327,7 +326,7 @@ int main(void)
     algorithm.collocation_method          = "trapezoidal";
     algorithm.mesh_refinement             = "automatic";
 
-    algorithm.ode_tolerance             = 1.e-7;//increases mesh refinement depth
+    algorithm.ode_tolerance             = 1.e-6;//increases mesh refinement depth
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////       Do a test run       //////////////////////////////
@@ -366,8 +365,8 @@ int main(void)
             test_state_trajectory,
             workspace_up.get());
 
-        plot(test_time_vector,test_state_trajectory.row(0),problem.name, "time (s)", "states", "x y z s b");
-        plot(test_time_vector,test_state_trajectory.row(5),problem.name, "time (s)", "states", "x y z s b");
+        plot(test_time_vector,test_state_trajectory.row(0),problem.name, "time (s)", "states", "x0_v");
+        plot(test_time_vector,test_state_trajectory.row(5),problem.name, "time (s)", "states", "x0_h");
         plot(test_time_vector,test_controls_derivative_2,problem.name, "time (s)", "states", "x");
         return 0;
     }
@@ -409,8 +408,8 @@ int main(void)
     ///////////  Plot some results if desired (requires gnuplot) ///////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    plot(t,x0_v*1e7,problem.name, "time (s)", "states", "x0_v");
-    plot(t,x0_h*1e7,problem.name, "time (s)", "states", "x0_h");
+    plot(t,x0_v,problem.name, "time (s)", "states", "x0_v");
+    plot(t,x0_h,problem.name, "time (s)", "states", "x0_h");
     plot(t,u0,problem.name, "time (s)", "states", "u0");
 
 }

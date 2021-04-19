@@ -12,7 +12,7 @@ tstop = 0.3e-6
 dt = 0.005e-9
 t = np.linspace(t0, tstop, int(tstop/dt))
 
-host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, t)
+host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
 
 # small_host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 2.5e-6, 5e-9, t)
 # host_cell = small_host_cell
