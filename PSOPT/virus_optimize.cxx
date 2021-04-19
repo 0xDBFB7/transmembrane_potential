@@ -362,7 +362,7 @@ int main(void)
     // // algorithm.mr_M1 = 40;
     // algorithm.mr_initial_increment = 50;
 
-    // algorithm.ipopt_linear_solver = "ma";
+    algorithm.ipopt_linear_solver = "spral";
     // algorithm.ipopt_linear_solver = "paradiso";
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////       Do a test run       //////////////////////////////
