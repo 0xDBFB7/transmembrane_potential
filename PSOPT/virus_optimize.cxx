@@ -100,6 +100,7 @@ adouble endpoint_cost(adouble* initial_states, adouble* final_states,
                       adouble* parameters,adouble& t0, adouble& tf,
                       adouble* xad, int iphase,Workspace* workspace)
 {
+   // return -(final_states[ x0_v_state ]*final_states[ x0_v_state ]) + (final_states[ x0_h_state ]*final_states[ x0_h_state ]);
    return 0;
 }
 
@@ -115,6 +116,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
 
     return -(states[ x0_v_state ]*states[ x0_v_state ]) + (states[ x0_h_state ]*states[ x0_h_state ]);
+    // return 0;
 }
 
 
@@ -200,8 +202,8 @@ static std::string eigentoString(const Eigen::MatrixXd& mat){
 }
 
 double normalized_gaussian_pulse(double t){
-    t = t - ((1e-8)/2);
-    double fwhm = 1e-9;
+    t = t - ((1e-8)/2);//-8
+    double fwhm = 1e-9; //-9
     double sigma = fwhm/2.355;
     return exp(-((t*t)/(2.0*(sigma*sigma))));
 }
@@ -226,7 +228,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 7;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 30;
+    int nnodes    			             = 500;
     problem.phases(1).nodes         << nnodes;
 
     psopt_level2_setup(problem, algorithm);
@@ -248,12 +250,12 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1.0;
+    double end_time = 1e-6;
 
     double control_bounds = 2;
 
-    double output_bounds = 1e-3;
-    double derivative_scaling = 1.0/(1e-4); //highest permissible derivative value - gets very high!
+    double output_bounds = 1e-4;
+    double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = derivative_scaling*derivative_scaling;
 
     //there is no state 2!
@@ -269,7 +271,7 @@ int main(void)
     double x0_initial_value = 0.0;
     double u0_initial_value = 0.0;
     // double u0_integral_constraint = end_time/2.0;
-    double u0_integral_constraint = 1.0;
+    double u0_integral_constraint = end_time;
 
     problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
     problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
@@ -305,40 +307,43 @@ int main(void)
     int nstates                         = problem.phases(1).nstates;
 
     MatrixXd u_guess    =  ones(ncontrols,nnodes);
-    MatrixXd x_guess    =  ones(nstates,nnodes);
-    MatrixXd time_guess =  linspace(0.0,end_time/2.0,nnodes);
+    MatrixXd x_guess    =  zeros(nstates,nnodes);
+    MatrixXd time_guess =  linspace(0.0,end_time,nnodes);
 
+
+    // MatrixXd guess_controls = time_guess.unaryExpr(&normalized_gaussian_pulse);
     //
-    // u_guess << linspace(theta0,thetaf,nnodes),
-    //            linspace(phi0,phif,nnodes);
+    // MatrixXd guess_controls_d1 = zeros(problem.phases(1).ncontrols,nnodes);
+    // MatrixXd guess_controls_d2 = zeros(problem.phases(1).ncontrols,nnodes);
     //
-    // for (int i = 0;i< nnodes;i++) {
-    //
-    //   x_guess(0,i) = a*sin(u_guess(0,i))*cos(u_guess(1,i));
-    //   x_guess(1,i) = a*sin(u_guess(0,i))*sin(u_guess(1,i));
-    //   x_guess(2,i) = b*cos(u_guess(0,i));
-    //
+    // for (int i=1;i<nnodes-1;i++){ //take first gaussian derivative, central differences
+    //     guess_controls_d1(i)=(guess_controls(i+1)-guess_controls(i-1))/(2.0*(end_time/nnodes));
+    // }
+    // for (int i=1;i<nnodes-1;i++){ //take second gaussian derivative (since u2 is our control, not u0!)
+    //     guess_controls_d2(i)=(guess_controls_d1(i+1)-guess_controls_d1(i-1))/(2.0*(end_time/nnodes));
     // }
 
-
-    problem.phases(1).guess.controls       = u_guess;
+    problem.phases(1).guess.controls       = u_guess; //guess_controls_d2
     problem.phases(1).guess.states         = x_guess;
     problem.phases(1).guess.time           = time_guess;
 
+
+    //try just _h and _v?
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     algorithm.nlp_iter_max                = 2000;
-    algorithm.nlp_tolerance               = 1.e-4;
+    algorithm.nlp_tolerance               = 1.e-7; //is this relative? I don't think so
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
     // algorithm.collocation_method          = "trapezoidal";
+    algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
     // algorithm.mr_max_iterations = 15;
     // algorithm.mr_M1 = 30;
-    algorithm.ode_tolerance             = 1.e-4;//increases mesh refinement depth
+    algorithm.ode_tolerance             = 1.e-7;//increases mesh refinement depth - relative
 
     // algorithm.ipopt_linear_solver = "ma";
     // algorithm.ipopt_linear_solver = "paradiso";
