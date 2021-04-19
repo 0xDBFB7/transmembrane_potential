@@ -242,8 +242,8 @@ int main(void)
 
     double control_bounds = 10;
 
-    double output_bounds = 5.0e-4;
-    double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
+    double output_bounds = 5.0e-3;
+    double derivative_scaling = 1.0/(1e-11); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = derivative_scaling*derivative_scaling;
 
     //there is no state 2!
@@ -319,14 +319,14 @@ int main(void)
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     algorithm.nlp_iter_max                = 1000;
-    algorithm.nlp_tolerance               = 1.e-5;
+    algorithm.nlp_tolerance               = 1.e-7;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
     algorithm.collocation_method          = "trapezoidal";
     algorithm.mesh_refinement             = "automatic";
 
-    algorithm.ode_tolerance             = 1.e-6;//increases mesh refinement depth
+    algorithm.ode_tolerance             = 1.e-7;//increases mesh refinement depth
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////       Do a test run       //////////////////////////////
