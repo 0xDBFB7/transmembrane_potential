@@ -100,7 +100,7 @@ adouble endpoint_cost(adouble* initial_states, adouble* final_states,
                       adouble* parameters,adouble& t0, adouble& tf,
                       adouble* xad, int iphase,Workspace* workspace)
 {
-   // return -(final_states[ x0_v_state ]*final_states[ x0_v_state ]) + (final_states[ x0_h_state ]*final_states[ x0_h_state ]);
+   // return -(final_states[ x0_v_state ]);
    return 0;
 }
 
@@ -113,10 +113,10 @@ adouble integrand_cost(adouble* states, adouble* controls,
                        int iphase, Workspace* workspace)
 {
 
-
-
+    // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
+    // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
     return -(states[ x0_v_state ]*states[ x0_v_state ]) + (states[ x0_h_state ]*states[ x0_h_state ]);
-    // return 0;
+    return 0;
 }
 
 
@@ -214,6 +214,9 @@ double ssin(double t){
 
 #define TEST 0
 
+//SPRAL is apparently the best, needs
+//https://github.com/jump-dev/Ipopt.jl/issues/223
+
 int main(void)
 {
 
@@ -232,7 +235,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 7;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 30;
+    int nnodes    			             = 150;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -255,12 +258,12 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1e-6;
+    double end_time = 1e-8;
 
     double control_bounds = 2;
 
-    double output_bounds = 1e-5;
-    double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
+    double output_bounds = 10;
+    double derivative_scaling = 1.0/(1e-12); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = derivative_scaling*derivative_scaling;
 
     //bounds are questionable.
@@ -274,7 +277,7 @@ int main(void)
     double x0_initial_value = 0.0;
     double u0_initial_value = 0.0;
     // double u0_integral_constraint = end_time/2.0;
-    double u0_integral_constraint = end_time;
+    double u0_integral_constraint = end_time/2.0;
 
     problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value , u0_integral_constraint; //2
     problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
@@ -285,7 +288,7 @@ int main(void)
     problem.phases(1).bounds.lower.StartTime    = 0.0;
     problem.phases(1).bounds.upper.StartTime    = 0.0;
 
-    problem.phases(1).bounds.lower.EndTime      = 1e-6;
+    problem.phases(1).bounds.lower.EndTime      = end_time;
     problem.phases(1).bounds.upper.EndTime      = end_time;
 
 
@@ -309,8 +312,8 @@ int main(void)
     int ncontrols                       = problem.phases(1).ncontrols;
     int nstates                         = problem.phases(1).nstates;
 
-    MatrixXd u_guess    =  ones(ncontrols,nnodes);
-    MatrixXd x_guess    =  ones(nstates,nnodes);
+    MatrixXd u_guess    =  ones(ncontrols,nnodes) * 0.001;
+    MatrixXd x_guess    =  zeros(nstates,nnodes);
     MatrixXd time_guess =  linspace(0.0,end_time,nnodes);
 
 
@@ -336,8 +339,8 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 750;
-    algorithm.nlp_tolerance               = 1.e-10; //is this relative? I don't think so
+    algorithm.nlp_iter_max                = 1000;
+    algorithm.nlp_tolerance               = 1.e-6; //is this relative? I don't think so
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
@@ -345,14 +348,19 @@ int main(void)
     // algorithm.collocation_method          = "trapezoidal";
     // algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
-    algorithm.mr_max_iterations = 1;
+
+    // RowVectorXi my_vector(5);
+    // my_vector  << 20, 40, 100, 500, 1500;
+    // problem.phases(1).nodes = my_vector;
+
+    algorithm.mr_max_iterations = 10;
     // algorithm.mr_M1 = 30;
-    algorithm.ode_tolerance             = 1.e-6;//increases mesh refinement depth - relative
+    algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
     // algorithm.nsteps_error_integration  = 20;
-    // algorithm.mr_kappa = 0.4;
-    algorithm.mr_max_increment_factor = 0.05;
-    // algorithm.mr_M1 = 40;
-    algorithm.mr_initial_increment = 50;
+    // // algorithm.mr_kappa = 0.4;
+    // algorithm.mr_max_increment_factor = 0.05;
+    // // algorithm.mr_M1 = 40;
+    // algorithm.mr_initial_increment = 50;
 
     // algorithm.ipopt_linear_solver = "ma";
     // algorithm.ipopt_linear_solver = "paradiso";
@@ -429,6 +437,7 @@ int main(void)
     Save(x0_h,"x0_h.dat");
     Save(u0, "u0.dat");
     Save(u2, "u2.dat");
+    Save(t, "t.dat");
 
 
 
