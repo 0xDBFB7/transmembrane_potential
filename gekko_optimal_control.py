@@ -75,26 +75,26 @@ end = 1e-2
 m.time = np.linspace(0,end,nt)
 # Variables
 x0_v = m.Var(value=0)
-x1_v = m.Var()
-x2_v = m.Var()
+x1_v = m.Var(value=0)
+x2_v = m.Var(value=0)
 
 x0_h = m.Var(value=0)
-x1_h = m.Var()
-x2_h = m.Var()
+x1_h = m.Var(value=0)
+x2_h = m.Var(value=0)
 
 t = m.Param(value=m.time)
 
 
 
-u0 = m.Var()
+u0 = m.Var(value=1)
 
 # m.Equation(u0 == m.sin(t)) # for simulation
 # m.Equation(u0 == m.exp(-(((t-(end/2.0))**2.0)/(2.0*((0.1e-4)**2.0))))) # for simulation
 
 
-u1 = m.Var()
+u1 = m.Var(value=0)
 m.Equation(u1==u0.dt())
-u2 = m.Var()
+u2 = m.Var(value=0)
 m.Equation(u2==u1.dt())
 
 
@@ -136,13 +136,13 @@ m.Equation(x2_h == (R_h*a1_h*u2 + R_h*a2_h*u1 + R_h*a3_h*u0 - b2_h*x1_h - b3_h*x
 # m.Equation(int_h==m.integral(x0_h**2.0))
 # m.Equation(t==m.vsum(m.abs2(u0)))
 
-m.Equation(m.integral(u0*u0)==(end**2.0)*0.5)
+m.Equation(m.integral(u0*u0)==(end))
 # m.Equation(m.vsum(m.abs2(u0))==0.1)
 # m.Equation(m.integral(m.abs2(u0))==0.1)
 # integral()
 # abs2()
 
-m.Obj(-x0_v + x0_h) # Objective function
+m.Obj(-m.integral(x0_v*x0_v) + m.integral(x0_h*x0_h)) # Objective function
 m.options.IMODE = 6 # optimal control mode
 
 # m.options.IMODE = 4 # dynamic simulation

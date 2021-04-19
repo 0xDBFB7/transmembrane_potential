@@ -130,7 +130,7 @@ adouble integrand( adouble* states, adouble* controls, adouble* parameters,
     //integrand from isoperimetric.cxx
     adouble g;
     adouble u0 = states[ u0_state ];
-    g = u0*u0;
+    g = (u0*u0);
     return g;
 }
 
@@ -208,6 +208,10 @@ double normalized_gaussian_pulse(double t){
     return exp(-((t*t)/(2.0*(sigma*sigma))));
 }
 
+double ssin(double t){
+    return sin((t/1e-6) * 2*3.14);
+}
+
 #define TEST 0
 
 int main(void)
@@ -228,7 +232,8 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 7;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 500;
+    int nnodes    			             = 30;
+
     problem.phases(1).nodes         << nnodes;
 
     psopt_level2_setup(problem, algorithm);
@@ -254,26 +259,24 @@ int main(void)
 
     double control_bounds = 2;
 
-    double output_bounds = 1e-4;
+    double output_bounds = 1e-5;
     double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = derivative_scaling*derivative_scaling;
 
-    //there is no state 2!
-
     //bounds are questionable.
-    problem.phases(1).bounds.lower.states << -control_bounds, -control_bounds*derivative_scaling, -output_bounds, -output_bounds*derivative_scaling,  -output_bounds, -output_bounds*derivative_scaling;
-    problem.phases(1).bounds.upper.states << control_bounds, control_bounds*derivative_scaling, output_bounds, output_bounds*derivative_scaling, output_bounds, output_bounds*derivative_scaling;
+    problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling,  -output_bounds, -derivative_scaling;
+    problem.phases(1).bounds.upper.states << control_bounds, derivative_scaling, output_bounds, derivative_scaling, output_bounds, derivative_scaling;
 
 
-    problem.phases(1).bounds.lower.controls << -control_bounds * second_derivative_scaling;
-    problem.phases(1).bounds.upper.controls << control_bounds * second_derivative_scaling;
+    problem.phases(1).bounds.lower.controls << -inf;
+    problem.phases(1).bounds.upper.controls << inf;
 
     double x0_initial_value = 0.0;
     double u0_initial_value = 0.0;
     // double u0_integral_constraint = end_time/2.0;
     double u0_integral_constraint = end_time;
 
-    problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
+    problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value , u0_integral_constraint; //2
     problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
 
     // problem.phases(1).bounds.lower.path << 0.0;
@@ -282,7 +285,7 @@ int main(void)
     problem.phases(1).bounds.lower.StartTime    = 0.0;
     problem.phases(1).bounds.upper.StartTime    = 0.0;
 
-    problem.phases(1).bounds.lower.EndTime      = 1e-10;
+    problem.phases(1).bounds.lower.EndTime      = 1e-6;
     problem.phases(1).bounds.upper.EndTime      = end_time;
 
 
@@ -307,11 +310,11 @@ int main(void)
     int nstates                         = problem.phases(1).nstates;
 
     MatrixXd u_guess    =  ones(ncontrols,nnodes);
-    MatrixXd x_guess    =  zeros(nstates,nnodes);
+    MatrixXd x_guess    =  ones(nstates,nnodes);
     MatrixXd time_guess =  linspace(0.0,end_time,nnodes);
 
 
-    // MatrixXd guess_controls = time_guess.unaryExpr(&normalized_gaussian_pulse);
+    // MatrixXd guess_controls = time_guess.unaryExpr(&ssin);
     //
     // MatrixXd guess_controls_d1 = zeros(problem.phases(1).ncontrols,nnodes);
     // MatrixXd guess_controls_d2 = zeros(problem.phases(1).ncontrols,nnodes);
@@ -333,17 +336,23 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 2000;
-    algorithm.nlp_tolerance               = 1.e-7; //is this relative? I don't think so
+    algorithm.nlp_iter_max                = 750;
+    algorithm.nlp_tolerance               = 1.e-10; //is this relative? I don't think so
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
+    // algorithm.collocation_method          = "Legendre";
     // algorithm.collocation_method          = "trapezoidal";
-    algorithm.collocation_method          ="Hermite-Simpson";
+    // algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
-    // algorithm.mr_max_iterations = 15;
+    algorithm.mr_max_iterations = 1;
     // algorithm.mr_M1 = 30;
-    algorithm.ode_tolerance             = 1.e-7;//increases mesh refinement depth - relative
+    algorithm.ode_tolerance             = 1.e-6;//increases mesh refinement depth - relative
+    // algorithm.nsteps_error_integration  = 20;
+    // algorithm.mr_kappa = 0.4;
+    algorithm.mr_max_increment_factor = 0.05;
+    // algorithm.mr_M1 = 40;
+    algorithm.mr_initial_increment = 50;
 
     // algorithm.ipopt_linear_solver = "ma";
     // algorithm.ipopt_linear_solver = "paradiso";
