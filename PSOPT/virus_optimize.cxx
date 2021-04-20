@@ -62,15 +62,12 @@ void Cell::init(){
     a2 = 3.0 * d * ((l_i * e_o + l_o * e_i) * sub1 + (l_m * e_o + l_o * e_m) * sub2);
     a3 = 3.0 * d * e_o * (e_i * (sub1) + e_m * sub2);
 
-    b1 = 2.0 * (R*R*R) * (l_m +     2.0*l_o) * (l_m + 0.5 * l_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (l_m - l_o) * (l_i - l_m);
+    b1 = 2.0 * (R*R*R) * (l_m + 2.0*l_o) * (l_m + 0.5 * l_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (l_m - l_o) * (l_i - l_m);
 
     b2 = 2.0 * (R*R*R) * (l_i * (0.5 * e_m + e_o) + l_m * (0.5*e_i + 2.0*e_m + 2*e_o) + l_o * (e_i + 2.0 * e_m)) + (2.0 * ((R-d)*(R-d)*(R-d))
     * (l_i * (e_m - e_o) + l_m * (e_i - 2.0*e_m + e_o) - l_o * (e_i - e_m))); // is this truly a multiply, or a cross?
 
     b3 = 2.0 * (R*R*R) * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (e_m - e_o) * (e_i - e_m);
-
-    // tau_1 = tau_1_f(b1, b2, b3); //yes, this is correct; only b's involved.
-    // tau_2 = tau_2_f(b1, b2, b3);
 }
 
 
@@ -78,16 +75,11 @@ void Cell::init(){
 Cell* virus;
 Cell* host;
 
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////  Define the phase linkages function ///////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-void linkages( adouble* linkages, adouble* xad, Workspace* workspace)
-{
+void linkages( adouble* linkages, adouble* xad, Workspace* workspace){
   // No linkages as this is a single phase problem
 }
 
@@ -98,9 +90,8 @@ void linkages( adouble* linkages, adouble* xad, Workspace* workspace)
 
 adouble endpoint_cost(adouble* initial_states, adouble* final_states,
                       adouble* parameters,adouble& t0, adouble& tf,
-                      adouble* xad, int iphase,Workspace* workspace)
-{
-   // return -(final_states[ x0_v_state ]);
+                      adouble* xad, int iphase,Workspace* workspace){
+   // return -(final_states[ x0_v_state ]) + final_states[ x0_h_state ];
    return 0;
 }
 
@@ -110,12 +101,12 @@ adouble endpoint_cost(adouble* initial_states, adouble* final_states,
 
 adouble integrand_cost(adouble* states, adouble* controls,
                        adouble* parameters, adouble& time, adouble* xad,
-                       int iphase, Workspace* workspace)
-{
+                       int iphase, Workspace* workspace){
 
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
-    return -(states[ x0_v_state ]*states[ x0_v_state ])*1000 + (states[ x0_h_state ]*states[ x0_h_state ]);
+    // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
+    return smooth_fabs(states[ x0_v_state ] - 1e-4, 1e-12) + smooth_fabs(states[x0_h_state],1e-9) + smooth_fabs(states[u0_state],1e-9) + smooth_fabs(states[u1_state],1e-9);
     // return 0;
 }
 
@@ -233,7 +224,7 @@ int main(void)
 
     problem.phases(1).nstates   		= 6;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 7;
+    problem.phases(1).nevents   		= 6;
     problem.phases(1).npath         = 0;
     int nnodes    			             = 500;
 
@@ -258,7 +249,7 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1e-7;
+    double end_time = 1e-6;
 
     double control_bounds = 2;
 
@@ -276,10 +267,10 @@ int main(void)
     double x0_initial_value = 0.0;
     double u0_initial_value = 0.0;
     // double u0_integral_constraint = end_time/2.0;
-    double u0_integral_constraint = end_time;
+    double u0_integral_constraint = end_time/2.0;
 
-    problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
-    problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
+    problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value; //2
+    problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
