@@ -3,3 +3,4 @@ psopt-5.0.0/*
 build/
 Ipopt/*
 spral/*
+coinhsl/*

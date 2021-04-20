@@ -235,7 +235,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 7;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 150;
+    int nnodes    			             = 100;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -258,7 +258,7 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1e-8;
+    double end_time = 1e-6;
 
     double control_bounds = 2;
 
@@ -269,7 +269,6 @@ int main(void)
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling,  -output_bounds, -derivative_scaling;
     problem.phases(1).bounds.upper.states << control_bounds, derivative_scaling, output_bounds, derivative_scaling, output_bounds, derivative_scaling;
-
 
     problem.phases(1).bounds.lower.controls << -second_derivative_scaling;
     problem.phases(1).bounds.upper.controls << second_derivative_scaling;
@@ -309,6 +308,10 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
 
 
+    //just define control bounds not an energy integral!
+
+
+
     int ncontrols                       = problem.phases(1).ncontrols;
     int nstates                         = problem.phases(1).nstates;
 
@@ -344,10 +347,10 @@ int main(void)
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
-    // algorithm.collocation_method          = "Legendre";
+    algorithm.collocation_method          = "Legendre";
     // algorithm.collocation_method          = "trapezoidal";
     // algorithm.collocation_method          ="Hermite-Simpson";
-    algorithm.mesh_refinement             = "automatic";
+    algorithm.mesh_refinement             = "manual";
 
     // RowVectorXi my_vector(5);
     // my_vector  << 20, 40, 100, 500, 1500;
@@ -362,8 +365,16 @@ int main(void)
     // // algorithm.mr_M1 = 40;
     // algorithm.mr_initial_increment = 50;
 
-    algorithm.ipopt_linear_solver = "spral";
-    // algorithm.ipopt_linear_solver = "paradiso";
+    //spral yields an "Emeergency mode" error if
+    // export OMP_CANCELLATION=TRUE
+    // export OMP_NESTED=TRUE
+    // export OMP_PROC_BIND=TRUE
+    // is not set
+
+    //see devel/doc/options.dox
+    algorithm.ipopt_linear_solver = "ma97";
+    // algorithm.ipopt_solver_GPU = 0;
+
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////       Do a test run       //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
