@@ -226,7 +226,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 10;
+    int nnodes    			             = 100;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -253,7 +253,7 @@ int main(void)
 
     double control_bounds = 2;
 
-    double output_bounds = 1e-2;
+    double output_bounds = 1e-5;
     double derivative_scaling = 1.0/(1e-9); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = 1e20;
 
@@ -333,13 +333,13 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 300;
+    algorithm.nlp_iter_max                = 50;
     algorithm.nlp_tolerance               = 1.e-12; //is this relative? I don't think so
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
-    algorithm.collocation_method          = "Legendre";
-    // algorithm.collocation_method          = "trapezoidal";
+    // algorithm.collocation_method          = "Legendre";
+    algorithm.collocation_method          = "trapezoidal";
     // algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
 
@@ -347,7 +347,7 @@ int main(void)
     // my_vector  << 20, 40, 100, 500, 1500;
     // problem.phases(1).nodes = my_vector;
 
-    algorithm.mr_max_iterations = 1;
+    algorithm.mr_max_iterations = 10;
     // algorithm.mr_M1 = 30;
     algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
     // algorithm.nsteps_error_integration  = 20;
@@ -364,7 +364,7 @@ int main(void)
 
     //see devel/doc/options.dox
     // algorithm.ipopt_linear_solver = "ma57";
-    algorithm.ipopt_linear_solver = "ma97";
+    algorithm.ipopt_linear_solver = "ma27";
     // algorithm.ipopt_solver_GPU = 0;
 
     ////////////////////////////////////////////////////////////////////////////
