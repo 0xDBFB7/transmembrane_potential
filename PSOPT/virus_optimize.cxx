@@ -106,7 +106,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
     // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
-    return smooth_fabs(states[ x0_v_state ] - 1e-4, 1e-12) + smooth_fabs(states[ x1_v_state ], 1e-12) + + smooth_fabs(states[ x1_h_state ], 1e-12) + smooth_fabs(states[x0_h_state],1e-12) + smooth_fabs(states[u0_state],1e-12);
+    return smooth_fabs(states[ x0_v_state ] - 1e-4, 1e-12) + smooth_fabs(states[ x1_v_state ], 1e-12) + smooth_fabs(states[ x1_h_state ], 1e-12) + smooth_fabs(states[x0_h_state],1e-12) + smooth_fabs(states[u0_state],1e-12);
     // return 0;
 }
 
@@ -226,7 +226,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 500;
+    int nnodes    			             = 1200;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -264,10 +264,10 @@ int main(void)
     problem.phases(1).bounds.lower.controls << -second_derivative_scaling;
     problem.phases(1).bounds.upper.controls << second_derivative_scaling;
 
-    double x0_initial_value = 0.0;
-    double u0_initial_value = 0.0;
+    // double x0_initial_value = 0.0;
+    // double u0_initial_value = 0.0;
     // double u0_integral_constraint = end_time/2.0;
-    double u0_integral_constraint = end_time/2.0;
+    // double u0_integral_constraint = end_time/2.0;
 
     problem.phases(1).bounds.lower.events << 0,0,0; //2
     problem.phases(1).bounds.upper.events << 0,0,0;
@@ -363,7 +363,8 @@ int main(void)
     // is not set
 
     //see devel/doc/options.dox
-    algorithm.ipopt_linear_solver = "ma57";
+    // algorithm.ipopt_linear_solver = "ma57";
+    algorithm.ipopt_linear_solver = "ma97";
     // algorithm.ipopt_solver_GPU = 0;
 
     ////////////////////////////////////////////////////////////////////////////
