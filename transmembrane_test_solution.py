@@ -9,7 +9,7 @@ import os
 from scipy import interpolate
 
 t0 = 0
-tstop = 1e-6
+tstop = 1e-7
 dt = 0.005e-9
 t = np.linspace(t0, tstop, int(tstop/dt))
 

@@ -263,7 +263,7 @@ int main(void)
     double control_bounds = 2;
 
     double output_bounds = 1e-4;
-    double derivative_scaling = 1.0/(1e-8); //highest permissible derivative value - gets very high!
+    double derivative_scaling = 1.0/(1e-9); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = 1e20;
 
     //bounds are questionable.
@@ -276,7 +276,7 @@ int main(void)
     double x0_initial_value = 0.0;
     double u0_initial_value = 0.0;
     // double u0_integral_constraint = end_time/2.0;
-    double u0_integral_constraint = end_time/2.0;
+    double u0_integral_constraint = end_time;
 
     problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
     problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
