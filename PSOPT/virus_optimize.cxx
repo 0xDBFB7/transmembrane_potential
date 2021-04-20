@@ -226,7 +226,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 6;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 500;
+    int nnodes    			             = 700;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -249,7 +249,7 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1e-6;
+    double end_time = 3e-6;
 
     double control_bounds = 2;
 
