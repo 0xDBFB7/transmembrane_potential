@@ -106,7 +106,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
     // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
-    return smooth_fabs(states[ x0_v_state ] - 1e-4, 1e-12) + smooth_fabs(states[x0_h_state],1e-9) + smooth_fabs(states[u0_state],1e-9) + smooth_fabs(states[u1_state],1e-9);
+    return smooth_fabs(states[ x0_v_state ] - 1e-4, 1e-12) + smooth_fabs(states[ x1_v_state ], 1e-12) + + smooth_fabs(states[ x1_h_state ], 1e-12) + smooth_fabs(states[x0_h_state],1e-12) + smooth_fabs(states[u0_state],1e-12) + smooth_fabs(states[u1_state],1e-12);
     // return 0;
 }
 
@@ -131,8 +131,8 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
 
     adouble u0 = initial_states[ u0_state ];
     e[ 0 ] = u0;
-    adouble u1 = initial_states[ u1_state ];
-    e[ 1 ] = u1;
+    // adouble u1 = initial_states[ u1_state ];
+    // e[ 1 ] = u1;
 
     adouble x0 = initial_states[ x0_v_state ];
     e[ 2 ] = x0;
@@ -140,11 +140,11 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
     adouble x0_h = initial_states[ x0_h_state ];
     e[ 3 ] = x0_h;
 
-    adouble x1 = initial_states[ x1_v_state ];
-    e[ 4 ] = x1;
-
-    adouble x1_h = initial_states[ x1_h_state ];
-    e[ 5 ] = x1_h;
+    // adouble x1 = initial_states[ x1_v_state ];
+    // e[ 4 ] = x1;
+    //
+    // adouble x1_h = initial_states[ x1_h_state ];
+    // e[ 5 ] = x1_h;
 
     // adouble u0_f = final_states[ 3 ];
     // e[ 3 ] = u0_f;
@@ -224,9 +224,9 @@ int main(void)
 
     problem.phases(1).nstates   		= 6;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 6;
+    problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 700;
+    int nnodes    			             = 500;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -249,7 +249,7 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 3e-6;
+    double end_time = 1e-6;
 
     double control_bounds = 2;
 
@@ -269,8 +269,8 @@ int main(void)
     // double u0_integral_constraint = end_time/2.0;
     double u0_integral_constraint = end_time/2.0;
 
-    problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value; //2
-    problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value;
+    problem.phases(1).bounds.lower.events << 0,0,0; //2
+    problem.phases(1).bounds.upper.events << 0,0,0;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
