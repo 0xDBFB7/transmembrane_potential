@@ -106,7 +106,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
     // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
-    return smooth_fabs(states[ x0_v_state ] - 1e-4, 1e-12) + smooth_fabs(states[ x1_v_state ], 1e-12) + smooth_fabs(states[ x1_h_state ], 1e-12) + smooth_fabs(states[x0_h_state],1e-12) + smooth_fabs(states[u0_state],1e-12);
+    return sqrt((states[ x0_v_state ] - 1e-4)*(states[ x0_v_state ] - 1e-4)) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]) + sqrt(states[u0_state]*states[u0_state]);
     // return 0;
 }
 
@@ -226,7 +226,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 1200;
+    int nnodes    			             = 10;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -253,7 +253,7 @@ int main(void)
 
     double control_bounds = 2;
 
-    double output_bounds = 1e-4;
+    double output_bounds = 1e-2;
     double derivative_scaling = 1.0/(1e-9); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = 1e20;
 
@@ -333,7 +333,7 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 100;
+    algorithm.nlp_iter_max                = 300;
     algorithm.nlp_tolerance               = 1.e-12; //is this relative? I don't think so
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
