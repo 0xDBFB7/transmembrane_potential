@@ -106,7 +106,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
     // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
-    return smooth_fabs(states[ x0_v_state ] - 1e-4, 1e-12) + smooth_fabs(states[ x1_v_state ], 1e-12) + + smooth_fabs(states[ x1_h_state ], 1e-12) + smooth_fabs(states[x0_h_state],1e-12) + smooth_fabs(states[u0_state],1e-12) + smooth_fabs(states[u1_state],1e-12);
+    return smooth_fabs(states[ x0_v_state ] - 1e-4, 1e-12) + smooth_fabs(states[ x1_v_state ], 1e-12) + + smooth_fabs(states[ x1_h_state ], 1e-12) + smooth_fabs(states[x0_h_state],1e-12) + smooth_fabs(states[u0_state],1e-12);
     // return 0;
 }
 
@@ -254,7 +254,7 @@ int main(void)
     double control_bounds = 2;
 
     double output_bounds = 1e-4;
-    double derivative_scaling = 1.0/(1e-9); //highest permissible derivative value - gets very high!
+    double derivative_scaling = 1.0/(1e-8); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = 1e20;
 
     //bounds are questionable.
