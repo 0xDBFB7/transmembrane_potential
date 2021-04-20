@@ -6,14 +6,23 @@ import dill
 from pytexit import py2tex
 import pickle
 import os
+from scipy import interpolate
 
-# t0 = 0
-# tstop = 1e-6
-# dt = 0.005e-9
-# t = np.linspace(t0, tstop, int(tstop/dt))
+t0 = 0
+tstop = 1e-6
+dt = 0.005e-9
+t = np.linspace(t0, tstop, int(tstop/dt))
 
-t = np.loadtxt( 'PSOPT/build/t.dat' )
-dt = (t[1] - t[0])
+sim_t = np.loadtxt( 'PSOPT/build/t.dat' )
+# dt = (t[1] - t[0])
+
+sim_values = np.loadtxt( 'PSOPT/build/u0.dat' )
+
+
+# flinear = interpolate.interp1d(x, sim_values)
+fcubic = interpolate.interp1d(sim_t, sim_values, kind='linear')
+
+ideal_values = fcubic(t)
 
 host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
 
@@ -26,7 +35,6 @@ def normalized_gaussian_pulse(t,fwhm):
     sigma = fwhm/2.355
     return np.exp(-((t**2.0)/(2.0*(sigma**2.0))))
 
-ideal_values = np.loadtxt( 'PSOPT/build/u0.dat' )
 
 plt.figure(1)
 plt.plot(t, ideal_values)

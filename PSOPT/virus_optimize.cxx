@@ -115,8 +115,8 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
-    return -(states[ x0_v_state ]*states[ x0_v_state ]) + (states[ x0_h_state ]*states[ x0_h_state ]);
-    return 0;
+    return -(states[ x0_v_state ]*states[ x0_v_state ])*1000 + (states[ x0_h_state ]*states[ x0_h_state ]);
+    // return 0;
 }
 
 
@@ -235,7 +235,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 7;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 100;
+    int nnodes    			             = 500;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -258,13 +258,13 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1e-6;
+    double end_time = 1e-7;
 
     double control_bounds = 2;
 
-    double output_bounds = 10;
-    double derivative_scaling = 1.0/(1e-12); //highest permissible derivative value - gets very high!
-    double second_derivative_scaling = derivative_scaling*derivative_scaling;
+    double output_bounds = 1e-4;
+    double derivative_scaling = 1.0/(1e-8); //highest permissible derivative value - gets very high!
+    double second_derivative_scaling = 1e20;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling,  -output_bounds, -derivative_scaling;
@@ -278,7 +278,7 @@ int main(void)
     // double u0_integral_constraint = end_time/2.0;
     double u0_integral_constraint = end_time/2.0;
 
-    problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value , u0_integral_constraint; //2
+    problem.phases(1).bounds.lower.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint; //2
     problem.phases(1).bounds.upper.events << 0,0,0, u0_initial_value, x0_initial_value, x0_initial_value, u0_integral_constraint;
 
     // problem.phases(1).bounds.lower.path << 0.0;
@@ -342,21 +342,21 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 1000;
-    algorithm.nlp_tolerance               = 1.e-6; //is this relative? I don't think so
+    algorithm.nlp_iter_max                = 100;
+    algorithm.nlp_tolerance               = 1.e-12; //is this relative? I don't think so
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
     algorithm.collocation_method          = "Legendre";
     // algorithm.collocation_method          = "trapezoidal";
     // algorithm.collocation_method          ="Hermite-Simpson";
-    algorithm.mesh_refinement             = "manual";
+    algorithm.mesh_refinement             = "automatic";
 
     // RowVectorXi my_vector(5);
     // my_vector  << 20, 40, 100, 500, 1500;
     // problem.phases(1).nodes = my_vector;
 
-    algorithm.mr_max_iterations = 10;
+    algorithm.mr_max_iterations = 1;
     // algorithm.mr_M1 = 30;
     algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
     // algorithm.nsteps_error_integration  = 20;
@@ -372,7 +372,7 @@ int main(void)
     // is not set
 
     //see devel/doc/options.dox
-    algorithm.ipopt_linear_solver = "ma97";
+    algorithm.ipopt_linear_solver = "ma57";
     // algorithm.ipopt_solver_GPU = 0;
 
     ////////////////////////////////////////////////////////////////////////////
