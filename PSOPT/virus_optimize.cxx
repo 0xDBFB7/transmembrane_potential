@@ -226,7 +226,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 410;
+    int nnodes    			             = 40;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -249,12 +249,12 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1e-8;
+    double end_time = 3e-8;
 
     double control_bounds = 2;
 
     double output_bounds = 1e-5;
-    double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
+    double derivative_scaling = 1.0/(1e-9); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = 1e20;
 
     //bounds are questionable.
@@ -340,14 +340,14 @@ int main(void)
     algorithm.derivatives                 = "automatic";
     // algorithm.collocation_method          = "Legendre";
     // algorithm.collocation_method          = "trapezoidal";
-    // algorithm.collocation_method          ="Hermite-Simpson";
+    algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
 
     // RowVectorXi my_vector(1);
     // my_vector  << 500;
     // problem.phases(1).nodes = my_vector;
 
-    algorithm.mr_max_iterations = 1;
+    algorithm.mr_max_iterations = 10;
     // algorithm.mr_M1 = 30;
     algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
     // algorithm.nsteps_error_integration  = 20;
