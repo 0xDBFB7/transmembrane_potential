@@ -106,7 +106,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
     // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
-    return sqrt((states[ x0_v_state ] - 1e-4)*(states[ x0_v_state ] - 1e-4)) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]) + sqrt(states[u0_state]*states[u0_state]);
+    return sqrt((states[ x0_v_state ] - 1e-4)*(states[ x0_v_state ] - 1e-4)) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
     // return 0;
 }
 
@@ -226,7 +226,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 100;
+    int nnodes    			             = 410;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -249,12 +249,12 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 1e-6;
+    double end_time = 1e-8;
 
     double control_bounds = 2;
 
     double output_bounds = 1e-5;
-    double derivative_scaling = 1.0/(1e-9); //highest permissible derivative value - gets very high!
+    double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
     double second_derivative_scaling = 1e20;
 
     //bounds are questionable.
@@ -306,8 +306,8 @@ int main(void)
     int ncontrols                       = problem.phases(1).ncontrols;
     int nstates                         = problem.phases(1).nstates;
 
-    MatrixXd u_guess    =  ones(ncontrols,nnodes) * 0.001;
-    MatrixXd x_guess    =  zeros(nstates,nnodes);
+    MatrixXd u_guess    =  ones(ncontrols,nnodes) * 0.1;
+    MatrixXd x_guess    =  ones(nstates,nnodes);
     MatrixXd time_guess =  linspace(0.0,end_time,nnodes);
 
 
@@ -339,15 +339,15 @@ int main(void)
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
     // algorithm.collocation_method          = "Legendre";
-    algorithm.collocation_method          = "trapezoidal";
+    // algorithm.collocation_method          = "trapezoidal";
     // algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
 
-    // RowVectorXi my_vector(5);
-    // my_vector  << 20, 40, 100, 500, 1500;
+    // RowVectorXi my_vector(1);
+    // my_vector  << 500;
     // problem.phases(1).nodes = my_vector;
 
-    algorithm.mr_max_iterations = 10;
+    algorithm.mr_max_iterations = 1;
     // algorithm.mr_M1 = 30;
     algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
     // algorithm.nsteps_error_integration  = 20;
@@ -364,7 +364,7 @@ int main(void)
 
     //see devel/doc/options.dox
     // algorithm.ipopt_linear_solver = "ma57";
-    algorithm.ipopt_linear_solver = "ma27";
+    algorithm.ipopt_linear_solver = "ma57";
     // algorithm.ipopt_solver_GPU = 0;
 
     ////////////////////////////////////////////////////////////////////////////
