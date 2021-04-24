@@ -249,7 +249,7 @@ int main(void)
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 3e-8;
+    double end_time = 0.5e-8;
 
     double control_bounds = 2;
 
