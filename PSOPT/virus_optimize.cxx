@@ -226,7 +226,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 40;
+    int nnodes    			             = 1000;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -244,18 +244,22 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
+    double scale_factor = 1e9;
+    virus->R *= scale_factor;
+    host->R *= scale_factor;
+
     // cells.push_back(virus);
     // cells.push_back(host);
 
     // problem.user_data = (void *) cells;
 
-    double end_time = 0.5e-8;
+    double end_time = 1e-6;
 
     double control_bounds = 2;
 
-    double output_bounds = 1e-5;
-    double derivative_scaling = 1.0/(1e-9); //highest permissible derivative value - gets very high!
-    double second_derivative_scaling = 1e20;
+    double output_bounds = 100;
+    double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
+    double second_derivative_scaling = 1e25;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling,  -output_bounds, -derivative_scaling;
@@ -309,6 +313,7 @@ int main(void)
     MatrixXd u_guess    =  ones(ncontrols,nnodes) * 0.1;
     MatrixXd x_guess    =  ones(nstates,nnodes);
     MatrixXd time_guess =  linspace(0.0,end_time,nnodes);
+    // MatrixXd u_guess    = RandomGaussian(ncontrols, nnodes);
 
 
     // MatrixXd guess_controls = time_guess.unaryExpr(&ssin);
@@ -347,7 +352,7 @@ int main(void)
     // my_vector  << 500;
     // problem.phases(1).nodes = my_vector;
 
-    algorithm.mr_max_iterations = 10;
+    algorithm.mr_max_iterations = 1;
     // algorithm.mr_M1 = 30;
     algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
     // algorithm.nsteps_error_integration  = 20;
