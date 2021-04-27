@@ -14,21 +14,21 @@ from transmembrane_lib import *
 host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, np.array([]))
 virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, np.array([]))
 
-a1_v = (virus.a_1)*1e9
-a2_v = (virus.a_2)*1e9
-a3_v = (virus.a_3)*1e9
-b1_v = (virus.b_1)*1e9
-b2_v = (virus.b_2)*1e9
-b3_v = (virus.b_3)*1e9
+a1_v = (virus.a_1)
+a2_v = (virus.a_2)
+a3_v = (virus.a_3)
+b1_v = (virus.b_1)
+b2_v = (virus.b_2)
+b3_v = (virus.b_3)
 R_v = (virus.R)
 
 
-a1_h = (host_cell.a_1)*1e9
-a2_h = (host_cell.a_2)*1e9
-a3_h = (host_cell.a_3)*1e9
-b1_h = (host_cell.b_1)*1e9
-b2_h = (host_cell.b_2)*1e9
-b3_h = (host_cell.b_3)*1e9
+a1_h = (host_cell.a_1)
+a2_h = (host_cell.a_2)
+a3_h = (host_cell.a_3)
+b1_h = (host_cell.b_1)
+b2_h = (host_cell.b_2)
+b3_h = (host_cell.b_3)
 R_h = (host_cell.R)
 
 
@@ -37,6 +37,8 @@ def on_iteration(iteration_count, xs, us, J_opt, accepted, converged):
     J_hist.append(J_opt)
     info = "converged" if converged else ("accepted" if accepted else "failed")
     print("iteration", iteration_count, info, J_opt)
+
+xEq_v = T.dscalar("xEq_v")
 
 x0_v = T.dscalar("x0_v")
 x1_v = T.dscalar("x1_v")
@@ -50,6 +52,7 @@ u1 = T.dscalar("u1")
 u2 = T.dscalar("u2")
 
 x_inputs = [
+    xEq_v,
     x0_v,
     x1_v,
     x0_h,
@@ -62,12 +65,14 @@ u_inputs = [
     u2
 ]
 
-dt = 1e-9  # Discrete time step.
+# dt = 1e-9  # Discrete time step.
+dt = 0.1
 
 # Discrete dynamics model definition.
 f = T.stack([
-    (x0_v-0.0001) + x1_v * dt,
-    x1_v + ((R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*x0_v)/b1_v) * dt,
+    xEq_v + (x0_v - 0.001),
+    x0_v + x1_v * dt,
+    x1_v + ((R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*(x0_v))/b1_v) * dt,
     # x2_v + ,
 
     x0_h + x1_h * dt,
@@ -87,8 +92,10 @@ dynamics = AutoDiffDynamics(f, x_inputs, u_inputs)
 Q = np.eye(dynamics.state_size)#state error
 # cost = transpose(x) * Q * x + transpose(u) * R * u
 
+# Q = np.ones((dynamics.state_size,dynamics.state_size))
 
-Q = np.ones((dynamics.state_size,dynamics.state_size))
+#One of the essential features of LQR is that Q should be a
+#symmetric positive semidefinite matrix and R should be a positive definite matrix.
 # Q = 1
 # Q[0, 0] = Q[0, 0] = -1
 # Q[0, 0] = 1
@@ -99,25 +106,25 @@ R = 0.0 * np.eye(dynamics.action_size)#control error
 cost = QRCost(Q, R)
 
 N = 500  # Number of time steps in trajectory.
-x0 = np.array([0.0, 0, 0, 0, 0, 0])  # Initial state.
+x0 = np.array([0, 0, 0, 0, 0, 0, 0])  # Initial state.
 
 # Random initial action path.
 us_init = np.random.uniform(-1, 1, (N, dynamics.action_size))
 
 J_hist = []
 ilqr = iLQR(dynamics, cost, N)
-xs, us = ilqr.fit(x0, us_init, on_iteration=on_iteration)
+# xs, us = ilqr.fit(x0, us_init, on_iteration=on_iteration)
 t = np.arange(N + 1) * dt
 
 # test run
 #
-# us_init = np.exp(-(((t[0:-1]-((N//4)*dt))**2.0)/(2.0*((1e-9)**2.0)))) # for simulation
-# us_init = np.diff(us_init, prepend=0.0)
-# us_init = np.diff(us_init,  prepend=0.0)
-#
-#
-# (xs, F_x, F_u, L, L_x, L_u, L_xx, L_ux, L_uu, F_xx, F_ux,
-#  F_uu) = ilqr._forward_rollout(x0, us_init)
+us_init = np.exp(-(((t[0:-1]-((N//4)*dt))**2.0)/(2.0*((1e-9)**2.0)))) # for simulation
+us_init = np.diff(us_init, prepend=0.0)
+us_init = np.diff(us_init,  prepend=0.0)
+
+
+(xs, F_x, F_u, L, L_x, L_u, L_xx, L_ux, L_uu, F_xx, F_ux,
+ F_uu) = ilqr._forward_rollout(x0, us_init)
 
 
 

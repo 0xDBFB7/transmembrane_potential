@@ -70,8 +70,8 @@ docs: "In all simulation modes (IMODE=1,4,7), the number of equations must equal
 
 m = GEKKO() # initialize gekko
 m.options.MAX_ITER = 100000
-nt = 401
-end = 1e-5
+nt = 1001
+end = 1e-6
 m.time = np.linspace(0,end,nt)
 # Variables
 x0_v = m.Var(value=0)
@@ -92,31 +92,32 @@ u0 = m.Var(value=1)
 # m.Equation(u0 == m.exp(-(((t-(end/2.0))**2.0)/(2.0*((0.1e-4)**2.0))))) # for simulation
 
 
-u1 = m.Var(value=0)
+u1 = m.Var(value=1)
 m.Equation(u1==u0.dt())
-u2 = m.Var(value=0)
+u2 = m.Var(value=1)
 m.Equation(u2==u1.dt())
 
 
 # p = np.zeros(nt) # mark final time point
 # p[-1] = 1.0
 #
-a1_v = m.Const(virus.a_1)
-a2_v = m.Const(virus.a_2)
-a3_v = m.Const(virus.a_3)
-b1_v = m.Const(virus.b_1)
-b2_v = m.Const(virus.b_2)
-b3_v = m.Const(virus.b_3)
-R_v = m.Const(virus.R)
+constval = 1e6
+a1_v = m.Const(virus.a_1*constval)
+a2_v = m.Const(virus.a_2*constval)
+a3_v = m.Const(virus.a_3*constval)
+b1_v = m.Const(virus.b_1*constval)
+b2_v = m.Const(virus.b_2*constval)
+b3_v = m.Const(virus.b_3*constval)
+R_v = m.Const(virus.R*constval)
 
 
-a1_h = m.Const(host_cell.a_1)
-a2_h = m.Const(host_cell.a_2)
-a3_h = m.Const(host_cell.a_3)
-b1_h = m.Const(host_cell.b_1)
-b2_h = m.Const(host_cell.b_2)
-b3_h = m.Const(host_cell.b_3)
-R_h = m.Const(host_cell.R)
+a1_h = m.Const(host_cell.a_1*constval)
+a2_h = m.Const(host_cell.a_2*constval)
+a3_h = m.Const(host_cell.a_3*constval)
+b1_h = m.Const(host_cell.b_1*constval)
+b2_h = m.Const(host_cell.b_2*constval)
+b3_h = m.Const(host_cell.b_3*constval)
+R_h = m.Const(host_cell.R*constval)
 
 
 # Equations
@@ -141,13 +142,15 @@ m.Equation(x2_h == (R_h*a1_h*u2 + R_h*a2_h*u1 + R_h*a3_h*u0 - b2_h*x1_h - b3_h*x
 # m.Equation(m.integral(m.abs2(u0))==0.1)
 # integral()
 # abs2()
-m.Obj(m.abs2(x0_v - 1e-4) + m.abs2(x1_v) + m.abs2(x1_h) + m.abs2(x0_h) + m.abs2(u0))
+
+
+m.Obj(m.integral(x0_v-0.0001) + m.integral(x1_v) + m.integral(x1_h) + m.integral(x0_h))
 
 # m.Obj(-m.integral(x0_v*x0_v) + m.integral(x0_h*x0_h))
 
 # m.Obj(-m.integral(x0_v*x0_v) + m.integral(x0_h*x0_h)) # Objective function
-m.options.OTOL = 1e-12
-m.options.RTOL = 1e-12
+m.options.OTOL = 1e-9
+m.options.RTOL = 1e-9
 
 m.options.IMODE = 6 # optimal control mode
 

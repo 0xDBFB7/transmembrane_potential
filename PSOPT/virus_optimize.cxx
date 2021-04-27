@@ -244,9 +244,9 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double scale_factor = 1e9;
-    virus->R *= scale_factor;
-    host->R *= scale_factor;
+    // double scale_factor = 1e9;
+    // virus->R ;
+    // host->R *= scale_factor;
 
     // cells.push_back(virus);
     // cells.push_back(host);
@@ -338,7 +338,7 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 50;
+    algorithm.nlp_iter_max                = 300;
     algorithm.nlp_tolerance               = 1.e-12; //is this relative? I don't think so
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
