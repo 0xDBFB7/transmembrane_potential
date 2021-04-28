@@ -11,8 +11,14 @@ from transmembrane_lib import *
 
 #https://github.com/anassinator/ilqr/blob/master/examples/rendezvous.ipynb
 
-host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, np.array([]))
-virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, np.array([]))
+dt = 1e-9  # Discrete time step.
+# dt = 0.1
+N = 500  # Number of time steps in trajectory.
+
+t = np.arange(N + 1) * dt
+
+host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, t)
+virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
 a1_v = (virus.a_1)
 a2_v = (virus.a_2)
@@ -65,17 +71,15 @@ u_inputs = [
     u2
 ]
 
-# dt = 1e-9  # Discrete time step.
-dt = 0.1
 
 # Discrete dynamics model definition.
 f = T.stack([
-    xEq_v + (x0_v - 0.001),
+    xEq_v + (x0_v - 1.0),
     x0_v + x1_v * dt,
     x1_v + ((R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v - b3_v*(x0_v))/b1_v) * dt,
     # x2_v + ,
 
-    x0_h + x1_h * dt,
+    x0_h + (x1_h * dt),
     x1_h + ((R_h*a1_h*u2 + R_h*a2_h*u1 + R_h*a3_h*u0 - b2_h*x1_h - b3_h*x0_h)/b1_h) * dt,
     # x2_h + ,
 
@@ -83,17 +87,22 @@ f = T.stack([
     u1 + u2 * dt
 ])
 
-#does Theano have a way to add a second derivative?
 
 dynamics = AutoDiffDynamics(f, x_inputs, u_inputs)
 
 
 
-Q = np.eye(dynamics.state_size)#state error
+# Q = np.eye(dynamics.state_size)#state error
+
 # cost = transpose(x) * Q * x + transpose(u) * R * u
 
-# Q = np.ones((dynamics.state_size,dynamics.state_size))
 
+Q = np.zeros((dynamics.state_size,dynamics.state_size))
+
+Q[0,0] = 1 # xExp^2
+Q[3,3] = 1 # xExp^2
+
+Q[5,5] = 1
 #One of the essential features of LQR is that Q should be a
 #symmetric positive semidefinite matrix and R should be a positive definite matrix.
 # Q = 1
@@ -101,11 +110,11 @@ Q = np.eye(dynamics.state_size)#state error
 # Q[0, 0] = 1
 
 
+
 R = 0.0 * np.eye(dynamics.action_size)#control error
 
 cost = QRCost(Q, R)
 
-N = 500  # Number of time steps in trajectory.
 x0 = np.array([0, 0, 0, 0, 0, 0, 0])  # Initial state.
 
 # Random initial action path.
@@ -113,26 +122,26 @@ us_init = np.random.uniform(-1, 1, (N, dynamics.action_size))
 
 J_hist = []
 ilqr = iLQR(dynamics, cost, N)
-# xs, us = ilqr.fit(x0, us_init, on_iteration=on_iteration)
-t = np.arange(N + 1) * dt
+xs, us = ilqr.fit(x0, us_init, on_iteration=on_iteration)
 
 # test run
 #
-us_init = np.exp(-(((t[0:-1]-((N//4)*dt))**2.0)/(2.0*((1e-9)**2.0)))) # for simulation
-us_init = np.diff(us_init, prepend=0.0)
-us_init = np.diff(us_init,  prepend=0.0)
+def test_run():
+    us_init = np.exp(-(((t[0:-1]-((N//4)*dt))**2.0)/(2.0*((1e-9)**2.0)))) # for simulation
+    us_init = np.diff(us_init, prepend=0.0)
+    us_init = np.diff(us_init,  prepend=0.0)
 
 
-(xs, F_x, F_u, L, L_x, L_u, L_xx, L_ux, L_uu, F_xx, F_ux,
- F_uu) = ilqr._forward_rollout(x0, us_init)
+    (xs, F_x, F_u, L, L_x, L_u, L_xx, L_ux, L_uu, F_xx, F_ux,
+     F_uu) = ilqr._forward_rollout(x0, us_init)
 
 
 
 
-x0_v = xs[:, 0]
-x0_h = xs[:, 2]
+x_v = xs[:, 1]
+x_h = xs[:, 3]
 
-u0 = xs[:, 4]
+u = xs[:, 5]
 
 # y_0 = xs[:, 1]
 # x_1 = xs[:, 2]
@@ -143,13 +152,27 @@ u0 = xs[:, 4]
 # y_1_dot = xs[:, 7]
 
 
+plt.subplot(1,3,1)
 
-_ = plt.plot(t, x0_v, "r")
-# _ = plt.plot(t, x0_h, "b")
+plt.plot(t, x_v, "r")
+plt.subplot(1,3,2)
+plt.plot(t, x_h, "b")
 # _ = plt.plot(t, u0, "g")
-_ = plt.xlabel("Time (s)")
-_ = plt.ylabel("x (m)")
-_ = plt.title("X positional paths")
-_ = plt.legend(["Vehicle 1", "Vehicle 2"])
+
+plt.subplot(1,3,3)
+plt.plot(t, u, "r")
+
+
+
+
+plt.show()
+plt.figure()
+ideal_values = u
+plt.plot(t, convolve_output(ideal_values, host_cell, dt))
+plt.plot(t, convolve_output(ideal_values, virus, dt))
+
+print((np.max(convolve_output(ideal_values, host_cell, dt) * 1e6) - np.min(convolve_output(ideal_values, host_cell, dt) * 1e6))
+            /(np.max(convolve_output(ideal_values, virus, dt) * 1e6) - np.min(convolve_output(ideal_values, virus, dt) * 1e6)))
+
 
 plt.show()
