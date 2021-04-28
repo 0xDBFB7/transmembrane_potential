@@ -102,7 +102,7 @@ Q = np.zeros((dynamics.state_size,dynamics.state_size))
 Q[0,0] = 1 # xExp^2
 Q[3,3] = 1 # xExp^2
 
-Q[5,5] = 1
+# Q[5,5] = 0.
 #One of the essential features of LQR is that Q should be a
 #symmetric positive semidefinite matrix and R should be a positive definite matrix.
 # Q = 1
@@ -142,14 +142,6 @@ x_v = xs[:, 1]
 x_h = xs[:, 3]
 
 u = xs[:, 5]
-
-# y_0 = xs[:, 1]
-# x_1 = xs[:, 2]
-# y_1 = xs[:, 3]
-# x_0_dot = xs[:, 4]
-# y_0_dot = xs[:, 5]
-# x_1_dot = xs[:, 6]
-# y_1_dot = xs[:, 7]
 
 
 plt.subplot(1,3,1)
