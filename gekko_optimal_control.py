@@ -6,7 +6,7 @@ from transmembrane_lib import *
 
 t = np.array([0])
 
-host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, t)
+host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-6, 5e-9, t)
 
 virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
