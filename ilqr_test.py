@@ -11,13 +11,13 @@ from transmembrane_lib import *
 
 #https://github.com/anassinator/ilqr/blob/master/examples/rendezvous.ipynb
 
-dt = 0.5e-9  # Discrete time step.
+dt = 2e-9  # Discrete time step.
 # dt = 0.1
-N = 2000  # Number of time steps in trajectory.
+N = 4000  # Number of time steps in trajectory.
 
 t = np.arange(N + 1) * dt
 
-host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-9, 5e-9, t)
+host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
 virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
 a1_v = (virus.a_1)
@@ -122,7 +122,7 @@ us_init = np.random.uniform(-1, 1, (N, dynamics.action_size))
 
 J_hist = []
 ilqr = iLQR(dynamics, cost, N)
-xs, us = ilqr.fit(x0, us_init, on_iteration=on_iteration)
+xs, us = ilqr.fit(x0, us_init, n_iterations=10, on_iteration=on_iteration)
 
 # test run
 #
@@ -166,5 +166,6 @@ plt.plot(t, convolve_output(ideal_values, virus, dt))
 print((np.max(convolve_output(ideal_values, host_cell, dt) * 1e6) - np.min(convolve_output(ideal_values, host_cell, dt) * 1e6))
             /(np.max(convolve_output(ideal_values, virus, dt) * 1e6) - np.min(convolve_output(ideal_values, virus, dt) * 1e6)))
 
+print( np.abs(np.sum(convolve_output(ideal_values, virus, dt))) / np.abs(np.sum(convolve_output(ideal_values, host_cell, dt))))
 
 plt.show()
