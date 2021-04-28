@@ -11,9 +11,9 @@ from transmembrane_lib import *
 
 #https://github.com/anassinator/ilqr/blob/master/examples/rendezvous.ipynb
 
-dt = 1e-9  # Discrete time step.
+dt = 0.5e-9  # Discrete time step.
 # dt = 0.1
-N = 500  # Number of time steps in trajectory.
+N = 2000  # Number of time steps in trajectory.
 
 t = np.arange(N + 1) * dt
 
