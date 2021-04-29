@@ -1,0 +1,34 @@
+-- inspired by  https://math.stackexchange.com/a/29373/827672 --
+use gucharmap to find characters -
+in particular, "COMMON/MATHEMATICAL BOLD or
+-by unicode block
+-seach by subscript and superscript two, three, etc
+
+
+original: x2  = (R*a1*u2 + R*a2*u1 + R*a3*u0 - b2*x1 - b3*x0)/b1
+
+
+d²xᵥ/dt² = (Rᵥ a1ᵥ/b1ᵥ) d²u/dt² + (Rᵥ a2ᵥ/b1ᵥ) du/dt + (Rᵥ*a3ᵥ/b1ᵥ) u - (b2ᵥ/b1ᵥ)*dxᵥ/dt - (b3ᵥ/b1ᵥ)*xᵥ
+
+
+
+
+http://math.colgate.edu/~wweckesser/math312Spring05/handouts/Nondim.pdf
+https://math.stackexchange.com/questions/3435173/how-to-nondimensionalize-a-second-order-differential-equation
+
+
+𝕏ᵥ = xᵥ / 𝕏₀
+𝕌 = u / 𝕌₀
+𝕥 = t / 𝕋₀
+
+d²𝕏ᵥ/d𝕥² = (𝕌₀ / (𝕋₀)²)(Rᵥ a1ᵥ/b1ᵥ) d²𝕌/d𝕥² + (𝕌₀ / 𝕋₀)(R a2ᵥ/b1ᵥ) d𝕌/d𝕥 + (R*a3ᵥ/b1ᵥ) 𝕌 - (1/𝕥)*(b2ᵥ/b1ᵥ)*d𝕏ᵥ/d𝕥 - (b3ᵥ/b1ᵥ)*𝕏ᵥ
+
+
+
+
+
+
+
+
+
+d
