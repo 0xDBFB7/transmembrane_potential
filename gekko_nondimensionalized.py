@@ -16,9 +16,13 @@ m = GEKKO() # initialize gekko
 m.options.MAX_ITER = 100000
 nt = 401
 
-t_0 = 1.0 / (virus.a_3 / virus.a_2)
+X0 = 1.0 / (virus.b_3/virus.b_1)
+U0 = 1.0 / (virus.R*virus.a_3/virus.b_1)
+T0 = 1.0 / (virus.a_3 / virus.a_2)
 
-end = 1e-6 / t_0
+
+
+end = 1e-6 / T0
 m.time = np.linspace(0,end,nt)
 
 # Variables
@@ -34,6 +38,10 @@ t = m.Param(value=m.time)
 
 
 
+SX0 = m.Const(1.0 / (virus.b_3/virus.b_1))
+ST0 = m.Const(1.0 / (virus.a_3 / virus.a_2))
+
+print(end)
 
 u0 = m.Var(value=1)
 
@@ -77,10 +85,10 @@ print((((a2_v*a2_v)*b3_v)/((a3_v*a3_v)*b1_v)))
 
 # Equations
 
-# m.Equation(x0_v == (R_v*a1_v*u2 + R_v*a2_v*u1 + R_v*a3_v*u0 - b2_v*x1_v  - x2_v*b1_v)/b3_v)
 m.Equation(x1_v==x0_v.dt())
 m.Equation(x2_v==x1_v.dt())
-m.Equation(x2_v == (((a1_v*a3_v)/((a2_v*a2_v))) * u2 + u1 + u0 - ((a2_v*b2_v)/(a3_v*b1_v))*x1_v - ((((a2_v*a2_v)*b3_v)/((a3_v*a3_v)*b1_v))*x0_v)))
+m.Equation(x2_v == (((a1_v*a3_v)/(a2_v*a2_v)) * u2 + u1 + u0 - ((a3_v*b2_v)/(a2_v*b3_v))*x1_v - x0_v) / (SX0 / ((ST0)**2.0)))
+
 
 
 
@@ -121,8 +129,7 @@ virus_output = np.array(x0_v.value)
 plt.figure(1) # plot results
 # plt.plot(m.time,x1.value,'k-',label=r'$x_1$')
 # plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
-plt.plot(m.time*t_0,virus_output,'b',label=r'$x0_v$')
-plt.plot(m.time*t_0,x2_v.value,'b',label=r'$x0_v$')
+plt.plot(m.time*T0,virus_output,'b',label=r'$x0_v$')
 # plt.plot(m.time*t_0,host_output,'r',label=r'$x0_h$')
 plt.legend(loc='best')
 plt.xlabel('Time')
