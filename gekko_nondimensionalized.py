@@ -122,6 +122,7 @@ plt.figure(1) # plot results
 # plt.plot(m.time,x1.value,'k-',label=r'$x_1$')
 # plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
 plt.plot(m.time*t_0,virus_output,'b',label=r'$x0_v$')
+plt.plot(m.time*t_0,x2_v.value,'b',label=r'$x0_v$')
 # plt.plot(m.time*t_0,host_output,'r',label=r'$x0_h$')
 plt.legend(loc='best')
 plt.xlabel('Time')
