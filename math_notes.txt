@@ -13,6 +13,7 @@ d²xᵥ/dt² = (Rᵥ a1ᵥ/b1ᵥ) d²u/dt² + (Rᵥ a2ᵥ/b1ᵥ) du/dt + (Rᵥ*a
 
 
 
+
 http://math.colgate.edu/~wweckesser/math312Spring05/handouts/Nondim.pdf
 https://math.stackexchange.com/questions/3435173/how-to-nondimensionalize-a-second-order-differential-equation
 

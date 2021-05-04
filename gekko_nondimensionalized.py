@@ -1,7 +1,6 @@
 from gekko import GEKKO
 import numpy as np
 import matplotlib.pyplot as plt
-
 from transmembrane_lib import *
 
 t = np.array([0])
@@ -10,127 +9,96 @@ host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-6, 5e-9, t)
 
 virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
-
-
 m = GEKKO() # initialize gekko
-m.options.MAX_ITER = 100000
-nt = 401
+m.options.MAX_ITER = 200
+nt = 800
 
-X0 = 1.0 / (virus.b_3/virus.b_1)
-U0 = 1.0 / (virus.R*virus.a_3/virus.b_1)
-T0 = 1.0 / (virus.a_3 / virus.a_2)
-
-
-
+# U0 = (1.0/(virus.R*virus.a_2/virus.b_1)) * ST0
+# X0 = (ST0**2.0)
+T0 = 1e-8
+#X0 = 1e-12
+U0 = 1.0
+X0 = 1e-6
 end = 1e-6 / T0
+
 m.time = np.linspace(0,end,nt)
+
+# print(ST0, U0, X0)
 
 # Variables
 x0_v = m.Var(value=0)
 x1_v = m.Var(value=0)
 x2_v = m.Var(value=0)
 
-# x0_h = m.Var(value=0)
-# x1_h = m.Var(value=0)
-# x2_h = m.Var(value=0)
+x0_h = m.Var(value=0)
+x1_h = m.Var(value=0)
+x2_h = m.Var(value=0)
 
 t = m.Param(value=m.time)
-
-
-
-SX0 = m.Const(1.0 / (virus.b_3/virus.b_1))
-ST0 = m.Const(1.0 / (virus.a_3 / virus.a_2))
 
 print(end)
 
 u0 = m.Var(value=1)
 
-m.Equation(u0 == 1)
+# m.Equation(u0 == 1) #doesn't seem to behave well with this discontinuity.
+# the gaussian pulse below works much better.
 # m.Equation(u0 == m.sin(t)) # for simulation
-# m.Equation(u0 == m.exp(-(((t-(end/2.0))**2.0)/(2.0*(((0.1e-7)/t_0)**2.0))))) # for simulation
-
+# m.Equation(u0 == m.exp(-((((t*T0)-((end*T0))/2.0))**2.0)/(2.0*(((((end*T0)/10.0))**2.0))))) # for simulation
 
 u1 = m.Var()
 m.Equation(u1==u0.dt())
 u2 = m.Var()
 m.Equation(u2==u1.dt())
 
+alpha_v = m.Const(virus.R*virus.a_1/virus.b_1)
+beta_v = m.Const(virus.R*virus.a_2/virus.b_1)
+gamma_v = m.Const(virus.R*virus.a_3/virus.b_1)
+phi_v = m.Const(virus.b_2/virus.b_1)
+xi_v = m.Const(virus.b_3/virus.b_1)
 
-a1_v = m.Const(virus.a_1)
-a2_v = m.Const(virus.a_2)
-a3_v = m.Const(virus.a_3)
-b1_v = m.Const(virus.b_1)
-b2_v = m.Const(virus.b_2)
-b3_v = m.Const(virus.b_3)
-R_v = m.Const(virus.R)
-
-
-# a1_h = m.Const(host_cell.a_1)
-# a2_h = m.Const(host_cell.a_2)
-# a3_h = m.Const(host_cell.a_3)
-# b1_h = m.Const(host_cell.b_1)
-# b2_h = m.Const(host_cell.b_2)
-# b3_h = m.Const(host_cell.b_3)
-# R_h = m.Const(host_cell.R)
+print(alpha_v, beta_v, gamma_v, phi_v, xi_v)
 
 
-# alpha = ((a1_h*a3_v*b1_v*R_h)/((a2_v*a2_v)*b1_h*R_v))
-# beta = (((1/(R_v*(a3_v/b1_v)))/(1 / (a3_v / a2_v)))*(R_h*(a2_h/b1_h)))
-# gamma = ((a3_h*b1_v*R_h)/(a3_v*b1_h*R_v))
-# psi = ((a2_v*b2_h)/(a3_v*b1_h))
-# xi = (((a2_v*a2_v)*b3_h)/((a3_v*a3_v)*b1_h))
+alpha_h = m.Const(host_cell.R*host_cell.a_1/host_cell.b_1)
+beta_h = m.Const(host_cell.R*host_cell.a_2/host_cell.b_1)
+gamma_h = m.Const(host_cell.R*host_cell.a_3/host_cell.b_1)
+phi_h = m.Const(host_cell.b_2/host_cell.b_1)
+xi_h = m.Const(host_cell.b_3/host_cell.b_1)
 
-
-print((((a2_v*a2_v)*b3_v)/((a3_v*a3_v)*b1_v)))
-
-# Equations
+SX0 = m.Const(X0)
+SU0 = m.Const(U0)
+ST0 = m.Const(T0)
 
 m.Equation(x1_v==x0_v.dt())
 m.Equation(x2_v==x1_v.dt())
-m.Equation(x2_v == (((a1_v*a3_v)/(a2_v*a2_v)) * u2 + u1 + u0 - ((a3_v*b2_v)/(a2_v*b3_v))*x1_v - x0_v) / (SX0 / ((ST0)**2.0)))
+m.Equation(x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - phi_v*(SX0 / ST0)*x1_v - xi_v*SX0*x0_v)/(SX0 / (ST0**2)))
+
+m.Equation(x1_h==x0_h.dt())
+m.Equation(x2_h==x1_h.dt())
+m.Equation(x2_h == ((SU0 / (ST0**2))*alpha_h*u2 + (SU0 / ST0)*beta_h*u1 + gamma_h*SU0*u0 - phi_h*(SX0 / ST0)*x1_h - xi_h*SX0*x0_h)/(SX0 / (ST0**2)))
 
 
-
-
-
-# m.Equation(x1_h==x0_h.dt())
-# m.Equation(x2_h==x1_h.dt())
-# m.Equation(x2_h == alpha*u2 + beta*u1 + gamma*u0 - psi*x1_h - xi*x0_h)
-
-#
-# int_h = m.Var()
-# m.Equation(int_h==m.integral(x0_h**2.0))
-# m.Equation(t==m.vsum(m.abs2(u0)))
-
-# m.Equation(m.integral(u0*u0)==(end))
-# m.Equation(m.vsum(m.abs2(u0))==0.1)
-# m.Equation(m.integral(m.abs2(u0))==0.1)
-# integral()
-# abs2()
-
-
-# m.Obj(m.integral(x0_v-0.0001) + m.integral(x1_v) + m.integral(x1_h) + m.integral(x0_h))
-
+m.Obj(m.integral(m.sqrt((x0_v-1/SX0)*(x0_v-1/SX0))) + m.integral(m.sqrt(x0_h*x0_h)))
 # m.options.OTOL = 1e-6
 # m.options.RTOL = 1e-6
 
-# m.options.IMODE = 6 # optimal control mode
+m.options.IMODE = 6 # optimal control mode
 
-m.options.IMODE = 4 # dynamic simulation
+# m.options.IMODE = 4 # dynamic simulation
 
 m.solve(disp=True) # solve
 
 
 virus_output = np.array(x0_v.value)
-# host_output = np.array(x0_h.value)
+host_output = np.array(x0_h.value)
 
 # print(np.max(virus_output) / np.max(host_output))
 
 plt.figure(1) # plot results
 # plt.plot(m.time,x1.value,'k-',label=r'$x_1$')
 # plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
-plt.plot(m.time*T0,virus_output,'b',label=r'$x0_v$')
-# plt.plot(m.time*t_0,host_output,'r',label=r'$x0_h$')
+plt.plot(m.time*T0,virus_output*X0 / U0,'r',label=r'$x0_v$')
+plt.plot(m.time*T0,host_output*X0 / U0,'b',label=r'$x0_h$')
 plt.legend(loc='best')
 plt.xlabel('Time')
 plt.ylabel('Value')

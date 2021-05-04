@@ -1,0 +1,84 @@
+-- inspired by  https://math.stackexchange.com/a/29373/827672 --
+use gucharmap to find characters -
+in particular, "COMMON/MATHEMATICAL BOLD or
+-by unicode block
+-seach by subscript and superscript two, three, etc
+
+
+original: x2  = (R*a1*u2 + R*a2*u1 + R*a3*u0 - b2*x1 - b3*x0)/b1
+
+wikipedia is actually a surprisingly good reference for this
+I think the thing I was missing is that the whole system has to be
+dimensionalized
+"Since there are two free parameters, at most only two coefficients can be made to equal unity."
+Here we have three free parameters, so at most three coefficients can be =1
+
+𝛂 = (Rᵥ a1ᵥ/b1ᵥ)
+
+
+𝛃 = (Rᵥ a2ᵥ/b1ᵥ)
+
+
+𝛄 = (Rᵥ*a3ᵥ/b1ᵥ)
+
+
+𝛙 = (b2ᵥ/b1ᵥ)
+
+
+𝛏 = (b3ᵥ/b1ᵥ)
+
+
+d²xᵥ/dt² = 𝛂*d²u/dt² + 𝛃*du/dt + 𝛄*u - 𝛙*dxᵥ/dt - 𝛏*xᵥ
+
+
+𝕏ᵥ = xᵥ / 𝕏₀
+𝕌 = u / 𝕌₀
+𝕥 = t / 𝕋₀
+
+
+(𝕏₀ / (𝕋₀)²) d²xᵥ/dt² = (𝕌₀ / (𝕋₀)²)*𝛂*d²𝕌/d𝕥² + (𝕌₀ / 𝕋₀)*𝛃*d𝕌/d𝕥 + 𝛄*𝕌₀*𝕌 - 𝛙*(𝕏₀ / 𝕋₀)*d𝕏ᵥ/d𝕥 - 𝛏*𝕏₀*𝕏ᵥ
+
+
+(𝕌₀ / (𝕋₀)²)*𝛂 = 1
+𝕌₀  = 𝛂*(𝕋₀)²
+
+
+
+#(𝕏₀ / (𝕋₀)²) = 1
+#𝕏₀ = (𝕋₀)²
+
+𝛏*𝕏₀ = 1
+𝕏₀ = 1/𝛏
+
+wow, time-scaling makes a *huge* difference.
+
+----------------------------------------------------
+
+
+𝕏ₕ = xₕ / 𝕏₀
+
+
+𝛂 =
+
+
+𝛃 =
+
+
+𝛄 =
+
+
+𝛙 =
+
+
+𝛏 =
+
+
+(𝕏₀ / (𝕋₀)²) d²𝕏ₕ/d𝕥² = (𝕌₀ / (𝕋₀)²) (Rₕ a1ₕ/b1ₕ)*d²𝕌/d𝕥² + (𝕌₀ / 𝕋₀) (Rₕ a2ₕ/b1ₕ)*d𝕌/d𝕥 + 𝕌₀(Rₕ*a3ₕ/b1ₕ)*𝕌 - (𝕏₀ / 𝕋₀)*(b2ₕ/b1ₕ)*d𝕏ₕ/d𝕥 - 𝕏₀(b3ₕ/b1ₕ)*𝕏ₕ
+
+
+
+
+
+
+
+d

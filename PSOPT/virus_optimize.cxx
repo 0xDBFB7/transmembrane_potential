@@ -160,9 +160,6 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
          adouble* controls, adouble* parameters, adouble& time,
          adouble* xad, int iphase, Workspace* workspace){
 
-    // vector<Cell * > cells = (vector<Cell * >) workspace->user_data;
-    // Cell virus = (Cell) cells[0];
-
     //https://mathoverflow.net/a/87902/176668
     adouble u0   = states[ u0_state ];
     adouble u1   = states[ u1_state ];
