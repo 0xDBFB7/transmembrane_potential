@@ -15,7 +15,7 @@ nt = 800
 
 # U0 = (1.0/(virus.R*virus.a_2/virus.b_1)) * ST0
 # X0 = (ST0**2.0)
-T0 = 1e-8
+T0 = 1e-7
 #X0 = 1e-12
 U0 = 1.0
 X0 = 1e-6

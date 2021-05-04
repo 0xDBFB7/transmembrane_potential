@@ -14,7 +14,7 @@ const double epsilon_0 = 8.854e-12;
 
 double T0 = 1e-8;
 double U0 = 1.0;
-double X0 = 1e-6;
+double X0 = 1e-7;
 
 
 struct Cell{
@@ -121,9 +121,9 @@ adouble integrand_cost(adouble* states, adouble* controls,
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
     // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
 
-    return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
+    // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
 
-    // return sqrt((states[ x0_v_state ] - (1e-5/X0))*(states[ x0_v_state ] - (1e-5/X0))) + sqrt(states[x0_h_state]*states[x0_h_state]);
+    return sqrt((states[ x0_v_state ] - (1e-5/X0))*(states[ x0_v_state ] - (1e-5/X0))) + sqrt(states[x0_h_state]*states[x0_h_state]);
 
     // return 0;
 }
@@ -261,7 +261,7 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-8 / T0;
+    double end_time = 1e-7 / T0;
 
     double control_bounds = 2;
 
