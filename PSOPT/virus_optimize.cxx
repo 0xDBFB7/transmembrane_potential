@@ -14,7 +14,7 @@ const double epsilon_0 = 8.854e-12;
 
 double T0 = 1e-8;
 double U0 = 1.0;
-double X0 = 1e-6;
+double X0 = 1e-7;
 
 
 struct Cell{
@@ -266,7 +266,7 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 10e-8 / T0;
+    double end_time = 5e-9 / T0;
 
     double control_bounds = 2;
 
