@@ -14,7 +14,7 @@ const double epsilon_0 = 8.854e-12;
 
 double T0 = 1e-8;
 double U0 = 1.0;
-double X0 = 1e-7;
+double X0 = 1e-6;
 
 
 struct Cell{
@@ -47,9 +47,9 @@ struct Cell{
 };
 
 void Cell::init(){
-    double e_o = extracellular_permittivity * epsilon_0; // S/m
-    double e_i = intracellular_permittivity * epsilon_0; //S/m
-    double e_m = membrane_permittivity * epsilon_0; //S/m
+    double e_o = extracellular_permittivity * epsilon_0;
+    double e_i = intracellular_permittivity * epsilon_0;
+    double e_m = membrane_permittivity * epsilon_0;
     R = cell_diameter / 2.0;
     // double selfR = R;
 
@@ -118,12 +118,17 @@ adouble integrand_cost(adouble* states, adouble* controls,
     //is there a fancy sqrt?
     //take out derivative terms
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
-    // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
-    // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
+
+    // return -smooth_fabs(states[ x0_v_state ], 1e-9) + smooth_fabs(states[ x0_h_state ], 1e-9); //also seems to work okay
+    //
+    //return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
 
     // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
 
-    return sqrt((states[ x0_v_state ] - (1e-5/X0))*(states[ x0_v_state ] - (1e-5/X0))) + sqrt(states[x0_h_state]*states[x0_h_state]);
+    // return ((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + (states[ x1_v_state ]*states[ x1_v_state ]) + (states[ x1_h_state ]*states[ x1_h_state ]) + (states[x0_h_state]*states[x0_h_state]);
+
+
+    return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + sqrt(states[x0_h_state]*states[x0_h_state]);
 
     // return 0;
 }
@@ -243,7 +248,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 500;
+    int nnodes    			             = 3400;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -261,13 +266,13 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-7 / T0;
+    double end_time = 10e-8 / T0;
 
     double control_bounds = 2;
 
     double output_bounds = 1;
     double derivative_scaling = 1;
-    double second_derivative_scaling = 1;
+    double second_derivative_scaling = 30;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling,  -output_bounds, -derivative_scaling;
@@ -320,6 +325,11 @@ int main(void)
 
     MatrixXd u_guess    =  ones(ncontrols,nnodes) * 0.1;
     MatrixXd x_guess    =  zeros(nstates,nnodes);
+    // MatrixXd u_guess =  MatrixXd::Random(ncontrols,nnodes);
+    // MatrixXd x_guess = MatrixXd::Random(ncontrols,nnodes);
+
+    // MatrixXf::
+    //
     MatrixXd time_guess =  linspace(0.0,end_time,nnodes);
     // MatrixXd u_guess    = RandomGaussian(ncontrols, nnodes);
 
@@ -347,7 +357,7 @@ int main(void)
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     algorithm.nlp_iter_max                = 1000;
-    algorithm.nlp_tolerance               = 1.e-3;
+    algorithm.nlp_tolerance               = 1e-5;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
