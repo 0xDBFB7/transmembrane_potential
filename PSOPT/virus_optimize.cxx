@@ -12,6 +12,10 @@ const double epsilon_0 = 8.854e-12;
 #define x0_h_state 4
 #define x1_h_state 5
 
+double T0 = 1e-8;
+double U0 = 1.0;
+double X0 = 1e-6;
+
 
 struct Cell{
     double extracellular_conductivity; // S/m
@@ -32,10 +36,11 @@ struct Cell{
     double b3 = 0;
     double R = 0;
 
-
-    // double tau_1;
-    // double tau_2;
-
+    double alpha = 0;
+    double beta = 0;
+    double gamma = 0;
+    double phi = 0;
+    double xi = 0;
 
     void init();
 
@@ -68,6 +73,13 @@ void Cell::init(){
     * (l_i * (e_m - e_o) + l_m * (e_i - 2.0*e_m + e_o) - l_o * (e_i - e_m))); // is this truly a multiply, or a cross?
 
     b3 = 2.0 * (R*R*R) * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (e_m - e_o) * (e_i - e_m);
+
+    alpha = (R*a1/b1);
+    beta = (R*a2/b1);
+    gamma = (R*a3/b1);
+    phi = (b2/b1);
+    xi = (b3/b1);
+
 }
 
 
@@ -171,14 +183,16 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     adouble x1_v    = states[ x1_v_state ];
 
     derivatives[ x0_v_state ] = x1_v; // m.Equation(x1_v_v==x0_v_v.dt())
-    derivatives[ x1_v_state ] = ((virus->R*virus->a1*u2 + virus->R*virus->a2*u1 + virus->R*virus->a3*u0 - virus->b2*x1_v - virus->b3*x0_v)/virus->b1);
+    derivatives[ x1_v_state ] = ((U0 / (T0*T0))*virus->alpha*u2 + (U0 / T0)*virus->beta*u1 + virus->gamma*U0*u0 - virus->phi*(X0 / T0)*x1_v - host->xi*X0*x0_v)/(X0 / (T0*T0));
 
 
     adouble x0_h    = states[ x0_h_state ];
     adouble x1_h    = states[ x1_h_state ];
 
     derivatives[ x0_h_state ] = x1_h; // m.Equation(x1_v==x0_v.dt())
-    derivatives[ x1_h_state ] = ((host->R*host->a1*u2 + host->R*host->a2*u1 + host->R*host->a3*u0 - host->b2*x1_h - host->b3*x0_h)/host->b1);
+    derivatives[ x1_h_state ] = ((U0 / (T0*T0))*host->alpha*u2 + (U0 / T0)*host->beta*u1 + host->gamma*U0*u0 - host->phi*(X0 / T0)*x1_h - host->xi*X0*x0_h)/(X0 / (T0*T0));
+
+    // derivatives[ x1_h_state ] = ((host->R*host->a1*u2 + host->R*host->a2*u1 + host->R*host->a3*u0 - host->b2*x1_h - host->b3*x0_h)/host->b1);
 
     // path[ 0 ] = //path constraint unused here
 }
@@ -241,22 +255,13 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    // double scale_factor = 1e9;
-    // virus->R ;
-    // host->R *= scale_factor;
-
-    // cells.push_back(virus);
-    // cells.push_back(host);
-
-    // problem.user_data = (void *) cells;
-
     double end_time = 1e-6;
 
     double control_bounds = 2;
 
     double output_bounds = 100;
-    double derivative_scaling = 1.0/(1e-10); //highest permissible derivative value - gets very high!
-    double second_derivative_scaling = 1e25;
+    double derivative_scaling = 1000; //highest permissible derivative value - gets very high!
+    double second_derivative_scaling = 1000;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling,  -output_bounds, -derivative_scaling;
@@ -335,14 +340,14 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 300;
-    algorithm.nlp_tolerance               = 1.e-12; //is this relative? I don't think so
+    algorithm.nlp_iter_max                = 1000;
+    // algorithm.nlp_tolerance               = 1.e-12; //is this relative? I don't think so
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
     // algorithm.collocation_method          = "Legendre";
     // algorithm.collocation_method          = "trapezoidal";
-    algorithm.collocation_method          ="Hermite-Simpson";
+    // algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
 
     // RowVectorXi my_vector(1);
