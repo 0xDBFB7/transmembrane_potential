@@ -115,10 +115,16 @@ adouble integrand_cost(adouble* states, adouble* controls,
                        adouble* parameters, adouble& time, adouble* xad,
                        int iphase, Workspace* workspace){
 
+    //is there a fancy sqrt?
+    //take out derivative terms
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
     // return -smooth_fabs(states[ x0_v_state ], 1e-7) + smooth_fabs(states[ x0_h_state ], 1e-7); //also seems to work okay
     // return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
-    return sqrt((states[ x0_v_state ] - 1e-4)*(states[ x0_v_state ] - 1e-4)) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
+
+    return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
+
+    // return sqrt((states[ x0_v_state ] - (1e-5/X0))*(states[ x0_v_state ] - (1e-5/X0))) + sqrt(states[x0_h_state]*states[x0_h_state]);
+
     // return 0;
 }
 
@@ -237,7 +243,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 3;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 1000;
+    int nnodes    			             = 500;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -255,13 +261,13 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-6;
+    double end_time = 1e-8 / T0;
 
     double control_bounds = 2;
 
-    double output_bounds = 100;
-    double derivative_scaling = 1000; //highest permissible derivative value - gets very high!
-    double second_derivative_scaling = 1000;
+    double output_bounds = 1;
+    double derivative_scaling = 1;
+    double second_derivative_scaling = 1;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling,  -output_bounds, -derivative_scaling;
@@ -313,7 +319,7 @@ int main(void)
     int nstates                         = problem.phases(1).nstates;
 
     MatrixXd u_guess    =  ones(ncontrols,nnodes) * 0.1;
-    MatrixXd x_guess    =  ones(nstates,nnodes);
+    MatrixXd x_guess    =  zeros(nstates,nnodes);
     MatrixXd time_guess =  linspace(0.0,end_time,nnodes);
     // MatrixXd u_guess    = RandomGaussian(ncontrols, nnodes);
 
@@ -341,22 +347,24 @@ int main(void)
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     algorithm.nlp_iter_max                = 1000;
-    // algorithm.nlp_tolerance               = 1.e-12; //is this relative? I don't think so
+    algorithm.nlp_tolerance               = 1.e-3;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
-    // algorithm.collocation_method          = "Legendre";
+    algorithm.collocation_method          = "Legendre";
     // algorithm.collocation_method          = "trapezoidal";
     // algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
 
     // RowVectorXi my_vector(1);
-    // my_vector  << 500;
+    // my_vector  << nnodes;
     // problem.phases(1).nodes = my_vector;
 
     algorithm.mr_max_iterations = 1;
     // algorithm.mr_M1 = 30;
-    algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
+
+    // algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
+
     // algorithm.nsteps_error_integration  = 20;
     // // algorithm.mr_kappa = 0.4;
     // algorithm.mr_max_increment_factor = 0.05;
@@ -370,8 +378,8 @@ int main(void)
     // is not set
 
     //see devel/doc/options.dox
-    // algorithm.ipopt_linear_solver = "ma57";
     algorithm.ipopt_linear_solver = "ma57";
+
     // algorithm.ipopt_solver_GPU = 0;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -455,10 +463,10 @@ int main(void)
     ///////////  Plot some results if desired (requires gnuplot) ///////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    plot(t,x0_v,problem.name, "time (s)", "states", "x0_v");
-    plot(t,x0_h,problem.name, "time (s)", "states", "x0_h");
-    plot(t,u0,problem.name, "time (s)", "states", "u0");
-    plot(t,u1,problem.name, "time (s)", "states", "u1");
-    plot(t,u2,problem.name, "time (s)", "states", "u2");
+    plot(t * T0,x0_v,problem.name, "time (s)", "states", "x0_v");
+    plot(t * T0,x0_h,problem.name, "time (s)", "states", "x0_h");
+    plot(t * T0,u0,problem.name, "time (s)", "states", "u0");
+    plot(t * T0,u1,problem.name, "time (s)", "states", "u1");
+    plot(t * T0,u2,problem.name, "time (s)", "states", "u2");
 
 }

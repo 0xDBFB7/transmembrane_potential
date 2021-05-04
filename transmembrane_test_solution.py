@@ -8,12 +8,15 @@ import pickle
 import os
 from scipy import interpolate
 
-sim_t = np.loadtxt( 'PSOPT/build/t.dat' )
+T0 = 1e-8
+
+
+sim_t = np.loadtxt( 'PSOPT/build/t.dat' ) * T0
 
 
 t0 = 0
 tstop = sim_t[-1]
-dt = 0.005e-9
+dt = 0.05e-9
 t = np.linspace(t0, tstop, int(tstop/dt))
 
 # dt = (t[1] - t[0])
