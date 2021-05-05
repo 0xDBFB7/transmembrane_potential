@@ -56,9 +56,6 @@ gamma_v = m.Const(virus.R*virus.a_3/virus.b_1)
 phi_v = m.Const(virus.b_2/virus.b_1)
 xi_v = m.Const(virus.b_3/virus.b_1)
 
-print(alpha_v, beta_v, gamma_v, phi_v, xi_v)
-
-
 alpha_h = m.Const(host_cell.R*host_cell.a_1/host_cell.b_1)
 beta_h = m.Const(host_cell.R*host_cell.a_2/host_cell.b_1)
 gamma_h = m.Const(host_cell.R*host_cell.a_3/host_cell.b_1)

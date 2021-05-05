@@ -1,0 +1,41 @@
+-- inspired by  https://math.stackexchange.com/a/29373/827672 --
+use gucharmap to find characters -
+in particular, "COMMON/MATHEMATICAL BOLD or
+-by unicode block
+-seach by subscript and superscript two, three, etc
+
+Now that we have a nondimensionalized eq, can we simplify the two diffeqs into one single equation?
+
+
+d²xᵥ/dt² = 𝛂ᵥ*d²u/dt² + 𝛃ᵥ*du/dt + 𝛄ᵥ*u - 𝛙ᵥ*dxᵥ/dt - 𝛏ᵥ*xᵥ
+d²xₕ/dt² = 𝛂ₕ*d²u/dt² + 𝛃ₕ*du/dt + 𝛄ₕ*u - 𝛙ₕ*dxₕ/dt - 𝛏ₕ*xₕ
+
+xᵥ = (𝛂ᵥ*d²u/dt² + 𝛃ᵥ*du/dt + 𝛄ᵥ*u - 𝛙ᵥ*dxᵥ/dt - d²xᵥ/dt²) / 𝛏ᵥ
+xₕ = (𝛂ₕ*d²u/dt² + 𝛃ₕ*du/dt + 𝛄ₕ*u - 𝛙ₕ*dxₕ/dt - d²xₕ/dt²) / 𝛏ₕ
+
+goal is g
+
+J = (xᵥ-g)^2 + (xₕ)^2
+
+
+-------------------
+
+xᵥ = sqrt(t)
+dxᵥ/dt = 1/(2 Sqrt[t])
+d²xᵥ/dt² = -(1/(4 t^(3/2)))
+
+xₕ = 0
+dxₕ/dt=0
+d²xₕ/dt²=0
+
+
+
+-(1/(4 t^(3/2))) + 𝛙ᵥ*(1/(2 Sqrt[t])) + 𝛏ᵥ*sqrt(t) = 𝛂ᵥ*d²u/dt² + 𝛃ᵥ*du/dt + 𝛄ᵥ*u
+
+
+0 = 𝛂ₕ*d²u/dt² + 𝛃ₕ*du/dt + 𝛄ₕ*u
+
+
+
+
+d

@@ -266,7 +266,7 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 5e-9 / T0;
+    double end_time = 7e-9 / T0;
 
     double control_bounds = 2;
 
