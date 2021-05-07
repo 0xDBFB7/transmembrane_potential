@@ -29,12 +29,40 @@ dxₕ/dt=0
 d²xₕ/dt²=0
 
 
-
 -(1/(4 t^(3/2))) + 𝛙ᵥ*(1/(2 Sqrt[t])) + 𝛏ᵥ*sqrt(t) = 𝛂ᵥ*d²u/dt² + 𝛃ᵥ*du/dt + 𝛄ᵥ*u
 
 
 0 = 𝛂ₕ*d²u/dt² + 𝛃ₕ*du/dt + 𝛄ₕ*u
 
+-------------------
+
+
+
+Actually, sqrt is not well behaved. might be better to use something smooth like
+the logistic:
+
+xᵥ = 1/(1+E^(-t))
+dxᵥ/dt = (E^-t)/((1+E^(-t))^2)
+d²xᵥ/dt² = ((2 E^(-2t))/((1+E^(-t))^3) - (E^(-t))/((1+E^(-t))^2))
+
+
+xᵥ = (𝛂ᵥ*d²u/dt² + 𝛃ᵥ*du/dt + 𝛄ᵥ*u - 𝛙ᵥ*dxᵥ/dt - d²xᵥ/dt²) / 𝛏ᵥ
+𝛏ᵥ*(1/(1+E^(-t))) = (𝛂ᵥ*d²u/dt² + 𝛃ᵥ*du/dt + 𝛄ᵥ*u - 𝛙ᵥ*((exp(-t))/((1+exp(-t))^2)) - ((2 exp(-2t))/((1+exp(-t))^3) - (exp(-t))/((1+exp(-t))^2)))
+
+
+
+
+0 = (𝛂ₕ*d²u/dt² + 𝛃ₕ*du/dt + 𝛄ₕ*u) / 𝛏ₕ
+0 = (𝛂ₕ*d²u/dt² + 𝛃ₕ*du/dt + 𝛄ₕ*u)
+
+this seems to form an overconstrained equation - more dependent variables than functions?
+There are fewer dependent variables than equations, so the system is overdetermined.
+
+oh, but the primes don't need to be zero, how about this:
+
+0 = (𝛂ₕ*d²u/dt² + 𝛃ₕ*du/dt + 𝛄ₕ*u - 𝛙ₕ*dxₕ/dt - d²xₕ/dt²) / 𝛏ₕ
+
+nope!
 
 
 
