@@ -127,8 +127,8 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
     // return ((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + (states[ x1_v_state ]*states[ x1_v_state ]) + (states[ x1_h_state ]*states[ x1_h_state ]) + (states[x0_h_state]*states[x0_h_state]);
 
-
-    return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + sqrt(states[x0_h_state]*states[x0_h_state]);
+    return -states[ x0_v_state ]*X0;
+    // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0)));
 
     // return 0;
 }
@@ -143,9 +143,11 @@ adouble integrand( adouble* states, adouble* controls, adouble* parameters,
 {
     //integrand from isoperimetric.cxx
     adouble g;
-    adouble u0 = states[ u0_state ];
-    g = (u0*u0);
-    return g;
+    adouble u0   = states[ u0_state ];
+    adouble u1   = states[ u1_state ];
+    adouble u2 = controls[ 0 ];
+    // g = (u0*u0);
+    return (((U0 / (T0*T0))*host->alpha*u2 + (U0 / T0)*host->beta*u1 + host->gamma*U0*u0));
 }
 
 void events(adouble* e, adouble* initial_states, adouble* final_states,
@@ -158,23 +160,23 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
     // e[ 1 ] = u1;
 
     adouble x0 = initial_states[ x0_v_state ];
-    e[ 2 ] = x0;
+    e[ 1 ] = x0;
 
     adouble x0_h = initial_states[ x0_h_state ];
-    e[ 3 ] = x0_h;
+    e[ 2 ] = x0_h;
 
-    // adouble x1 = initial_states[ x1_v_state ];
-    // e[ 4 ] = x1;
-    //
-    // adouble x1_h = initial_states[ x1_h_state ];
-    // e[ 5 ] = x1_h;
+    adouble x1 = initial_states[ x1_v_state ];
+    e[ 3 ] = x1;
+
+    adouble x1_h = initial_states[ x1_h_state ];
+    e[ 4 ] = x1_h;
 
     // adouble u0_f = final_states[ 3 ];
     // e[ 3 ] = u0_f;
     // Compute the integral to be constrained
     adouble Q;
     Q = integrate(integrand, xad, iphase, workspace);
-    e[ 6 ] = Q;
+    e[ 5 ] = Q;
 }
 
 
@@ -188,7 +190,7 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     adouble u1   = states[ u1_state ];
     adouble u2 = controls[ 0 ];
     derivatives[ u0_state ] = u1;
-    derivatives[ u1_state ] = u2;
+    derivatives[ u1_state ] = u2; //multiply by dt?
 
     adouble x0_v    = states[ x0_v_state ];
     adouble x1_v    = states[ x1_v_state ];
@@ -196,14 +198,13 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     derivatives[ x0_v_state ] = x1_v; // m.Equation(x1_v_v==x0_v_v.dt())
     derivatives[ x1_v_state ] = ((U0 / (T0*T0))*virus->alpha*u2 + (U0 / T0)*virus->beta*u1 + virus->gamma*U0*u0 - virus->phi*(X0 / T0)*x1_v - host->xi*X0*x0_v)/(X0 / (T0*T0));
 
-
+    //
     adouble x0_h    = states[ x0_h_state ];
     adouble x1_h    = states[ x1_h_state ];
 
     derivatives[ x0_h_state ] = x1_h; // m.Equation(x1_v==x0_v.dt())
     derivatives[ x1_h_state ] = ((U0 / (T0*T0))*host->alpha*u2 + (U0 / T0)*host->beta*u1 + host->gamma*U0*u0 - host->phi*(X0 / T0)*x1_h - host->xi*X0*x0_h)/(X0 / (T0*T0));
 
-    // derivatives[ x1_h_state ] = ((host->R*host->a1*u2 + host->R*host->a2*u1 + host->R*host->a3*u0 - host->b2*x1_h - host->b3*x0_h)/host->b1);
 
     // path[ 0 ] = //path constraint unused here
 }
@@ -246,9 +247,9 @@ int main(void)
 
     problem.phases(1).nstates   		= 6;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 3;
+    problem.phases(1).nevents   		= 6;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 3400;
+    int nnodes    			             = 1000;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -266,16 +267,16 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 7e-9 / T0;
+    double end_time = 1e-7 / T0;
 
-    double control_bounds = 2;
+    double control_bounds = 0.5;
 
     double output_bounds = 1;
     double derivative_scaling = 1;
-    double second_derivative_scaling = 30;
+    double second_derivative_scaling = 1;
 
     //bounds are questionable.
-    problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling,  -output_bounds, -derivative_scaling;
+    problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling, -output_bounds, -derivative_scaling;
     problem.phases(1).bounds.upper.states << control_bounds, derivative_scaling, output_bounds, derivative_scaling, output_bounds, derivative_scaling;
 
     problem.phases(1).bounds.lower.controls << -second_derivative_scaling;
@@ -283,11 +284,11 @@ int main(void)
 
     // double x0_initial_value = 0.0;
     // double u0_initial_value = 0.0;
-    // double u0_integral_constraint = end_time/2.0;
-    // double u0_integral_constraint = end_time/2.0;
+    // double u0_integral_constraint = 0;
+    // double u0_integral_constraint = 0;
 
-    problem.phases(1).bounds.lower.events << 0,0,0; //2
-    problem.phases(1).bounds.upper.events << 0,0,0;
+    problem.phases(1).bounds.lower.events << 0,0,0,0,0,0; //2
+    problem.phases(1).bounds.upper.events << 0,0,0,0,0,0;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
@@ -323,7 +324,7 @@ int main(void)
     int ncontrols                       = problem.phases(1).ncontrols;
     int nstates                         = problem.phases(1).nstates;
 
-    MatrixXd u_guess    =  ones(ncontrols,nnodes) * 0.1;
+    MatrixXd u_guess    =  ones(ncontrols,nnodes) * 0.8;
     MatrixXd x_guess    =  zeros(nstates,nnodes);
     // MatrixXd u_guess =  MatrixXd::Random(ncontrols,nnodes);
     // MatrixXd x_guess = MatrixXd::Random(ncontrols,nnodes);
@@ -356,8 +357,8 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 1000;
-    algorithm.nlp_tolerance               = 1e-5;
+    algorithm.nlp_iter_max                = 400;
+    algorithm.nlp_tolerance               = 1e-4;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
@@ -464,6 +465,7 @@ int main(void)
     Save(x0_v,"x0_v.dat");
     Save(x0_h,"x0_h.dat");
     Save(u0, "u0.dat");
+    Save(u1, "u1.dat");
     Save(u2, "u2.dat");
     Save(t, "t.dat");
 
