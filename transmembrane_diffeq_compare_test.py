@@ -7,41 +7,42 @@ import numpy as np
 
 
 
+m = GEKKO() # initialize gekko
+m.options.MAX_ITER = 100000
+nt = 301
+end = 1e-6
+
+
 t0 = 0
 tstop = 1e-6
-dt = 0.005e-9
-m.time = np.linspace(t0, tstop, int(tstop/dt))
 
-T0 = 1e-7
+T0 = 1e-6
 U0 = 1.0
 X0 = 1e-6
-end = 1e-6 / T0
+m.time = np.linspace(t0, tstop/T0, nt)
+t1 = np.linspace(t0, tstop, nt)
 
 
-host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
-virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
+host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t1 )
+virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t1 )
 
  # differential equation is wrong - must be just after gekko_.
 
-control_input = 1
+control_input = np.sin(t1/((end/30.0)/T0))
 
-plt.plot(t, convolve_output(control_input, host_cell, dt))
-plt.plot(t, convolve_output(control_input, virus, dt))
-
-plt.show()
 
 
 # Variables
 x0_v = m.Var(value=0)
-x1_v = m.Var(value=0)
-x2_v = m.Var(value=0)
+x1_v = m.Var()
+x2_v = m.Var()
 
 t = m.Param(value=m.time)
 
 u0 = m.Var()
-m.Equation(u0 == 1) #doesn't seem to behave well with this discontinuity.
+# m.Equation(u0 == 1)
 # the gaussian pulse below works much better.
-# m.Equation(u0 == m.sin(t)) # for simulation
+m.Equation(u0 == m.sin(t/((end/30)/T0))) # for simulation
 # m.Equation(u0 == m.exp(-((((t*T0)-((end*T0))/2.0))**2.0)/(2.0*(((((end*T0)/10.0))**2.0))))) # for simulation
 
 u1 = m.Var()
@@ -70,16 +71,8 @@ m.Equation(x2_v==x1_v.dt())
 m.Equation(x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - phi_v*(SX0 / ST0)*x1_v - xi_v*SX0*x0_v)/(SX0 / (ST0**2)))
 
 
-#0 = (𝛂ₕ*d²u/dt² + 𝛃ₕ*du/dt + 𝛄ₕ*u)
 
-
-m.Obj(-m.integral(x0_v*x0_v))
-# m.options.OTOL = 1e-6
-# m.options.RTOL = 1e-6
-
-m.options.IMODE = 6 # optimal control mode
-
-# m.options.IMODE = 4 # dynamic simulation
+m.options.IMODE = 4 # dynamic simulation
 
 m.solve(disp=True) # solve
 
@@ -97,8 +90,11 @@ plt.plot(m.time*T0,virus_output*X0 / U0,'r',label=r'$x0_v$')
 plt.legend(loc='best')
 plt.xlabel('Time')
 plt.ylabel('Value')
+plt.show()
 plt.figure(2) # plot results
-plt.plot(m.time,u0.value,'g',label=r'$u$')
+plt.plot( t1, convolve_output(control_input, virus, end/nt))
+
+print(np.max((virus_output*X0 / U0) - control_input))
 
 
 plt.show()

@@ -21,14 +21,14 @@ def ustep(v):
 
 @dataclass
 class Cell:
-    extracellular_conductivity: float # S/m
-    extracellular_permittivity: float # relative
-    intracellular_conductivity: float # S/m
-    intracellular_permittivity: float # relative
-    membrane_conductivity: float # S/m
-    membrane_permittivity: float # relative
-    cell_diameter: float # meters
-    membrane_thickness: float
+    extracellular_conductivity: np.float128 # S/m
+    extracellular_permittivity: np.float128 # relative
+    intracellular_conductivity: np.float128 # S/m
+    intracellular_permittivity: np.float128 # relative
+    membrane_conductivity: np.float128 # S/m
+    membrane_permittivity: np.float128 # relative
+    cell_diameter: np.float128 # meters
+    membrane_thickness: np.float128
 
     t: np.ndarray
 
@@ -119,11 +119,11 @@ That means an alternative way to calculate the output is convolving with the der
 
 def tau_1_f(b_1, b_2, b_3):
     #equation A6e in Kotnik
-    return (2.0 * b_3) / (b_2 - sqrt(((b_2)**2.0) - ((4.0*b_1) * b_3)))
+    return (2.0 * b_3) / (b_2 - np.sqrt(((b_2)**2.0) - ((4.0*b_1) * b_3)))
 
 def tau_2_f(b_1, b_2, b_3):
     #equation A6f in Kotnik
-    return (2.0 * b_3) / (b_2 + sqrt(((b_2)**2.0) - ((4.0*b_1) * b_3)))
+    return (2.0 * b_3) / (b_2 + np.sqrt(((b_2)**2.0) - ((4.0*b_1) * b_3)))
 
 
 def delta_transmembrane_unit_ramp(t, cell):

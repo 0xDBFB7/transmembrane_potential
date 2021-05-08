@@ -34,7 +34,9 @@ def analytic_control_solution(t, C1, C2):
 # at the largest scale, analytic_control_solution( with c1 and c2 -1 and 1 is a straight line
 # with a slope that appears to be similar to what I've seen in previous simulations. However there's a fine structure
 # of sub-femtosecond pulses.
-# however, I don't understand why
+# however, I don't understand why this convolution isn't agreeing with the expected value.
+# we should get no response because u is 0  - oh it's because there's no second derivative value because it's between timesteps
+
 
 t0 = 0
 tstop = 1
@@ -50,17 +52,23 @@ gamma_v = (virus.R*virus.a_3/virus.b_1)
 phi_v = (virus.b_2/virus.b_1)
 xi_v = (virus.b_3/virus.b_1)
 
+
 alpha_h = (host_cell.R*host_cell.a_1/host_cell.b_1)
 beta_h = (host_cell.R*host_cell.a_2/host_cell.b_1)
 gamma_h = (host_cell.R*host_cell.a_3/host_cell.b_1)
 phi_h = (host_cell.b_2/host_cell.b_1)
 xi_h = (host_cell.b_3/host_cell.b_1)
 
+
+print(virus.R*virus.a_1)
+print(host_cell.R*host_cell.a_2)
+print(host_cell.R*host_cell.a_3)
+
  # differential equation is wrong - must be just after gekko_.
 print(beta_h)
 print(-4*alpha_h*gamma_h + beta_h**2)
 
-control_input = analytic_control_solution(t, -1, 1)
+control_input = analytic_control_solution(t, 1, 1)
 control_input /= np.max(control_input)
 
 
