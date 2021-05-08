@@ -26,7 +26,7 @@ u = Function('u')
 t, alpha_v, beta_v, gamma_v, phi_v, xi_v = symbols("t alpha_v beta_v gamma_v phi_v xi_v")
 alpha_h, beta_h, gamma_h, phi_h, xi_h = symbols("alpha_h beta_h gamma_h phi_h xi_h")
 
-solution = dsolve(Eq(0, (alpha_h*Derivative(u(t),t,t) + beta_h*Derivative(u(t),t) + gamma_h*u(t))), u(t),ics={u(0): 0})
+solution = dsolve(Eq(0, (alpha_h*Derivative(u(t),t,t) + beta_h*Derivative(u(t),t) + gamma_h*u(t))), u(t),ics={u(0): 0, u(t).diff(t).subs(t, 1e-6): 1})
 
 sympy.pprint(solution)
 print(str(solution))
