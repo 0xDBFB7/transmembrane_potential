@@ -81,8 +81,8 @@ plt.figure(1) # plot results
 # plt.plot(m.time,x2.value,'b-',label=r'$x_2$')
 integration_method = virus_output*X0 / U0
 plt.plot(m.time*T0,integration_method,'r',label=r'$x0_v$')
-convolution_method_output = convolve_output(control_input, virus, end/nt)
-plt.plot( t1, convolution_method_output)
+# convolution_method_output = convolve_output(control_input, virus, end/nt)
+# plt.plot( t1, convolution_method_output)
 
 
 print(np.mean(np.abs(integration_method - convolution_method_output))/(np.max(convolution_method_output)))
