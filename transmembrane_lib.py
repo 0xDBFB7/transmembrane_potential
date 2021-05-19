@@ -44,7 +44,6 @@ class Cell:
         l_m = self.membrane_conductivity #S/m
 
         d = self.membrane_thickness
-        # epsilon_0
 
         sub1 = (3.0 * (R**2.0) - 3.0 * d * R + d**2.0)
         sub2 = (3.0 * d * R - d**2.0)
