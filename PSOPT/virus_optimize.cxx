@@ -119,7 +119,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
     //take out derivative terms
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
 
-    return -smooth_fabs(states[ x0_v_state ], 1e-9) + smooth_fabs(states[ x0_h_state ], 1e-9); //also seems to work okay
+    // return -smooth_fabs(states[ x0_v_state ], 1e-9) + smooth_fabs(states[ x0_h_state ], 1e-9); //also seems to work okay
     //
     //return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
 
@@ -127,7 +127,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
     // return ((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + (states[ x1_v_state ]*states[ x1_v_state ]) + (states[ x1_h_state ]*states[ x1_h_state ]) + (states[x0_h_state]*states[x0_h_state]);
 
-    // return -states[ x0_v_state ]*X0;
+    return -(states[ x0_v_state ]*states[ x0_v_state ]) + states[ x0_h_state ]*states[ x0_h_state ];
     // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0)));
 
     // return 0;
@@ -267,7 +267,7 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-7 / T0;
+    double end_time = 1e-8 / T0;
 
     double control_bounds = 0.5;
 
@@ -357,8 +357,8 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 400;
-    algorithm.nlp_tolerance               = 1e-7;
+    algorithm.nlp_iter_max                = 500;
+    algorithm.nlp_tolerance               = 1e-6;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";

@@ -23,7 +23,7 @@ T0 = 1e-7
 #X0 = 1e-12
 U0 = 1.0
 X0 = 1e-6
-end = 1e-6 / T0
+end = 1e-7 / T0
 
 m.time = np.linspace(0,end,nt)
 
@@ -42,29 +42,29 @@ t = m.Param(value=m.time)
 
 print(end)
 
-u0 = m.Var(value=1)
+u0 = m.Var(value=0.0)
 
 # m.Equation(u0 == 1) #doesn't seem to behave well with this discontinuity.
 # the gaussian pulse below works much better.
 # m.Equation(u0 == m.sin(t)) # for simulation
 # m.Equation(u0 == m.exp(-((((t*T0)-((end*T0))/2.0))**2.0)/(2.0*(((((end*T0)/10.0))**2.0))))) # for simulation
 
-u1 = m.Var()
+u1 = m.Var(value=0)
 m.Equation(u1==u0.dt())
-u2 = m.Var()
+u2 = m.Var(value=0)
 m.Equation(u2==u1.dt())
 
-alpha_v = m.Const(virus.R*virus.a_1/virus.b_1)
-beta_v = m.Const(virus.R*virus.a_2/virus.b_1)
-gamma_v = m.Const(virus.R*virus.a_3/virus.b_1)
-phi_v = m.Const(virus.b_2/virus.b_1)
-xi_v = m.Const(virus.b_3/virus.b_1)
+alpha_v = m.Const(virus.R*virus.a_3/virus.b_3)
+beta_v = m.Const(virus.R*virus.a_2/virus.b_3)
+gamma_v = m.Const(virus.R*virus.a_1/virus.b_3)
+phi_v = m.Const(virus.b_2/virus.b_3)
+xi_v = m.Const(virus.b_1/virus.b_3)
 
-alpha_h = m.Const(host_cell.R*host_cell.a_1/host_cell.b_1)
-beta_h = m.Const(host_cell.R*host_cell.a_2/host_cell.b_1)
-gamma_h = m.Const(host_cell.R*host_cell.a_3/host_cell.b_1)
-phi_h = m.Const(host_cell.b_2/host_cell.b_1)
-xi_h = m.Const(host_cell.b_3/host_cell.b_1)
+alpha_h = m.Const(host_cell.R*host_cell.a_3/host_cell.b_3)
+beta_h = m.Const(host_cell.R*host_cell.a_2/host_cell.b_3)
+gamma_h = m.Const(host_cell.R*host_cell.a_1/host_cell.b_3)
+phi_h = m.Const(host_cell.b_2/host_cell.b_3)
+xi_h = m.Const(host_cell.b_1/host_cell.b_3)
 
 SX0 = m.Const(X0)
 SU0 = m.Const(U0)
@@ -77,7 +77,11 @@ m.Equation(x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_
 m.Equation(x1_h==x0_h.dt())
 m.Equation(x2_h==x1_h.dt())
 m.Equation(x2_h == ((SU0 / (ST0**2))*alpha_h*u2 + (SU0 / ST0)*beta_h*u1 + gamma_h*SU0*u0 - phi_h*(SX0 / ST0)*x1_h - xi_h*SX0*x0_h)/(SX0 / (ST0**2)))
-m.Equation(x1_h == 0)
+
+
+m.Obj(m.integral(x0_v - 1) + m.integral(x0_h))
+
+
 
 
 m.options.IMODE = 6 # optimal control mode
