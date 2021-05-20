@@ -74,11 +74,11 @@ void Cell::init(){
 
     b3 = 2.0 * (R*R*R) * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * ((R-d)*(R-d)*(R-d)) * (e_m - e_o) * (e_i - e_m);
 
-    alpha = (R*a1/b1);
-    beta = (R*a2/b1);
-    gamma = (R*a3/b1);
-    phi = (b2/b1);
-    xi = (b3/b1);
+    alpha = (R*a3/b3);
+    beta = (R*a2/b3);
+    gamma = (R*a1/b3);
+    phi = (b2/b3);
+    xi = (b1/b3);
 
 }
 
@@ -119,7 +119,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
     //take out derivative terms
     // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
 
-    // return -smooth_fabs(states[ x0_v_state ], 1e-9) + smooth_fabs(states[ x0_h_state ], 1e-9); //also seems to work okay
+    return -smooth_fabs(states[ x0_v_state ], 1e-9) + smooth_fabs(states[ x0_h_state ], 1e-9); //also seems to work okay
     //
     //return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
 
@@ -127,7 +127,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
     // return ((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + (states[ x1_v_state ]*states[ x1_v_state ]) + (states[ x1_h_state ]*states[ x1_h_state ]) + (states[x0_h_state]*states[x0_h_state]);
 
-    return -states[ x0_v_state ]*X0;
+    // return -states[ x0_v_state ]*X0;
     // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0)));
 
     // return 0;
@@ -174,9 +174,9 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
     // adouble u0_f = final_states[ 3 ];
     // e[ 3 ] = u0_f;
     // Compute the integral to be constrained
-    adouble Q;
-    Q = integrate(integrand, xad, iphase, workspace);
-    e[ 5 ] = Q;
+    // adouble Q;
+    // Q = integrate(integrand, xad, iphase, workspace);
+    // e[ 5 ] = Q;
 }
 
 
@@ -247,7 +247,7 @@ int main(void)
 
     problem.phases(1).nstates   		= 6;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 6;
+    problem.phases(1).nevents   		= 5;
     problem.phases(1).npath         = 0;
     int nnodes    			             = 1000;
 
@@ -272,8 +272,8 @@ int main(void)
     double control_bounds = 0.5;
 
     double output_bounds = 1;
-    double derivative_scaling = 1;
-    double second_derivative_scaling = 1;
+    double derivative_scaling = 5;
+    double second_derivative_scaling = 50;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling, -output_bounds, -derivative_scaling;
@@ -287,8 +287,8 @@ int main(void)
     // double u0_integral_constraint = 0;
     // double u0_integral_constraint = 0;
 
-    problem.phases(1).bounds.lower.events << 0,0,0,0,0,0; //2
-    problem.phases(1).bounds.upper.events << 0,0,0,0,0,0;
+    problem.phases(1).bounds.lower.events << 0,0,0,0,0; //2
+    problem.phases(1).bounds.upper.events << 0,0,0,0,0;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
@@ -358,7 +358,7 @@ int main(void)
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     algorithm.nlp_iter_max                = 400;
-    algorithm.nlp_tolerance               = 1e-4;
+    algorithm.nlp_tolerance               = 1e-7;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
