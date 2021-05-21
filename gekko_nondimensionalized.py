@@ -42,16 +42,16 @@ t = m.Param(value=m.time)
 
 print(end)
 
-u0 = m.Var(value=0.0)
+u0 = m.Var()
 
 # m.Equation(u0 == 1) #doesn't seem to behave well with this discontinuity.
 # the gaussian pulse below works much better.
 # m.Equation(u0 == m.sin(t)) # for simulation
 # m.Equation(u0 == m.exp(-((((t*T0)-((end*T0))/2.0))**2.0)/(2.0*(((((end*T0)/10.0))**2.0))))) # for simulation
 
-u1 = m.Var(value=0)
+u1 = m.Var()
 m.Equation(u1==u0.dt())
-u2 = m.Var(value=0)
+u2 = m.Var()
 m.Equation(u2==u1.dt())
 
 alpha_v = m.Const(virus.R*virus.a_3/virus.b_3)

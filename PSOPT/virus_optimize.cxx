@@ -125,9 +125,9 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
     // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
 
-    // return ((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + (states[ x1_v_state ]*states[ x1_v_state ]) + (states[ x1_h_state ]*states[ x1_h_state ]) + (states[x0_h_state]*states[x0_h_state]);
+    return ((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + (states[ x1_v_state ]*states[ x1_v_state ]) + (states[ x1_h_state ]*states[ x1_h_state ]) + (states[x0_h_state]*states[x0_h_state]);
 
-    return -(states[ x0_v_state ]*states[ x0_v_state ]) + states[ x0_h_state ]*states[ x0_h_state ];
+    // return -(states[ x0_v_state ]*states[ x0_v_state ]) + states[ x0_h_state ]*states[ x0_h_state ];
     // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0)));
 
     // return 0;
@@ -147,7 +147,8 @@ adouble integrand( adouble* states, adouble* controls, adouble* parameters,
     adouble u1   = states[ u1_state ];
     adouble u2 = controls[ 0 ];
     // g = (u0*u0);
-    return (((U0 / (T0*T0))*host->alpha*u2 + (U0 / T0)*host->beta*u1 + host->gamma*U0*u0));
+    // return (((U0 / (T0*T0))*host->alpha*u2 + (U0 / T0)*host->beta*u1 + host->gamma*U0*u0));
+    return 0;
 }
 
 void events(adouble* e, adouble* initial_states, adouble* final_states,
@@ -156,20 +157,25 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
 
     adouble u0 = initial_states[ u0_state ];
     e[ 0 ] = u0;
-    // adouble u1 = initial_states[ u1_state ];
-    // e[ 1 ] = u1;
+    adouble u1 = initial_states[ u1_state ];
+    e[ 1 ] = u1;
 
-    adouble x0 = initial_states[ x0_v_state ];
-    e[ 1 ] = x0;
+    adouble controls[1];
+    get_initial_controls(controls,xad,iphase,workspace);
+    adouble q4 = controls[ 0 ];
+    e[ 2 ] = q4;
+
+    adouble x0_v = initial_states[ x0_v_state ];
+    e[ 3 ] = x0_v;
 
     adouble x0_h = initial_states[ x0_h_state ];
-    e[ 2 ] = x0_h;
+    e[ 4 ] = x0_h;
 
-    adouble x1 = initial_states[ x1_v_state ];
-    e[ 3 ] = x1;
+    adouble x1_v = initial_states[ x1_v_state ];
+    e[ 5 ] = x1_v;
 
     adouble x1_h = initial_states[ x1_h_state ];
-    e[ 4 ] = x1_h;
+    e[ 6 ] = x1_h;
 
     // adouble u0_f = final_states[ 3 ];
     // e[ 3 ] = u0_f;
@@ -191,6 +197,8 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     adouble u2 = controls[ 0 ];
     derivatives[ u0_state ] = u1;
     derivatives[ u1_state ] = u2; //multiply by dt?
+
+
 
     adouble x0_v    = states[ x0_v_state ];
     adouble x1_v    = states[ x1_v_state ];
@@ -247,9 +255,9 @@ int main(void)
 
     problem.phases(1).nstates   		= 6;
     problem.phases(1).ncontrols 		= 1;
-    problem.phases(1).nevents   		= 5;
+    problem.phases(1).nevents   		= 7;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 1000;
+    int nnodes    			             = 2000;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -267,7 +275,7 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-8 / T0;
+    double end_time = 1e-6 / T0;
 
     double control_bounds = 0.5;
 
@@ -287,8 +295,8 @@ int main(void)
     // double u0_integral_constraint = 0;
     // double u0_integral_constraint = 0;
 
-    problem.phases(1).bounds.lower.events << 0,0,0,0,0; //2
-    problem.phases(1).bounds.upper.events << 0,0,0,0,0;
+    problem.phases(1).bounds.lower.events << 0,0,0,0,0,0,0; //2
+    problem.phases(1).bounds.upper.events << 0,0,0,0,0,0,0;
 
     // problem.phases(1).bounds.lower.path << 0.0;
     // problem.phases(1).bounds.upper.path << 0.0;
