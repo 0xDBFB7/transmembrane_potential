@@ -14,7 +14,7 @@ const double epsilon_0 = 8.854e-12;
 
 double T0 = 1e-8;
 double U0 = 1.0;
-double X0 = 1e-7;
+double X0 = 1e-6;
 
 
 struct Cell{
@@ -117,18 +117,29 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
     //is there a fancy sqrt?
     //take out derivative terms
-    // return states[ x0_h_state ]/states[ x0_v_state ]; // does not converge
+    // return -states[ x0_v_state ]*100 + states[ x0_h_state ] + sqrt(states[u0_state]*states[u0_state]);
 
     // return -smooth_fabs(states[ x0_v_state ], 1e-9) + smooth_fabs(states[ x0_h_state ], 1e-9); //also seems to work okay
     //
     //return states[ x0_v_state ]- + (states[ x0_h_state ]*states[ x0_h_state ]) + (states[ x1_h_state ]);
 
-    // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
+    // return sqrt((states[ x0_v_state ] - (1e-8/X0))*(states[ x0_v_state ] - (1e-8/X0))) + sqrt(states[ x1_v_state ]*states[ x1_v_state ]) + sqrt(states[ x1_h_state ]*states[ x1_h_state ]) + sqrt(states[x0_h_state]*states[x0_h_state]);
 
-    return ((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + (states[ x1_v_state ]*states[ x1_v_state ]) + (states[ x1_h_state ]*states[ x1_h_state ]) + (states[x0_h_state]*states[x0_h_state]);
+    // return ((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0))) + (states[ x1_v_state ]*states[ x1_v_state ]) + (states[ x1_h_state ]*states[ x1_h_state ]) + (states[x0_h_state]*states[x0_h_state]);
 
-    // return -(states[ x0_v_state ]*states[ x0_v_state ]) + states[ x0_h_state ]*states[ x0_h_state ];
+
+
+    // double rho = virus->R / host->R;
+    double rho = virus->R / host->R;
+    return -(states[ x0_v_state ]*states[ x0_v_state ]) + (rho*rho)*(states[ x0_h_state ]*states[ x0_h_state ]);
+
+    // return (states[ x0_h_state ]*states[ x0_h_state ]) / (states[ x0_v_state ]*states[ x0_v_state ]);
+
+
+
+    // return (1.0-(states[ x0_v_state ]*states[ x0_v_state ])) + states[ x0_h_state ]*states[ x0_h_state ];
     // return sqrt((states[ x0_v_state ] - (1e-4/X0))*(states[ x0_v_state ] - (1e-4/X0)));
+
 
     // return 0;
 }
@@ -257,7 +268,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 7;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 2000;
+    int nnodes    			             = 1000;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -275,7 +286,7 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-6 / T0;
+    double end_time = 1e-7 / T0;
 
     double control_bounds = 0.5;
 
@@ -337,6 +348,7 @@ int main(void)
     // MatrixXd u_guess =  MatrixXd::Random(ncontrols,nnodes);
     // MatrixXd x_guess = MatrixXd::Random(ncontrols,nnodes);
 
+    // u_guess.
     // MatrixXf::
     //
     MatrixXd time_guess =  linspace(0.0,end_time,nnodes);
@@ -365,8 +377,8 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 500;
-    algorithm.nlp_tolerance               = 1e-6;
+    algorithm.nlp_iter_max                = 200;
+    algorithm.nlp_tolerance               = 1e-8;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
@@ -483,8 +495,8 @@ int main(void)
     ///////////  Plot some results if desired (requires gnuplot) ///////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    plot(t * T0,x0_v,problem.name, "time (s)", "states", "x0_v");
-    plot(t * T0,x0_h,problem.name, "time (s)", "states", "x0_h");
+    plot(t * T0,x0_v*X0,problem.name, "time (s)", "states", "x0_v");
+    plot(t * T0,x0_h*X0,problem.name, "time (s)", "states", "x0_h");
     plot(t * T0,u0,problem.name, "time (s)", "states", "u0");
     plot(t * T0,u1,problem.name, "time (s)", "states", "u1");
     plot(t * T0,u2,problem.name, "time (s)", "states", "u2");
