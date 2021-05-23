@@ -67,12 +67,12 @@ u2_ = np.diff(u1_, prepend=u1_[0])/((end/nt)/T0)
 u2 = m.Param(value=u2_)
 
 
-alpha_v = m.Const((U0 / (T0**2))*(virus.R*virus.a_3/virus.b_3))
-beta_v = m.Const((U0 / T0)*(virus.R*virus.a_2/virus.b_3))
-gamma_v = m.Const((virus.R*virus.a_1/virus.b_3))
+alpha_v = m.Const((U0 / (T0**2))*virus.alpha)
+beta_v = m.Const((U0 / T0)*virus.beta)
+gamma_v = m.Const(virus.gamma)
 
-phi_v = m.Const((X0 / T0)*(virus.b_2/virus.b_3))
-xi_v = m.Const(X0*(virus.b_1/virus.b_3))
+phi_v = m.Const((X0 / T0)*virus.phi)
+xi_v = m.Const(X0*virus.xi)
 
 
 

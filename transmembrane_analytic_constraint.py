@@ -14,8 +14,8 @@ def analytic_control_solution(t, C1, C2):
     # if u(t=0 ) = 0, C1=C2
     # C1 = - C2
     # base solution
-    return (C1*np.exp(t*(-beta_h - np.sqrt(-4*alpha_h*gamma_h + beta_h**2))/(2*alpha_h))
-    + C2*np.exp(t*(-beta_h + np.sqrt(-4*alpha_h*gamma_h + beta_h**2))/(2*alpha_h)))
+    return (C1*np.exp(t*(-host_cell.beta - np.sqrt(-4*host_cell.alpha*host_cell.gamma + beta**2))/(2*host_cell.alpha))
+    + C2*np.exp(t*(-host_cell.beta + np.sqrt(-4*host_cell.alpha*host_cell.gamma + host_cell.beta**2))/(2*host_cell.alpha)))
     # wait, why can this be imaginary?
     # what?
     # solution with ICS of u(0) = 0 u(1e-6)=1
@@ -46,27 +46,7 @@ t = np.linspace(t0, tstop, 1000000, dtype=np.float128)
 host_cell = Cell(np.float128(0.3), np.float128(80), np.float128(0.3), np.float128(80), np.float128(1e-7), np.float128(5), np.float128(20e-6), np.float128(5e-9), t)
 virus = Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(14e-9), t)
 
-alpha_v = (virus.R*virus.a_1/virus.b_1)
-beta_v = (virus.R*virus.a_2/virus.b_1)
-gamma_v = (virus.R*virus.a_3/virus.b_1)
-phi_v = (virus.b_2/virus.b_1)
-xi_v = (virus.b_3/virus.b_1)
 
-
-alpha_h = (host_cell.R*host_cell.a_1/host_cell.b_1)
-beta_h = (host_cell.R*host_cell.a_2/host_cell.b_1)
-gamma_h = (host_cell.R*host_cell.a_3/host_cell.b_1)
-phi_h = (host_cell.b_2/host_cell.b_1)
-xi_h = (host_cell.b_3/host_cell.b_1)
-
-
-print(virus.R*virus.a_1)
-print(host_cell.R*host_cell.a_2)
-print(host_cell.R*host_cell.a_3)
-
- # differential equation is wrong - must be just after gekko_.
-print(beta_h)
-print(-4*alpha_h*gamma_h + beta_h**2)
 
 control_input = analytic_control_solution(t, 1, 1)
 control_input /= np.max(control_input)

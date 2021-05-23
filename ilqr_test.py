@@ -14,12 +14,12 @@ from transmembrane_lib import *
 
 #https://github.com/anassinator/ilqr/blob/master/examples/rendezvous.ipynb
 
-T0 = 1e-10
+T0 = 1e-8
 U0 = 1.0
 X0 = 1e-9
 
-N = 2000  # Number of time steps in trajectory.
-end = 1e-7 / T0
+N = 3000  # Number of time steps in trajectory.
+end = 1e-5 / T0
 dt = end/N  # Discrete time step.
 
 # dt = 0.1
@@ -31,18 +31,18 @@ t = np.arange(N + 1) * dt
 host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
 virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
-alpha_v = (virus.R*virus.a_1/virus.b_1)
-beta_v = (virus.R*virus.a_2/virus.b_1)
-gamma_v = (virus.R*virus.a_3/virus.b_1)
-phi_v = (virus.b_2/virus.b_1)
-xi_v = (virus.b_3/virus.b_1)
+alpha_v = ((U0 / (T0**2))*(virus.R*virus.a_3/virus.b_3))
+beta_v = ((U0 / T0)*(virus.R*virus.a_2/virus.b_3))
+gamma_v = ((virus.R*virus.a_1/virus.b_3))
+phi_v = ((X0 / T0)*(virus.b_2/virus.b_3))
+xi_v = (X0*(virus.b_1/virus.b_3))
 
+alpha_h = ((U0 / (T0**2))*(host_cell.R*host_cell.a_3/host_cell.b_3))
+beta_h = ((U0 / T0)*(host_cell.R*host_cell.a_2/host_cell.b_3))
+gamma_h = ((host_cell.R*host_cell.a_1/host_cell.b_3))
+phi_h = ((X0 / T0)*(host_cell.b_2/host_cell.b_3))
+xi_h = (X0*(host_cell.b_1/host_cell.b_3))
 
-alpha_h = (host_cell.R*host_cell.a_1/host_cell.b_1)
-beta_h = (host_cell.R*host_cell.a_2/host_cell.b_1)
-gamma_h = (host_cell.R*host_cell.a_3/host_cell.b_1)
-phi_h = (host_cell.b_2/host_cell.b_1)
-xi_h = (host_cell.b_3/host_cell.b_1)
 
 
 def on_iteration(iteration_count, xs, us, J_opt, accepted, converged):
@@ -94,8 +94,6 @@ f = T.stack([
 dynamics = AutoDiffDynamics(f, x_inputs, u_inputs)
 # dynamics = FiniteDiffDynamics(f, 6, 1)
 # dynamics = BatchAutoDiffDynamics(f, state_size, action_size)
-
-#NEED TO SCALE ODE!
 
 # Q = np.eye(dynamics.state_size)#state error
 

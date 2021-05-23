@@ -130,7 +130,7 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
 
     // double rho = virus->R / host->R;
-    double rho = virus->R / host->R;
+    // double rho = 10.0;
     return -(states[ x0_v_state ]*states[ x0_v_state ]) + (rho*rho)*(states[ x0_h_state ]*states[ x0_h_state ]);
 
     // return (states[ x0_h_state ]*states[ x0_h_state ]) / (states[ x0_v_state ]*states[ x0_v_state ]);
@@ -291,8 +291,8 @@ int main(void)
     double control_bounds = 0.5;
 
     double output_bounds = 1;
-    double derivative_scaling = 5;
-    double second_derivative_scaling = 50;
+    double derivative_scaling = 100;
+    double second_derivative_scaling = 100;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling, -output_bounds, -derivative_scaling;

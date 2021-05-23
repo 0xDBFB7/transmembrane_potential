@@ -10,13 +10,10 @@ from scipy.signal import convolve
 from pytexit import py2tex
 
 def ustep(v):
-    # v[v>0] = v[v>0]
-    # v[v<0] = 0
-    # return v
-    # if(v > 0.0):
-    #     return v
-    # else:
-    #     return 0.0
+
+    # note that the definition of the discrete unit step can be the cause of differences
+    # in outputs between solvers.
+    # some use 0.5, some 1.
     return heaviside(v, 0.5)
 
 @dataclass
@@ -60,21 +57,33 @@ class Cell:
 
         self.b_3 = 2.0 * R**3.0 * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * (R-d)**3.0 * (e_m - e_o) * (e_i - e_m)
 
-        #py2tex("b_3 = 2.0 - R**3.0 * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * (R-d)**3.0 * (e_m - e_o) * (e_i - e_m)")
-        #https://quicklatex.com/
+        # to check, use
+        # py2tex("b_3 = 2.0 - R**3.0 * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * (R-d)**3.0 * (e_m - e_o) * (e_i - e_m)")
+        # https://quicklatex.com/
 
         # Kotnik variously use "step function" or the "unit step".
-
         self.tau_1 = tau_1_f(self.b_1, self.b_2, self.b_3)
         self.tau_2 = tau_2_f(self.b_1, self.b_2, self.b_3)
 
 
         self.step_response = delta_transmembrane_unit_step(self.t, self)
 
+        # coefficients in front of the differential equation.
+        # note the error in kotnik et al transfer function!
+        self.alpha = ((virus.R*virus.a_3/virus.b_3))
+        self.beta = ((virus.R*virus.a_2/virus.b_3))
+        self.gamma = ((virus.R*virus.a_1/virus.b_3))
+        self.phi = ((virus.b_2/virus.b_3))
+        self.xi = ((virus.b_1/virus.b_3))
+
+
+default_host_cell = Cell(np.float128(0.3), np.float128(80), np.float128(0.3), np.float128(80), np.float128(1e-7), np.float128(5), np.float128(20e-6), np.float128(5e-9), t)
+default_virus = Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(14e-9), t)
 
 '''
+
 This is a verbatim implementation of
-[1]:
+
 Kotnik T, Miklavčič D, Slivnik T.
 Time course of transmembrane voltage induced by time-varying electric fields—a method for theoretical analysis and its application.
 Bioelectrochemistry and Bioenergetics 1998;45:3–16.
@@ -114,6 +123,9 @@ That means an alternative way to calculate the output is convolving with the der
 
 -----------------------------------------
 
+
+Scipy lti has built-in functions for the convolution integral. Should replace this with that.
+
 '''
 
 def tau_1_f(b_1, b_2, b_3):
@@ -137,6 +149,7 @@ def delta_transmembrane_unit_ramp(t, cell):
     delta_phi_m_t *= cell.R
     # # unlike in symbolic math, the unit step doesn't actually prevent errors from occuring in the np.exp step.
     delta_phi_m_t = np.nan_to_num(delta_phi_m_t)
+
     # if(np.isscalar(t)):
     #     if(t < 0):
     #         delta_phi_m_t == 0
@@ -158,7 +171,7 @@ def delta_transmembrane_unit_step(t, cell):
     delta_phi_m_t += (phisub1 + (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_1)) * ustep(t)
     delta_phi_m_t += (phisub1 - (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_2)) * ustep(t) # glitch?
     delta_phi_m_t *= cell.R
-    # # unlike in symbolic math, the unit step doesn't actually prevent errors from occuring in the np.exp step.
+    # unlike in symbolic math, the unit step doesn't actually prevent errors from occuring in the np.exp step.
     delta_phi_m_t = np.nan_to_num(delta_phi_m_t)
     # if(np.isscalar(t)):
     #     if(t < 0):
@@ -173,7 +186,6 @@ def convolve_output(input, cell, dt):
 
     #again, either the step response or the input can be differentiated.
     input = np.diff(input, prepend=input[0])/dt
-
 
     #scipy signal automatically chooses an FFT-based method
     #not sure why I'm clipping to half, and I'm not entirely sure if that's valid.
