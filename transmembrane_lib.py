@@ -70,15 +70,20 @@ class Cell:
 
         # coefficients in front of the differential equation.
         # note the error in kotnik et al transfer function!
-        self.alpha = ((virus.R*virus.a_3/virus.b_3))
-        self.beta = ((virus.R*virus.a_2/virus.b_3))
-        self.gamma = ((virus.R*virus.a_1/virus.b_3))
-        self.phi = ((virus.b_2/virus.b_3))
-        self.xi = ((virus.b_1/virus.b_3))
+        self.alpha = ((self.R*self.a_3/self.b_3))
+        self.beta = ((self.R*self.a_2/self.b_3))
+        self.gamma = ((self.R*self.a_1/self.b_3))
+        self.phi = ((self.b_2/self.b_3))
+        self.xi = ((self.b_1/self.b_3))
 
 
-default_host_cell = Cell(np.float128(0.3), np.float128(80), np.float128(0.3), np.float128(80), np.float128(1e-7), np.float128(5), np.float128(20e-6), np.float128(5e-9), t)
-default_virus = Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(14e-9), t)
+
+
+def default_host_cell(t):
+    return Cell(np.float128(0.3), np.float128(80), np.float128(0.3), np.float128(80), np.float128(1e-7), np.float128(5), np.float128(20e-6), np.float128(5e-9), t)
+
+def default_virus(t):
+    return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(14e-9), t)
 
 '''
 

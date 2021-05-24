@@ -13,6 +13,8 @@ virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
 """
 
+THIS MUST BE FIXED due to the typo in kotnik
+
 PSOPT_Manual_R5.pdf
 
 For convenience, let's convert the Kotnik equation to standard DE form.
