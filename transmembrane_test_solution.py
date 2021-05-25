@@ -16,12 +16,15 @@ sim_t = np.loadtxt( 'PSOPT/build/t.dat' ) * T0
 
 t0 = 0
 tstop = sim_t[-1]
-dt = 0.05e-9
+
+dt = 0.005e-9
 t = np.linspace(t0, tstop, int(tstop/dt))
 
 # dt = (t[1] - t[0])
 
 sim_values = np.loadtxt( 'PSOPT/build/u0.dat' )
+sim_x0_v = np.loadtxt( 'PSOPT/build/x0_v.dat' )
+sim_x0_h = np.loadtxt( 'PSOPT/build/x0_h.dat' )
 
 
 # flinear = interpolate.interp1d(x, sim_values)
@@ -47,6 +50,10 @@ plt.show()
 plt.figure(2)
 plt.plot(t, convolve_output(ideal_values, host_cell, dt))
 plt.plot(t, convolve_output(ideal_values, virus, dt))
+
+plt.plot(sim_t, sim_x0_v)
+plt.plot(sim_t, sim_x0_h)
+
 
 print((np.max(convolve_output(ideal_values, host_cell, dt) * 1e6) - np.min(convolve_output(ideal_values, host_cell, dt) * 1e6))
             /(np.max(convolve_output(ideal_values, virus, dt) * 1e6) - np.min(convolve_output(ideal_values, virus, dt) * 1e6)))
