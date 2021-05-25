@@ -15,7 +15,7 @@ def analytic_control_solution(t, C1, C2):
     # C1 = - C2
     # base solution
 
-    return -C2*exp(t*(-host_cell.beta - sqrt(-4*host_cell.alpha*host_cell.gamma + host_cell.beta**2))/(2*host_cell.alpha)) + C2*exp(t*(-host_cell.beta + sqrt(-4*host_cell.alpha*host_cell.gamma + host_cell.beta**2))/(2*host_cell.alpha))
+    return -C2*np.exp(t*(-host_cell.beta - np.sqrt(-4*host_cell.alpha*host_cell.gamma + host_cell.beta**2))/(2*host_cell.alpha)) + C2*np.exp(t*(-host_cell.beta + np.sqrt(-4*host_cell.alpha*host_cell.gamma + host_cell.beta**2))/(2*host_cell.alpha))
 
     # solution with ICS of u(0) = 0 u(1e-6)=1
 
@@ -45,16 +45,15 @@ first_derivative = first_derivative[:-1]
 
 sum = host_cell.alpha * second_derivative + host_cell.beta * first_derivative + host_cell.gamma * control_input
 
-# plt.figure(1)
-# plt.plot(t, host_cell.gamma * control_input,marker='o')
-# plt.figure(2)
-#
-# plt.plot(host_cell.beta * first_derivative ,marker='o')
-# plt.figure(3)
-# plt.plot(host_cell.alpha * second_derivative ,marker='o')
-# plt.figure(4)
-plt.plot(t, convolve_output(control_input, host_cell, dt))
-# plt.plot(t_, sum,marker='o')
+plt.figure(1)
+plt.plot(host_cell.gamma * control_input,marker='o')
+plt.figure(2)
+plt.plot(host_cell.beta * first_derivative,marker='o')
+plt.figure(3)
+plt.plot(host_cell.alpha * second_derivative,marker='o')
+plt.figure(4)
+# plt.plot(t, convolve_output(control_input, host_cell, dt))
+plt.plot(t_, sum,marker='o')
 
 plt.show()
 
