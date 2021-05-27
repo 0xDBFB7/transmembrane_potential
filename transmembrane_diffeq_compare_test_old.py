@@ -10,15 +10,30 @@ from scipy.ndimage.interpolation import shift
 m = GEKKO() # initialize gekko
 m.options.MAX_ITER = 30
 nt = 1000
-end = 1e-6
+end = 1e-1
 
 T0 = 1.0
 U0 = 1.0
 X0 = 1.0
-m.time = np.linspace(0, end/T0, nt, dtype=np.float64)
+m.time = np.linspace(0, end/T0, nt, dtype=np.float128)
 t1 = np.linspace(0, end, nt, dtype=np.float128)
 
-virus = Cell(np.float128(0.0001), np.float128(80), np.float128(0.05), np.float128(30), np.float128(1e-8), np.float128(600000), np.float128(1), np.float128(14e-9), t1)
+virus = Cell(np.float128(0.0001), np.float128(80), np.float128(0.05), np.float128(30), np.float128(1e-8), np.float128(60000), np.float128(50e-9), np.float128(14e-9), t1)
+
+#override to check discretization error
+virus.R = np.float128(1.0)
+# virus.a_1 = virus.b_1 = np.float128(1.0)
+# virus.a_2 = virus.b_2 = np.float128(1)
+# virus.a_3 = virus.b_3 = np.float128(1e-4)
+# virus.tau_1 = tau_1_f(virus.b_1, virus.b_2, virus.b_3)
+# virus.tau_2 = tau_2_f(virus.b_1, virus.b_2, virus.b_3)
+
+m.options.RTOL = 1e-1
+m.options.OTOL = 1e-1
+
+virus.step_response = delta_transmembrane_unit_step(virus.t, virus)
+
+ # differential equation is wrong - must be just after gekko_.
 
 control_input = np.sin(t1/((end/30.0)))
 
@@ -52,11 +67,12 @@ u2_ = np.diff(u1_, prepend=u1_[0])/((end/nt)/T0)
 u2 = m.Param(value=u2_)
 
 
-alpha_v = m.Const((U0 / (T0**2))*virus.alpha)
-beta_v = m.Const((U0 / T0)*virus.beta)
-gamma_v = m.Const(virus.gamma)
-phi_v = m.Const((X0 / T0)*virus.phi)
-xi_v = m.Const(X0*virus.xi)
+alpha_v = m.Const((U0 / (T0**2))*(virus.R*virus.a_3/virus.b_3))
+beta_v = m.Const((U0 / T0)*(virus.R*virus.a_2/virus.b_3))
+gamma_v = m.Const((virus.R*virus.a_1/virus.b_3))
+
+phi_v = m.Const((X0 / T0)*(virus.b_2/virus.b_3))
+xi_v = m.Const(X0*(virus.b_1/virus.b_3))
 
 
 
@@ -98,7 +114,7 @@ plt.figure(1) # plot results
 integration_method = virus_output*X0 / U0
 # plt.plot(m.time*T0,,'r',marker='o')
 
-plt.plot(m.time*T0,integration_method,'r',marker='o', label="GEKKO integrator")
+plt.plot(m.time*T0,integration_method,'r',marker='o')
 # plt.plot(m.time*T0,x1_v.value,'g',marker='o')
 
 # convolution_method_output = convolve_output(control_input, virus, end/nt)

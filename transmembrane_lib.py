@@ -18,14 +18,14 @@ def ustep(v):
 
 @dataclass
 class Cell:
-    extracellular_conductivity: np.float128 # S/m
-    extracellular_permittivity: np.float128 # relative
-    intracellular_conductivity: np.float128 # S/m
-    intracellular_permittivity: np.float128 # relative
-    membrane_conductivity: np.float128 # S/m
-    membrane_permittivity: np.float128 # relative
-    cell_diameter: np.float128 # meters
-    membrane_thickness: np.float128
+    extracellular_conductivity: np.float64 # S/m
+    extracellular_permittivity: np.float64 # relative
+    intracellular_conductivity: np.float64 # S/m
+    intracellular_permittivity: np.float64 # relative
+    membrane_conductivity: np.float64 # S/m
+    membrane_permittivity: np.float64 # relative
+    cell_diameter: np.float64 # meters
+    membrane_thickness: np.float64
 
     t: np.ndarray
 
@@ -73,6 +73,7 @@ class Cell:
         self.alpha = ((self.R*self.a_3/self.b_3))
         self.beta = ((self.R*self.a_2/self.b_3))
         self.gamma = ((self.R*self.a_1/self.b_3))
+        print(self.gamma, self.R,self.a_1,self.b_3)
         self.phi = ((self.b_2/self.b_3))
         self.xi = ((self.b_1/self.b_3))
 
