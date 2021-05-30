@@ -73,7 +73,6 @@ class Cell:
         self.alpha = ((self.R*self.a_3/self.b_3))
         self.beta = ((self.R*self.a_2/self.b_3))
         self.gamma = ((self.R*self.a_1/self.b_3))
-        print(self.gamma, self.R,self.a_1,self.b_3)
         self.phi = ((self.b_2/self.b_3))
         self.xi = ((self.b_1/self.b_3))
 
@@ -241,3 +240,58 @@ def delta_transmembrane_trapezoid(t, t_start, t_rise, t_fall, duration, cell, E_
     # is the duration t1+rise perhaps?
 
     return out * E_field_magnitude
+
+
+class gekko_sim_method:
+    def __init__(self, control_input_u0, u1=None, u2=None, N=500, T0=1e-6, X0=1e-6, U0=0):
+        # U0 scaling is not really needed
+        self.m = GEKKO() # initialize gekko
+        self.m.options.MAX_ITER = 200
+        U0 = 1.0
+        X0 = 1e-6
+        end = tstop / T0
+        self.m.time = np.linspace(0,end,N)
+
+        # control_input_u0 =
+        # gekko_input = np.float64(interpolant(np.float64(m.time)*T0))
+        # u0 = m.Param(value=gekko_input)
+        # u1_ = np.diff(gekko_input, prepend=gekko_input[0])/((end/nt))
+        # u1 = m.Param(value=u1_)
+        # u2_ = np.diff(u1_, prepend=u1_[0])/((end/nt)/T0)
+        # u2 = m.Param(value=u2_)
+
+        self.x0_v = m.Var(value=0)
+        self.x1_v = m.Var(value=0)
+        self.x2_v = m.Var(value=0)
+
+        self.x0_h = m.Var(value=0)
+        self.x1_h = m.Var(value=0)
+        self.x2_h = m.Var(value=0)
+
+        alpha_h = m.Const(host_cell.alpha)
+        beta_h = m.Const(host_cell.beta)
+        gamma_h = m.Const(host_cell.gamma)
+        phi_h = m.Const(host_cell.phi)
+        xi_h = m.Const(host_cell.xi)
+
+        alpha_v = m.Const(virus.alpha)
+        beta_v = m.Const(virus.beta)
+        gamma_v = m.Const(virus.gamma)
+        phi_v = m.Const(virus.phi)
+        xi_v = m.Const(virus.xi)
+
+        SX0 = m.Const(X0)
+        SU0 = m.Const(U0)
+        ST0 = m.Const(T0)
+
+        m.Equation(self.x1_v==self.x0_v.dt())
+        m.Equation(self.x2_v==self.x1_v.dt())
+        m.Equation(self.x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - phi_v*(SX0 / ST0)*self.x1_v - xi_v*SX0*self.x0_v)/(SX0 / (ST0**2)))
+
+        m.Equation(self.x1_h==self.x0_h.dt())
+        m.Equation(self.x2_h==self.x1_h.dt())
+        m.Equation(self.x2_h == ((SU0 / (ST0**2))*alpha_h*u2 + (SU0 / ST0)*beta_h*u1 + gamma_h*SU0*u0 - phi_h*(SX0 / ST0)*self.x1_h - xi_h*SX0*self.x0_h)/(SX0 / (ST0**2)))
+
+        m.options.IMODE = 4 # dynamic simulation
+
+        m.solve(disp=True) # solve

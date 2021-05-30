@@ -19,79 +19,21 @@ T0 = 1e-8
 
 sim_t = np.loadtxt( 'PSOPT/build/t.dat', dtype=np.float128) * T0
 sim_t = sim_t[:-1] # duplicate!
+sim_u0 = np.loadtxt( 'PSOPT/build/u0.dat', dtype=np.float128 )[:-1]
 
-t0 = 0
-tstop = sim_t[-1]
-print(tstop)
-dt = 0.00005e-9
-t = np.linspace(t0, tstop, int(tstop/dt), dtype=np.float128)
+# t0 = 0
+# tstop = sim_t[-1]
+# print(tstop)
+# dt = 0.0005e-9 / T0
+# t = np.linspace(t0, tstop, int(tstop/dt), dtype=np.float128)
 
-# dt = (t[1] - t[0])
-
-sim_values = np.loadtxt( 'PSOPT/build/u0.dat', dtype=np.float128 )[:-1]
-
-
-# flinear = interpolate.interp1d(x, sim_values)
-# fcubic = interpolate.interp1d(sim_t, sim_values, kind="quadratic")
 interpolant = interpolate.InterpolatedUnivariateSpline(sim_t, sim_values, k=5)
-
 control_input = interpolant(np.float64(t))
-host_cell = default_host_cell(t)
-virus = default_virus(t)
+
+host_cell = default_host_cell(sim_t * T0)
+virus = default_virus(sim_t * T0)
 
 
-m = GEKKO() # initialize gekko
-m.options.MAX_ITER = 200
-nt = 3000
-U0 = 1.0
-X0 = 1e-6
-end = tstop / T0
-m.time = np.linspace(0,end,nt)
-
-gekko_input = np.float64(interpolant(np.float64(m.time)*T0))
-u0 = m.Param(value=gekko_input)
-u1_ = np.diff(gekko_input, prepend=gekko_input[0])/((end/nt)/T0)
-u1 = m.Param(value=u1_)
-u2_ = np.diff(u1_, prepend=u1_[0])/((end/nt)/T0)
-u2 = m.Param(value=u2_)
-
-x0_v = m.Var(value=0)
-x1_v = m.Var(value=0)
-x2_v = m.Var(value=0)
-
-x0_h = m.Var(value=0)
-x1_h = m.Var(value=0)
-x2_h = m.Var(value=0)
-
-# t = m.Param(value=m.time)
-
-alpha_h = m.Const(host_cell.alpha)
-beta_h = m.Const(host_cell.beta)
-gamma_h = m.Const(host_cell.gamma)
-phi_h = m.Const(host_cell.phi)
-xi_h = m.Const(host_cell.xi)
-
-alpha_v = m.Const(virus.alpha)
-beta_v = m.Const(virus.beta)
-gamma_v = m.Const(virus.gamma)
-phi_v = m.Const(virus.phi)
-xi_v = m.Const(virus.xi)
-
-SX0 = m.Const(X0)
-SU0 = m.Const(U0)
-ST0 = m.Const(T0)
-
-m.Equation(x1_v==x0_v.dt())
-m.Equation(x2_v==x1_v.dt())
-m.Equation(x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - phi_v*(SX0 / ST0)*x1_v - xi_v*SX0*x0_v)/(SX0 / (ST0**2)))
-
-m.Equation(x1_h==x0_h.dt())
-m.Equation(x2_h==x1_h.dt())
-m.Equation(x2_h == ((SU0 / (ST0**2))*alpha_h*u2 + (SU0 / ST0)*beta_h*u1 + gamma_h*SU0*u0 - phi_h*(SX0 / ST0)*x1_h - xi_h*SX0*x0_h)/(SX0 / (ST0**2)))
-
-m.options.IMODE = 4 # dynamic simulation
-
-m.solve(disp=True) # solve
 
 
 
