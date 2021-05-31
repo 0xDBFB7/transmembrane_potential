@@ -10,8 +10,8 @@ from scipy import interpolate
 
 m = GEKKO() # initialize gekko
 m.options.MAX_ITER = 30
-nt = 1000
-end = 1e-8
+nt = 3000
+end = 1e-6
 
 T0 = 1e-8
 U0 = 1.0
@@ -32,7 +32,7 @@ sim_u0 = np.loadtxt( 'PSOPT/build/u0.dat', dtype=np.float128 )[:-1]
 
 interpolant = interpolate.InterpolatedUnivariateSpline(sim_t, sim_u0, k=5)
 
-# host_cell = 
+# host_cell =
 virus = default_host_cell(t1)
 
 

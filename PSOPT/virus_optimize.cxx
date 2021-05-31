@@ -214,12 +214,17 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
          adouble* xad, int iphase, Workspace* workspace){
 
     //https://mathoverflow.net/a/87902/176668
-    adouble u0   = states[ u0_state ];
-    adouble u1   = states[ u1_state ];
-    adouble u2 = controls[ 0 ];
-    derivatives[ u0_state ] = u1;
-    derivatives[ u1_state ] = u2; //multiply by dt?
+    // adouble u0   = states[ u0_state ];
+    // adouble u1   = states[ u1_state ];
+    // adouble u2 = controls[ 0 ];
+    // derivatives[ u0_state ] = u1;
+    // derivatives[ u1_state ] = u2; //multiply by dt?
+    //
 
+    adouble u2 = controls[ 0 ];
+
+    adouble control_derivative =
+    get_control_derivative(control_derivative, 0, iphase, time, xad);
 
 
     adouble x0_v    = states[ x0_v_state ];
