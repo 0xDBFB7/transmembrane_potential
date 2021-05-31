@@ -14,7 +14,7 @@ const double epsilon_0 = 8.854e-12;
 
 double T0 = 1e-8;
 double U0 = 1.0;
-double X0 = 1e-6;
+double X0 = 1e-10;
 
 
 struct Cell{
@@ -132,8 +132,12 @@ adouble integrand_cost(adouble* states, adouble* controls,
 
     // double rho = virus->R / host->R;
     adouble input = (states[ u0_state ]*states[ u0_state ]) + 1e-6;
+    // double rho = 1;
+    // return -((rho*rho)*(states[ x0_v_state ]*states[ x0_v_state ])/input) + ((states[ x0_h_state ]*states[ x0_h_state ])/input);
+
     double rho = 1;
-    return -((rho*rho)*(states[ x0_v_state ]*states[ x0_v_state ])/input) + ((states[ x0_h_state ]*states[ x0_h_state ])/input);
+    return -((rho*rho)*(states[ x0_v_state ]*states[ x0_v_state ])) + (((states[ x0_h_state ]*states[ x0_h_state ])));
+
 
     // return (states[ x0_h_state ]*states[ x0_h_state ]) / (states[ x0_v_state ]*states[ x0_v_state ]);
 
@@ -294,13 +298,13 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-8 / T0;
+    double end_time = 1e-6 / T0;
 
     double control_bounds = 0.5;
 
-    double output_bounds = 50;
-    double derivative_scaling = 100;
-    double second_derivative_scaling = 100;
+    double output_bounds = 100;
+    double derivative_scaling = 400;
+    double second_derivative_scaling = 400;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling, -output_bounds, -derivative_scaling;
@@ -391,8 +395,8 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 50;
-    algorithm.nlp_tolerance               = 1e-4;
+    algorithm.nlp_iter_max                = 100;
+    // algorithm.nlp_tolerance               = 1e-15;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
@@ -408,7 +412,7 @@ int main(void)
     algorithm.mr_max_iterations = 1;
     // algorithm.mr_M1 = 30;
 
-    algorithm.ode_tolerance             = 1.e-13;//increases mesh refinement depth - relative
+    // algorithm.ode_tolerance             = 1.e-13;//increases mesh refinement depth - relative
 
     // algorithm.nsteps_error_integration  = 20;
     // // algorithm.mr_kappa = 0.4;
