@@ -131,8 +131,9 @@ adouble integrand_cost(adouble* states, adouble* controls,
     // return -(states[ x0_v_state ]*states[ x0_v_state ]) ;
 
     // double rho = virus->R / host->R;
-    double rho = 1.0;
-    return -(rho*rho)*(states[ x0_v_state ]*states[ x0_v_state ]) + (states[ x0_h_state ]*states[ x0_h_state ]);
+    adouble input = (states[ u0_state ]*states[ u0_state ]) + 1e-6;
+    double rho = 1;
+    return -((rho*rho)*(states[ x0_v_state ]*states[ x0_v_state ])/input) + ((states[ x0_h_state ]*states[ x0_h_state ])/input);
 
     // return (states[ x0_h_state ]*states[ x0_h_state ]) / (states[ x0_v_state ]*states[ x0_v_state ]);
 
@@ -297,7 +298,7 @@ int main(void)
 
     double control_bounds = 0.5;
 
-    double output_bounds = 1;
+    double output_bounds = 50;
     double derivative_scaling = 100;
     double second_derivative_scaling = 100;
 
@@ -390,8 +391,8 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 200;
-    algorithm.nlp_tolerance               = 1e-15;
+    algorithm.nlp_iter_max                = 50;
+    algorithm.nlp_tolerance               = 1e-4;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
@@ -407,7 +408,7 @@ int main(void)
     algorithm.mr_max_iterations = 1;
     // algorithm.mr_M1 = 30;
 
-    // algorithm.ode_tolerance             = 1.e-8;//increases mesh refinement depth - relative
+    algorithm.ode_tolerance             = 1.e-13;//increases mesh refinement depth - relative
 
     // algorithm.nsteps_error_integration  = 20;
     // // algorithm.mr_kappa = 0.4;
