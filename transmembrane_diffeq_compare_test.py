@@ -69,7 +69,9 @@ plt.plot(t1, virus.step_response.astype('float32',casting='same_kind'), marker='
 system = signal.lti(np.float64([virus.a_3,virus.a_2,virus.a_1]),np.float64([virus.b_3,virus.b_2,virus.b_1]))
 #output is transfer function times input times R!
 
-_, yout, _ = signal.lsim2(system, U=np.float64(u_step), T=np.float64(t1),)
+
+#odeint did not produce the correct result except when rtol and atol were
+_, yout, _ = signal.lsim2(system, U=np.float64(u_step), T=np.float64(t1),rtol=1e-11,atol=1e-11)
 plt.plot(t1, yout*virus.R, label='lsim2')
 _, yout, _ = signal.lsim(system, U=np.float64(u_step), T=np.float64(t1))
 plt.plot(t1, yout*virus.R, label='lsim')

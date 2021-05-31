@@ -221,7 +221,7 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     adouble x1_v    = states[ x1_v_state ];
 
     derivatives[ x0_v_state ] = x1_v; // m.Equation(x1_v_v==x0_v_v.dt())
-    derivatives[ x1_v_state ] = ((U0 / (T0*T0))*virus->alpha*u2 + (U0 / T0)*virus->beta*u1 + virus->gamma*U0*u0 - virus->phi*(X0 / T0)*x1_v - host->xi*X0*x0_v)/(X0 / (T0*T0));
+    derivatives[ x1_v_state ] = ((U0 / (T0*T0))*virus->alpha*u2 + (U0 / T0)*virus->beta*u1 + virus->gamma*U0*u0 - virus->phi*(X0 / T0)*x1_v - virus->xi*X0*x0_v)/(X0 / (T0*T0));
 
     //
     adouble x0_h    = states[ x0_h_state ];

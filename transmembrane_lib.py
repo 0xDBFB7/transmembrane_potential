@@ -243,7 +243,7 @@ def delta_transmembrane_trapezoid(t, t_start, t_rise, t_fall, duration, cell, E_
 
 
 class gekko_sim_method:
-    def __init__(self, control_input_u0, u1=None, u2=None, N=500, T0=1e-6, X0=1e-6, U0=0):
+    def __init__(self, virus, host_cell, control_input_u0, u1=None, u2=None, N=500, T0=1e-6, X0=1e-6, U0=0):
         # U0 scaling is not really needed
         self.m = GEKKO() # initialize gekko
         self.m.options.MAX_ITER = 200

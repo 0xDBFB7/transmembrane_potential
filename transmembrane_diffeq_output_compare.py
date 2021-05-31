@@ -5,20 +5,21 @@ from gekko import GEKKO
 import numpy as np
 from scipy import signal
 from scipy.ndimage.interpolation import shift
+from scipy import interpolate
 
 
 m = GEKKO() # initialize gekko
 m.options.MAX_ITER = 30
 nt = 1000
-end = 1e-1
+end = 1e-8
 
-T0 = 1.0
+T0 = 1e-8
 U0 = 1.0
 X0 = 1.0
 m.time = np.linspace(0, end/T0, nt, dtype=np.float128)
 t1 = np.linspace(0, end, nt, dtype=np.float128)
 
-virus = Cell(np.float128(0.0001), np.float128(8000), np.float128(0.05), np.float128(300), np.float128(1e-8), np.float128(60), np.float128(20e-6), np.float128(14e-9), t1)
+
 
 x0_v = m.Var(value=0)
 x1_v = m.Var(value=0)
@@ -26,9 +27,19 @@ x2_v = m.Var(value=0)
 
 t = m.Param(value=m.time)
 
-u_step = np.zeros(nt,dtype=np.float128)
-u_step[nt//2:] = 1
-u_step[nt//2] = 0.5 #heaviside step
+sim_t = (np.loadtxt( 'PSOPT/build/t.dat', dtype=np.float128) * T0)[:-1]
+sim_u0 = np.loadtxt( 'PSOPT/build/u0.dat', dtype=np.float128 )[:-1]
+
+interpolant = interpolate.InterpolatedUnivariateSpline(sim_t, sim_u0, k=5)
+
+# host_cell = 
+virus = default_host_cell(t1)
+
+
+
+u_step = interpolant(np.float64(m.time)*T0)
+plt.plot(t1, u_step)
+plt.show()
 u0 = m.Param(value=u_step)
 u1_ = np.diff(u_step, prepend=u_step[0])/((end/nt)/T0)
 u1 = m.Param(value=u1_)
@@ -57,37 +68,23 @@ virus_output = np.array(x0_v.value)
 
 plt.figure(1) # plot results
 integration_method = virus_output*X0 / U0
-# plt.plot(m.time*T0,,'r',marker='o')
 
 plt.plot(m.time*T0,integration_method,'r',marker='o', label="GEKKO integrator")
-# plt.plot(m.time*T0,x1_v.value,'g',marker='o')
 
 convolution_method_output = convolve_output(u_step, virus, end/nt)
 plt.plot(t1, convolution_method_output, label="lib_onvolution_method_output")
 
-# shift(virus.step_response.astype('float32',casting='same_kind'), nt//2,cval=0.0)
-plt.plot(t1, virus.step_response.astype('float32',casting='same_kind'), marker='o', label='lib_step_response')
+
 
 system = signal.lti(np.float64([virus.a_3,virus.a_2,virus.a_1]),np.float64([virus.b_3,virus.b_2,virus.b_1]))
+#output is transfer function times input times R!
 
-# _, yout, _ = signal.lsim2(system, U=np.float64(u_step), T=np.float64(t1)) # this isn't working for some reason
-# plt.plot(t1, yout, label='lsim2')
-# _, yout, _ = signal.lsim(system, U=np.float64(u_step), T=np.float64(t1))
-# plt.plot(t1, yout, label='lsim')
-# _, yout = signal.step(system, T=np.float64(t1))
-# plt.plot(t1+end/2, yout, label='scipy step')
+#odeint did not produce the correct result except when rtol and atol were
+_, yout, _ = signal.lsim2(system, U=np.float64(u_step), T=np.float64(t1),rtol=1e-11,atol=1e-11)
+plt.plot(t1, yout*virus.R, label='lsim2')
+_, yout, _ = signal.lsim(system, U=np.float64(u_step), T=np.float64(t1))
+plt.plot(t1, yout*virus.R, label='lsim')
 
 plt.legend()
 
 plt.show()
-
-#
-#
-#
-# from scipy.integrate import quad
-# def integrand(x, a, b):
-#     return a*x**2 + b
-#
-# a = 2
-# b = 1
-# I = quad(integrand, 0, 1, args=(a,b))
