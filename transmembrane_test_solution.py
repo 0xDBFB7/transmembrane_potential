@@ -22,6 +22,8 @@ t = np.linspace(t0, tstop, int(tstop/dt))
 # dt = (t[1] - t[0])
 
 sim_values = np.loadtxt( 'PSOPT/build/u0.dat' )
+u1 = np.loadtxt( 'PSOPT/build/u1.dat' )
+u2 = np.loadtxt( 'PSOPT/build/u2.dat' )
 
 
 # flinear = interpolate.interp1d(x, sim_values)
@@ -40,7 +42,10 @@ def normalized_gaussian_pulse(t,fwhm):
     sigma = fwhm/2.355
     return np.exp(-((t**2.0)/(2.0*(sigma**2.0))))
 
-
+plt.figure(1)
+plt.plot(sim_t, u1)
+plt.plot(sim_t, u2)
+plt.show()
 plt.figure(1)
 plt.plot(t, ideal_values)
 plt.show()

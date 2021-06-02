@@ -9,13 +9,15 @@ from transmembrane_lib import *
 
 t = np.array([0])
 
-host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-6, 5e-9, t)
+# host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-6, 5e-9, t)
+#
+# virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
 
-virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
-
+host_cell = default_host_cell(t)
+virus = default_virus(t)
 m = GEKKO() # initialize gekko
 m.options.MAX_ITER = 200
-nt = 800
+nt = 1500
 
 # U0 = (1.0/(virus.R*virus.a_2/virus.b_1)) * ST0
 # X0 = (ST0**2.0)
@@ -23,7 +25,7 @@ T0 = 1e-8
 #X0 = 1e-12
 U0 = 1.0
 X0 = 1e-6
-end = 1e-7 / T0
+end = 1e-8 / T0
 
 m.time = np.linspace(0,end,nt)
 
@@ -42,12 +44,12 @@ t = m.Param(value=m.time)
 
 print(end)
 
-u0 = m.Var()
-
+u0 = m.Var(value=1)
 # m.Equation(u0 == 1) #doesn't seem to behave well with this discontinuity.
 # the gaussian pulse below works much better.
 # m.Equation(u0 == m.sin(t)) # for simulation
 # m.Equation(u0 == m.exp(-((((t*T0)-((end*T0))/2.0))**2.0)/(2.0*(((((end*T0)/10.0))**2.0))))) # for simulation
+m.fix(u0,val=0,pos=0)
 
 u1 = m.Var()
 m.Equation(u1==u0.dt())
@@ -81,7 +83,7 @@ m.Equation(x2_h==x1_h.dt())
 m.Equation(x2_h == ((SU0 / (ST0**2))*alpha_h*u2 + (SU0 / ST0)*beta_h*u1 + gamma_h*SU0*u0 - phi_h*(SX0 / ST0)*x1_h - xi_h*SX0*x0_h)/(SX0 / (ST0**2)))
 
 
-m.Obj(m.integral(x0_v - 1) + m.integral(x0_h))
+m.Obj(-m.integral(x0_v*x0_v) + m.integral(x0_h*x0_h))
 
 
 

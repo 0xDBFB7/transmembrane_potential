@@ -14,8 +14,14 @@ const double epsilon_0 = 8.854e-12;
 
 double T0 = 1e-8;
 double U0 = 1.0;
-double X0 = 1e-10;
+double X0 = 1e-6;
 
+Workspace * workspace;
+
+std::vector<double> u0_store;
+std::vector<double> u1_store;
+std::vector<double> u2_store;
+std::vector<double> hit_store;
 
 struct Cell{
     double extracellular_conductivity; // S/m
@@ -103,8 +109,9 @@ void linkages( adouble* linkages, adouble* xad, Workspace* workspace){
 adouble endpoint_cost(adouble* initial_states, adouble* final_states,
                       adouble* parameters,adouble& t0, adouble& tf,
                       adouble* xad, int iphase,Workspace* workspace){
-   // return -(final_states[ x0_v_state ]) + final_states[ x0_h_state ];
-   return 0;
+
+   return -(final_states[ x0_v_state ]*final_states[ x0_v_state ]) + (final_states[ x0_h_state ]*final_states[ x0_h_state ]);
+   // return 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -177,15 +184,15 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
             adouble* parameters,adouble& t0, adouble& tf, adouble* xad,
             int iphase, Workspace* workspace){
 
-    adouble u0 = initial_states[ u0_state ];
-    e[ 0 ] = u0;
+    // adouble u0 = initial_states[ u0_state ];
+    // e[ 0 ] = u0;
     // adouble u1 = initial_states[ u1_state ];
     // e[ 1 ] = u1;
 
-    // adouble controls[1];
-    // get_initial_controls(controls,xad,iphase,workspace);
-    // adouble q4 = controls[ 0 ];
-    // e[ 2 ] = q4;
+    adouble controls[1];
+    get_initial_controls(controls,xad,iphase,workspace);
+    adouble q4 = controls[ 0 ];
+    e[ 0 ] = q4;
 
     adouble x0_v = initial_states[ x0_v_state ];
     e[ 1 ] = x0_v;
@@ -209,9 +216,16 @@ void events(adouble* e, adouble* initial_states, adouble* final_states,
 
 
 
+// std::cout << "{\n";
+// for(int p = 0; p < 100; p++){
+//     std::cout << cj[p] << "\n";
+// }
+// std::cout << "{\n";
+
 void dae(adouble* derivatives, adouble* path, adouble* states,
          adouble* controls, adouble* parameters, adouble& time,
          adouble* xad, int iphase, Workspace* workspace){
+
 
     //https://mathoverflow.net/a/87902/176668
     // adouble u0   = states[ u0_state ];
@@ -220,15 +234,51 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     // derivatives[ u0_state ] = u1;
     // derivatives[ u1_state ] = u2; //multiply by dt?
     //
+    adouble t0, tf;
+    get_times(&t0, &tf, xad, iphase, workspace);
 
-    adouble u2 = controls[ 0 ];
+    adouble* cj = workspace->single_trajectory_tmp;
+    // MatrixXd& control_scaling = workspace->problem->phase[0].scale.controls;
+    // cj[0] = xad[0]/control_scaling(0); //control trajectory array - only valid on order 1
+    get_individual_control_trajectory(cj, 0, 1, xad, workspace); // needs simplifying I think
 
-    adouble control_derivative =
-    get_control_derivative(control_derivative, 0, iphase, time, xad);
+
+    adouble dt = (tf-t0) / workspace->problem->phases(1).nodes(0);
+
+    //this only works with local collocation (trapezoidal, H-S)
+    int cur_idx = time.value() / (dt.value());
+    // std::cout << time.value() << "\n";
+    // std::cout << dt.value() << "\n";
+    // std::cout <<  time.value() / (dt.value()) << "\n";
+    // std::cout <<  cj[cur_idx] << "\n";
+    // std::cout << cur_idx << "\n";
 
 
-    adouble x0_v    = states[ x0_v_state ];
-    adouble x1_v    = states[ x1_v_state ];
+    int h = 1;
+    if ( time == tf ) {
+        h = -1;
+    }
+
+    adouble u0 = controls[0];
+
+    adouble u1 = (-h*cj[cur_idx] + h*cj[cur_idx+h]) / (dt);
+    // std::cout << u1 << "\n";
+
+    // https://en.wikipedia.org/wiki/Finite_difference # Higher-order differences
+    // second-order forward/backward
+    adouble u2 = (cj[cur_idx+2*h] - 2*cj[cur_idx+h] + cj[cur_idx]) / (dt*dt);
+
+    // states[u0_state] = u1; //offset by 1 since
+    // states[u1_state] = u2;
+
+    // derivatives[ u0_state ] = u1;
+    // derivatives[ u1_state ] = u2;
+
+    //from the PSOPT implementation of get_state_derivative,
+
+
+    adouble x0_v = states[ x0_v_state ];
+    adouble x1_v = states[ x1_v_state ];
 
     derivatives[ x0_v_state ] = x1_v; // m.Equation(x1_v_v==x0_v_v.dt())
     derivatives[ x1_v_state ] = ((U0 / (T0*T0))*virus->alpha*u2 + (U0 / T0)*virus->beta*u1 + virus->gamma*U0*u0 - virus->phi*(X0 / T0)*x1_v - virus->xi*X0*x0_v)/(X0 / (T0*T0));
@@ -240,6 +290,12 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     derivatives[ x0_h_state ] = x1_h; // m.Equation(x1_v==x0_v.dt())
     derivatives[ x1_h_state ] = ((U0 / (T0*T0))*host->alpha*u2 + (U0 / T0)*host->beta*u1 + host->gamma*U0*u0 - host->phi*(X0 / T0)*x1_h - host->xi*X0*x0_h)/(X0 / (T0*T0));
 
+    if(!hit_store[cur_idx]){
+        u0_store[cur_idx] = u0.value();
+        u1_store[cur_idx] = u1.value();
+        u2_store[cur_idx] = u2.value();
+        hit_store[cur_idx] = 1;
+    }
 
     // path[ 0 ] = //path constraint unused here
     // path[ 0 ] = (U0 / (T0*T0))*host->alpha * u2 + (U0 / T0)* host->beta * u1 + host->gamma * u0;
@@ -285,11 +341,21 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 6;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 3000;
+    int nnodes    			             = 300;
 
     problem.phases(1).nodes         << nnodes;
 
     psopt_level2_setup(problem, algorithm);
+
+
+
+    //in the twoburn.cxx example, rk4_propagate takes a NULL.
+    workspace = new Workspace{problem, algorithm,solution};
+    hit_store.resize(nnodes);
+
+    u0_store.resize(nnodes);
+    u1_store.resize(nnodes);
+    u2_store.resize(nnodes);
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -303,20 +369,20 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-6 / T0;
+    double end_time = 1e-8 / T0;
 
-    double control_bounds = 0.5;
+    double control_bounds = 100;
 
-    double output_bounds = 100;
-    double derivative_scaling = 400;
-    double second_derivative_scaling = 400;
+    double output_bounds = 4;
+    double derivative_scaling = 40;
+    double second_derivative_scaling = 40;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states << -control_bounds, -derivative_scaling, -output_bounds, -derivative_scaling, -output_bounds, -derivative_scaling;
     problem.phases(1).bounds.upper.states << control_bounds, derivative_scaling, output_bounds, derivative_scaling, output_bounds, derivative_scaling;
 
-    problem.phases(1).bounds.lower.controls << -second_derivative_scaling;
-    problem.phases(1).bounds.upper.controls << second_derivative_scaling;
+    problem.phases(1).bounds.lower.controls << -0.5;
+    problem.phases(1).bounds.upper.controls << 0.5;
 
     // double x0_initial_value = 0.0;
     // double u0_initial_value = 0.0;
@@ -378,7 +444,7 @@ int main(void)
     // MatrixXd u_guess    = RandomGaussian(ncontrols, nnodes);
 
 
-    MatrixXd guess_controls = time_guess.unaryExpr(&normalized_gaussian_pulse);
+    MatrixXd guess_controls = time_guess.unaryExpr(&normalized_gaussian_pulse)*0.5;
     u_guess = guess_controls;
     // MatrixXd guess_controls_d1 = zeros(problem.phases(1).ncontrols,nnodes);
     // MatrixXd guess_controls_d2 = zeros(problem.phases(1).ncontrols,nnodes);
@@ -405,8 +471,8 @@ int main(void)
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
-    algorithm.collocation_method          = "Legendre";
-    // algorithm.collocation_method          = "trapezoidal";
+    // algorithm.collocation_method          = "Legendre";
+    algorithm.collocation_method          = "trapezoidal";
     // algorithm.collocation_method          ="Hermite-Simpson";
     algorithm.mesh_refinement             = "automatic";
 
@@ -460,9 +526,6 @@ int main(void)
         }
 
 
-        //in the twoburn.cxx example, rk4_propagate takes a NULL.
-        unique_ptr<Workspace> workspace_up{ new Workspace{problem, algorithm,solution} };
-
         rk4_propagate( dae,
             test_controls_derivative_2,
             test_time_vector,
@@ -471,7 +534,7 @@ int main(void)
             problem,
             1,
             test_state_trajectory,
-            workspace_up.get());
+            workspace);
 
         plot(test_time_vector,test_state_trajectory.row(x0_v_state),problem.name, "time (s)", "states", "x0_v");
         plot(test_time_vector,test_state_trajectory.row(x0_h_state),problem.name, "time (s)", "states", "x0_h");
@@ -497,9 +560,13 @@ int main(void)
 
     MatrixXd x0_v = states.row(x0_v_state);
     MatrixXd x0_h = states.row(x0_h_state);
-    MatrixXd u0 = states.row(u0_state);
-    MatrixXd u1 = states.row(u1_state);
-    MatrixXd u2 = controls.row(0);
+    // MatrixXd u0 = states.row(u0_state);
+    // MatrixXd u1 = states.row(u1_state);
+    // MatrixXd u2 = controls.row(0);
+
+    MatrixXd u0 = controls.row(0);
+    MatrixXd u1 = states.row(u0_state);
+    MatrixXd u2 = states.row(u1_state);
 
     ////////////////////////////////////////////////////////////////////////////
     ///////////  Save solution data to files if desired ////////////////////////
@@ -523,9 +590,16 @@ int main(void)
     plot(t * T0,x0_v*X0,problem.name, "time (s)", "states", "x0_v");
     plot(t * T0,x0_h*X0,problem.name, "time (s)", "states", "x0_h");
     plot(t * T0,u0,problem.name, "time (s)", "states", "u0");
-    plot(t * T0,u1,problem.name, "time (s)", "states", "u1");
-    plot(t * T0,u2,problem.name, "time (s)", "states", "u2");
+    Eigen::MatrixXd u0_ = Eigen::Map<Eigen::MatrixXd>(u0_store.data(), 1, nnodes);
+    Eigen::MatrixXd u1_ = Eigen::Map<Eigen::MatrixXd>(u1_store.data(), 1, nnodes);
+    Eigen::MatrixXd u2_ = Eigen::Map<Eigen::MatrixXd>(u2_store.data(), 1, nnodes);
+    plot(t * T0,u0_,problem.name, "time (s)", "states", "u0_2");
+
+    plot(t * T0,u1_,problem.name, "time (s)", "states", "u1");
+    plot(t * T0,u2_,problem.name, "time (s)", "states", "u2");
     plot(t * T0,sum,problem.name, "time (s)", "states", "sum");
 
+    Eigen::MatrixXd hit_store_ = Eigen::Map<Eigen::MatrixXd>(hit_store.data(), 1, nnodes);
+    plot(t * T0,hit_store_,problem.name, "time (s)", "states", "sum");
 
 }
