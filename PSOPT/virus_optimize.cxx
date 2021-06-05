@@ -178,7 +178,7 @@ adouble integrand( adouble* states, adouble* controls, adouble* parameters,
 
     // return 0;
 
-    return (controls[ 0 ]*controls[ 0 ]);
+    return (controls[ 0 ]*controls[ 0 ]);//
     // return (U0 / (T0*T0))*host->alpha * u2 + (U0 / T0)* host->beta * u1 + host->gamma * u0;
     //why doesn't this work?
 }
@@ -244,37 +244,59 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     MatrixXd& control_scaling = workspace->problem->phase[0].scale.controls;
     // get_individual_control_trajectory(cj, 0, 1, xad, workspace); // needs simplifying I think
 
+    int nnodes = workspace->problem->phases(1).nodes(0);
 
-    adouble dt = (tf-t0) / workspace->problem->phases(1).nodes(0);
+    adouble dt = (tf-t0) / nnodes;
 
     //this only works with local collocation (trapezoidal, H-S)
-    int cur_idx = time.value() / (dt.value());
+    int ix = time.value() / (dt.value());
     adouble cs = control_scaling(0);
-    // adouble cj_this = xad[cur_idx]/control_scaling(0); //control trajectory array - only valid on order 1
+    // adouble cj_this = xad[ix]/control_scaling(0); //control trajectory array - only valid on order 1
 
     // std::cout << time.value() << "\n";
     // std::cout << dt.value() << "\n";
     // std::cout <<  time.value() / (dt.value()) << "\n";
-    // std::cout <<  cj[cur_idx] << "\n";
-    std::cout << cur_idx << "\n";
-
-
-    int h = 1;
-    if ( time == tf ) {
-        h = -1;
-    }
-    std::cout << h << "\n";
-
+    // std::cout <<  cj[ix] << "\n";
+    // std::cout << ix << "\n";
 
     adouble u0 = controls[0];
 
-    adouble u1 = (-h*(xad[cur_idx]/cs) + h*xad[cur_idx+h]/cs) / (dt);
-    // std::cout << u1 << "\n";
+    adouble u1;
+    adouble u2;
+    //not using the get_interpolated functions because
+    //they require so much computation that the nnodes can't be very high
+    //a tradeoff
 
-    // https://en.wikipedia.org/wiki/Finite_difference # Higher-order differences
-    // second-order forward/backward
-    adouble u2 = (xad[cur_idx+2*h]/cs - 2*xad[cur_idx+h]/cs + xad[cur_idx]/cs) / (dt*dt);
+    if(ix <= 4 || ix >= nnodes-4){
+        //can't do central differences at the edges!
+        int h = 1;
+        if ( ix >= nnodes-2) {
+            h = -1;
+        }
 
+        // first-order forward/backward
+        u1 = (-h*(xad[ix]/cs) + h*xad[ix+h]/cs) / (dt);
+
+        // https://en.wikipedia.org/wiki/Finite_difference # Higher-order differences
+        // second-order forward/backward
+        u2 = (xad[ix+2*h]/cs - 2*xad[ix+h]/cs + xad[ix]/cs) / (dt*dt);
+    }
+    else{
+        // u1 = (xad[ix+1]/cs - (xad[ix-1]/cs)) / (2*dt);
+        //first-order smooth differentiator with N=7
+        u1 = (5*(xad[ix+1]/cs-xad[ix-1]/cs) + 4*(xad[ix+2]/cs-xad[ix-2]/cs)
+             + (xad[ix+3]/cs-xad[ix-3]/cs)) / (32*dt);
+
+        //second-order smooth differentiator with N=7
+        //http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators/
+        //remember to credit!
+        u2 = ((xad[ix+3]/cs + xad[ix-3]/cs)
+            + 2*(xad[ix+2]/cs + xad[ix-2]/cs)
+            - (xad[ix+1]/cs + xad[ix-1]/cs) - 4*xad[ix]/cs)/ (16*(dt*dt));
+
+        //second-order central-difference differentiator
+        // u2 = (xad[ix+1]/cs - 2*xad[ix]/cs + xad[ix-1]/cs) / (dt*dt);
+    }
     // states[u0_state] = u1; //offset by 1 since
     // states[u1_state] = u2;
 
@@ -297,11 +319,11 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
     derivatives[ x0_h_state ] = x1_h; // m.Equation(x1_v==x0_v.dt())
     derivatives[ x1_h_state ] = ((U0 / (T0*T0))*host->alpha*u2 + (U0 / T0)*host->beta*u1 + host->gamma*U0*u0 - host->phi*(X0 / T0)*x1_h - host->xi*X0*x0_h)/(X0 / (T0*T0));
 
-    // if(!hit_store[cur_idx]){
-    u0_store[cur_idx] = u0.value();
-    u1_store[cur_idx] = u1.value();
-    u2_store[cur_idx] = u2.value();
-    // hit_store[cur_idx] = 1;
+    // if(!hit_store[ix]){
+    // u0_store[ix] = u0.value();
+    u1_store[ix] = u1.value();
+    u2_store[ix] = u2.value();
+    // hit_store[ix] = 1;
     // }
 
     // path[ 0 ] = //path constraint unused here
@@ -348,7 +370,7 @@ int main(void)
     problem.phases(1).ncontrols 		= 1;
     problem.phases(1).nevents   		= 6;
     problem.phases(1).npath         = 0;
-    int nnodes    			             = 600;
+    int nnodes    			             = 4000;
 
     problem.phases(1).nodes         << nnodes;
 
@@ -376,28 +398,28 @@ int main(void)
     host = new Cell{0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9};
     host->init();
 
-    double end_time = 1e-8 / T0;
+    double end_time = 5e-10 / T0;
 
     double control_bounds = 100;
 
-    double output_bounds = 10;
-    double derivative_scaling = 10;
-    double second_derivative_scaling = 10;
+    double output_bounds = 1;
+    double derivative_scaling = 1;
+    // double second_derivative_scaling = 0.0001;
 
     //bounds are questionable.
     problem.phases(1).bounds.lower.states <<  -output_bounds, -derivative_scaling, -output_bounds, -derivative_scaling;
     problem.phases(1).bounds.upper.states <<  output_bounds, derivative_scaling, output_bounds, derivative_scaling;
 
-    problem.phases(1).bounds.lower.controls << -0.5;
-    problem.phases(1).bounds.upper.controls << 0.5;
+    problem.phases(1).bounds.lower.controls << -100;
+    problem.phases(1).bounds.upper.controls << 100;
 
     // double x0_initial_value = 0.0;
     // double u0_initial_value = 0.0;
     // double u0_integral_constraint = 0;
     // double u0_integral_constraint = 0;
 
-    problem.phases(1).bounds.lower.events << 0,0,0,0,0,0.001; //2
-    problem.phases(1).bounds.upper.events << 0,0,0,0,0,0.001;
+    problem.phases(1).bounds.lower.events << 0,0,0,0,0,0.1; //2
+    problem.phases(1).bounds.upper.events << 0,0,0,0,0,0.1;
 
     // problem.phases(1).bounds.lower.events << 0,0,0; //2
     // problem.phases(1).bounds.upper.events << 0,0,0;
@@ -473,8 +495,8 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
     ///////////////////  Enter algorithm options  //////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    algorithm.nlp_iter_max                = 1;
-    algorithm.nlp_tolerance               = 1e-15;
+    algorithm.nlp_iter_max                = 100;
+    algorithm.nlp_tolerance               = 1e-8;
     algorithm.nlp_method                  = "IPOPT";
     algorithm.scaling                     = "automatic";
     algorithm.derivatives                 = "automatic";
@@ -506,6 +528,7 @@ int main(void)
 
     //see devel/doc/options.dox
     algorithm.ipopt_linear_solver = "ma57";
+    // algorithm.ipopt_linear_solver = "ma97";
 
     // algorithm.ipopt_solver_GPU = 0;
 
@@ -514,7 +537,7 @@ int main(void)
     ////////////////////////////////////////////////////////////////////////////
 
     if(TEST){
-        int test_nnodes = 200;
+        int test_nnodes = nnodes;
         double test_end_time = 1e-8;
         MatrixXd initial_test_state    =  zeros(problem.phases(1).nstates,1);
         MatrixXd test_parameters    =  ones(0,1);
@@ -597,10 +620,10 @@ int main(void)
     plot(t * T0,x0_v*X0,problem.name, "time (s)", "states", "x0_v");
     plot(t * T0,x0_h*X0,problem.name, "time (s)", "states", "x0_h");
     plot(t * T0,u0,problem.name, "time (s)", "states", "u0");
-    Eigen::MatrixXd u0_ = Eigen::Map<Eigen::MatrixXd>(u0_store.data(), 1, nnodes);
+    // Eigen::MatrixXd u0_ = Eigen::Map<Eigen::MatrixXd>(u0_store.data(), 1, nnodes);
     Eigen::MatrixXd u1_ = Eigen::Map<Eigen::MatrixXd>(u1_store.data(), 1, nnodes);
     Eigen::MatrixXd u2_ = Eigen::Map<Eigen::MatrixXd>(u2_store.data(), 1, nnodes);
-    plot(t * T0,u0_,problem.name, "time (s)", "states", "u0_2");
+    // plot(t * T0,u0_,problem.name, "time (s)", "states", "u0_2");
 
     plot(t * T0,u1_,problem.name, "time (s)", "states", "u1");
     plot(t * T0,u2_,problem.name, "time (s)", "states", "u2");

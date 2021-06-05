@@ -16,7 +16,7 @@ sim_t = np.loadtxt( 'PSOPT/build/t.dat' ) * T0
 
 t0 = 0
 tstop = sim_t[-1]
-dt = 0.0005e-9
+dt = 0.000005e-9
 t = np.linspace(t0, tstop, int(tstop/dt))
 
 # dt = (t[1] - t[0])
