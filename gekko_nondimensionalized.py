@@ -9,29 +9,19 @@ from transmembrane_lib import *
 
 t = np.array([0])
 
-# host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 50e-6, 5e-9, t)
-#
-# virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
-
 host_cell = default_host_cell(t)
 virus = default_virus(t)
 m = GEKKO() # initialize gekko
 m.options.MAX_ITER = 200
 nt = 1500
 
-# U0 = (1.0/(virus.R*virus.a_2/virus.b_1)) * ST0
-# X0 = (ST0**2.0)
 T0 = 1e-8
-#X0 = 1e-12
 U0 = 1.0
 X0 = 1e-6
 end = 1e-8 / T0
 
 m.time = np.linspace(0,end,nt)
 
-# print(ST0, U0, X0)
-
-# Variables
 x0_v = m.Var(value=0)
 x1_v = m.Var(value=0)
 x2_v = m.Var(value=0)
@@ -41,8 +31,6 @@ x1_h = m.Var(value=0)
 x2_h = m.Var(value=0)
 
 t = m.Param(value=m.time)
-
-print(end)
 
 u0 = m.Var(value=1)
 # m.Equation(u0 == 1) #doesn't seem to behave well with this discontinuity.

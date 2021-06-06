@@ -5,6 +5,12 @@ from scipy.integrate import odeint
 host_cell = default_host_cell(np.array([]))
 virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, np.array([]))
 
+'''
+
+Does setting x_v to a smooth ramp (the logistic function in this case) to reduce
+DOF make the problem any easier?
+
+'''
 
 
 print(alpha_h)
