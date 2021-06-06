@@ -5,8 +5,8 @@ from numpy import exp
 from numpy import sqrt
 
 '''
-using the analytic soluion to u' u'' u = 0 provided by sympy_constraint,
-test the output
+using the analytic solution to u'' u' u = 0 provided by sympy_constraint_solutions,
+test the output of the solution
 '''
 
 def analytic_control_solution(t, C1, C2):
@@ -46,15 +46,18 @@ first_derivative = first_derivative[:-1]
 sum = host_cell.alpha * second_derivative + host_cell.beta * first_derivative + host_cell.gamma * control_input
 
 plt.figure(1)
-plt.plot(host_cell.gamma * control_input,marker='o')
+plt.plot(host_cell.gamma * control_input,marker='o', label="")
 plt.figure(2)
 plt.plot(host_cell.beta * first_derivative,marker='o')
 plt.figure(3)
 plt.plot(host_cell.alpha * second_derivative,marker='o')
 plt.figure(4)
 # plt.plot(t, convolve_output(control_input, host_cell, dt))
-plt.plot(t_, sum,marker='o')
+plt.plot(t_, sum,marker='o', label="sum")
+plt.figure(5)
+plt.plot(t, convolve_output(control_input, host_cell, dt),label="output")
 
+plt.legend()
 plt.show()
 
 
