@@ -80,11 +80,16 @@ class Cell:
 
 
 def default_host_cell(t):
+    # if(args):
     return Cell(np.float128(0.3), np.float128(80), np.float128(0.3), np.float128(80), np.float128(1e-7), np.float128(5), np.float128(20e-6), np.float128(5e-9), t)
 
 def default_virus(t):
-    return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(14e-9), t)
-
+    #should be implemented but I haven't the heart to break things right now
+    # if(args):
+    #     t = args[0]
+    # else:
+    #     t = np.array(0)
+    return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(14e-9),t)
 '''
 
 This is a verbatim implementation of
