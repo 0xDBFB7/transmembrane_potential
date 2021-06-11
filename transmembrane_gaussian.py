@@ -35,17 +35,16 @@ input = np.zeros_like(t)
 ideal_values = normalized_gaussian_pulse(t-tstop/2.0 - FWHM,FWHM) - normalized_gaussian_pulse(t-tstop/2.0 + FWHM,FWHM)
 
 plt.style.use('grayscale')
-plt.plot(t, ideal_values, linestyle="solid", label="Input values")
+plt.plot(t/1e-9, ideal_values, linestyle="solid", label="Input values")
 host_output = convolve_output(ideal_values, host_cell, dt) * 1e7
 virus_output = convolve_output(ideal_values, virus, dt) * 1e7
-plt.plot(t, host_output, linestyle="dotted", label="Host cell")
-plt.plot(t, virus_output, linestyle="dashed", label="Virus")
+plt.plot(t/1e-9, host_output, linestyle="dotted", label="Host cell")
+plt.plot(t/1e-9, virus_output, linestyle="dashed", label="Virus")
 
-plt.xlabel("Time (nanoseconds)")
-plt.ylabel("1 V/m input waveform,\nTransmembrane voltage scaled by $10^7$")
+plt.xlabel("Time (nanoseconds)\nY axis: 1 V/m input waveform, membrane $\Delta$V scaled by $10^7$")
 plt.legend()
 
-plt.savefig("plots/gaussian_pulse.png")
+plt.savefig("plots/gaussian_pulse.png", bbox_inches="tight")
 
 
 
