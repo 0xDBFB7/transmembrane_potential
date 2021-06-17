@@ -1,0 +1,24 @@
+-- inspired by  https://math.stackexchange.com/a/29373/827672 --
+use gucharmap to find characters -
+in particular, "COMMON/MATHEMATICAL BOLD or
+-by unicode block
+-seach by subscript and superscript two, three, etc
+
+
+
+export PATH=$PATH:/home/arthurdent/Projects/covidinator/biology/kotnik_transmembrane/hampath/hampath307/bin
+
+terminology (maybe this should go in "conventions"):
+
+
+u(t) -> control
+u*(t) -> optimal control
+J = integral to be minimized
+F -> Functional performance criterion (inside ^ integral)
+
+bang bang doesn't just have to mean 1 and -1, can also mean 1 and 0. 0 is "singular control", [double check!]
+
+beginner Paper by Kelly is a fantastic intro. Single shooting
+
+
+J = ∫ F() dt
