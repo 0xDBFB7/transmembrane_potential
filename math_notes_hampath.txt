@@ -22,3 +22,7 @@ beginner Paper by Kelly is a fantastic intro. Single shooting
 
 
 J = ∫ F() dt
+
+
+https://en.wikipedia.org/wiki/Hamiltonian_(control_theory)
+a great overview of the

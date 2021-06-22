@@ -9,12 +9,23 @@ from scipy.constants import epsilon_0, mu_0
 from scipy.signal import convolve
 from pytexit import py2tex
 
-def ustep(v):
+# def ustep(v):
+#
+#     # note that the definition of the discrete unit step can be the cause of differences
+#     # in outputs between solvers.
+#     # some use 0.5, some 1.
+#     return heaviside(v, 0.5)
 
-    # note that the definition of the discrete unit step can be the cause of differences
-    # in outputs between solvers.
-    # some use 0.5, some 1.
-    return heaviside(v, 0.5)
+def safe_ustep(output, xes, h0=0.5):
+    # multiplying inf * 0 causes undef behav. This avoids that issue.
+    # also, more compatible with autograd.
+    if(x > 0):
+        return output
+    if(x == 0):
+        return h0
+    if(x < 0):
+        return 0
+
 
 @dataclass
 class Cell:
@@ -147,6 +158,8 @@ def tau_2_f(b_1, b_2, b_3):
     return (2.0 * b_3) / (b_2 + np.sqrt(((b_2)**2.0) - ((4.0*b_1) * b_3)))
 
 
+
+
 def delta_transmembrane_unit_ramp(t, cell):
     # a9d, Kotnik 1998, unit ramp function response
     delta_phi_m_t = (cell.a_1 / cell.b_1) * t * ustep(t)
@@ -173,16 +186,18 @@ def delta_transmembrane_unit_step(t, cell):
     # Kotnik variously use "step function" or the "unit step". I think these have different definitions?
 
     # a9d, Kotnik 1998, unit step function response
-    delta_phi_m_t = (cell.a_3 / cell.b_3) * ustep(t)
+    delta_phi_m_t = safe_ustep((cell.a_3 / cell.b_3),t)
     phisub1 = (cell.a_1 / (2.0 * cell.b_1)) - (cell.a_3 / (2.0 * cell.b_3))
     phisub2 = ((cell.a_1 * cell.b_2) /  (2.0 * cell.b_1)) - cell.a_2 + ((cell.a_3 * cell.b_2) / (2.0 * cell.b_3))
     phisub3 = np.sqrt(cell.b_2**2.0 - 4.0 * cell.b_1 * cell.b_3)
 
-    delta_phi_m_t += (phisub1 + (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_1)) * ustep(t)
-    delta_phi_m_t += (phisub1 - (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_2)) * ustep(t) # glitch?
+    delta_phi_m_t += safe_ustep((phisub1 + (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_1)), t)
+    delta_phi_m_t += safe_ustep((phisub1 - (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_2)), t)
     delta_phi_m_t *= cell.R
+
     # unlike in symbolic math, the unit step doesn't actually prevent errors from occuring in the np.exp step.
-    delta_phi_m_t = np.nan_to_num(delta_phi_m_t)
+    # fixed by safe_ustep
+    # delta_phi_m_t = np.nan_to_num(delta_phi_m_t)
     # if(np.isscalar(t)):
     #     if(t < 0):
     #         delta_phi_m_t == 0
