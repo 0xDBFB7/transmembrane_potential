@@ -1,30 +1,33 @@
 from dataclasses import dataclass
 from math import pi, sqrt, e, log, isclose, exp
 # from scipy.optimize import curve_fit
-import numpy as np
+try:
+    import autograd.numpy as np  # Thinly-wrapped numpy
+except:
+    import numpy as np
 from numpy import heaviside
-# import matplotlib.pyplot as plt
 # import h5py
 from scipy.constants import epsilon_0, mu_0
 from scipy.signal import convolve
 from pytexit import py2tex
 
-# def ustep(v):
-#
-#     # note that the definition of the discrete unit step can be the cause of differences
-#     # in outputs between solvers.
-#     # some use 0.5, some 1.
-#     return heaviside(v, 0.5)
+def ustep(v):
 
-def safe_ustep(output, xes, h0=0.5):
-    # multiplying inf * 0 causes undef behav. This avoids that issue.
-    # also, more compatible with autograd.
-    if(x > 0):
-        return output
-    if(x == 0):
-        return h0
-    if(x < 0):
-        return 0
+    # note that the definition of the discrete unit step can be the cause of differences
+    # in outputs between solvers.
+    # some use 0.5, some 1.
+    return heaviside(v, 0.5)
+
+# def safe_ustep(output, xes, h0=0.5):
+#     # multiplying inf * 0 causes undef behav. This avoids that issue.
+#     # also, more compatible with autograd.
+#     return np.nan_to_num(output*heaviside(xes, 0.5))
+#     # if(x > 0):
+#     #     return output
+#     # if(x == 0):
+#     #     return h0
+#     # if(x < 0):
+#     #     return 0
 
 
 @dataclass
@@ -101,6 +104,7 @@ def default_virus(t):
     # else:
     #     t = np.array(0)
     return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(14e-9),t)
+    
 '''
 
 This is a verbatim implementation of
@@ -186,25 +190,27 @@ def delta_transmembrane_unit_step(t, cell):
     # Kotnik variously use "step function" or the "unit step". I think these have different definitions?
 
     # a9d, Kotnik 1998, unit step function response
-    delta_phi_m_t = safe_ustep((cell.a_3 / cell.b_3),t)
+    delta_phi_m_t = (cell.a_3 / cell.b_3)
     phisub1 = (cell.a_1 / (2.0 * cell.b_1)) - (cell.a_3 / (2.0 * cell.b_3))
     phisub2 = ((cell.a_1 * cell.b_2) /  (2.0 * cell.b_1)) - cell.a_2 + ((cell.a_3 * cell.b_2) / (2.0 * cell.b_3))
     phisub3 = np.sqrt(cell.b_2**2.0 - 4.0 * cell.b_1 * cell.b_3)
 
-    delta_phi_m_t += safe_ustep((phisub1 + (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_1)), t)
-    delta_phi_m_t += safe_ustep((phisub1 - (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_2)), t)
+    delta_phi_m_t += (phisub1 + (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_1))
+    delta_phi_m_t += (phisub1 - (phisub2/phisub3)) * (1.0 - np.exp(-t/cell.tau_2))
     delta_phi_m_t *= cell.R
 
     # unlike in symbolic math, the unit step doesn't actually prevent errors from occuring in the np.exp step.
     # fixed by safe_ustep
-    # delta_phi_m_t = np.nan_to_num(delta_phi_m_t)
+    delta_phi_m_t = np.nan_to_num(delta_phi_m_t)
     # if(np.isscalar(t)):
     #     if(t < 0):
     #         delta_phi_m_t == 0
 
     # if(np.isscalar(t)):
 
-    return delta_phi_m_t
+    #beware: unit step replaced with (t > 0),
+
+    return delta_phi_m_t * (t > 0)
 
 
 def convolve_output(input, cell, dt):
