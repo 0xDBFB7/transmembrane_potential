@@ -1,24 +1,47 @@
 
 '''
 
+Niemann DD. Determination of bang-bang controls for large nonlinear systems n.d.:97.
+
+Uses an endpoint cost by default non-lagrange (or continuous integr
+
+"Initially, one may be tempted to simply sort the switching times
+into ascending order before integration. However, the sorting process
+destroys the geometric concept of stepping in the negative gradient
+direction, and the single variable minimization becomes a rather random process"
+
+#Denote the desired final state vector as Xd.
+#A cost function is used to measure the distance between the actual final state X(t) and the Xd
+#By determining the partial derivatives of the cost with respect
+to the switching times, the switching times can be adjusted to minimize
+the state error at the final time.
+
+# 2.11
 
 
 
+In Chapter Two, the switching- time vector T and the control vector S were introduced.
+Each element of T contains a switching time with the first switch in t1 the second switch in t2, and so on.
+The last element of T contains the final time tf. The corresponding
+elements of the vector S contain the integer values of the control which
+is to be switched. A zero in the final element of S is used to designate the final time.
 
 '''
 
-#
-# from autograd.scipy.integrate import odeint
+
+from autograd.scipy.integrate import odeint
 # import autograd.numpy as np  # Thinly-wrapped numpy
-# from autograd import grad
 import numpy as np
 #maybe jax someday?
 
+from autograd import grad    # The only autograd function you may ever need
 import sys
 sys.path.append('../')
 from transmembrane_lib import *
 import matplotlib.pyplot as plt
 
+
+# actually, we don't even need to integrate - just a sum of step functions will do!
 
 t_end = 5e-10
 num_time_nodes = 5000
