@@ -10,7 +10,6 @@ export PATH=$PATH:/home/arthurdent/Projects/covidinator/biology/kotnik_transmemb
 
 terminology (maybe this should go in "conventions"):
 
-
 u(t) -> control
 u*(t) -> optimal control
 J = integral to be minimized
@@ -25,4 +24,4 @@ J = ∫ F() dt
 
 
 https://en.wikipedia.org/wiki/Hamiltonian_(control_theory)
-a great overview of the
+a great overview of the control theoretic hamiltonian

@@ -26,8 +26,6 @@ The computational cost is thus significantly reduced."
 
 x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - phi_v*(SX0 / ST0)*x1_v - xi_v*SX0*x0_v)/(SX0 / (ST0**2)))
 
-
-
 '''
 
 
@@ -42,8 +40,6 @@ sys.path.append('../')
 from transmembrane_lib import *
 import matplotlib.pyplot as plt
 
-
-# actually, we don't even need to integrate - just a sum of step functions will do!
 
 t_end = 5e-10
 num_time_nodes = 5000
