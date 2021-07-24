@@ -1,0 +1,33 @@
+
+
+
+x2_v = 𝛂ᵥ*u2 + 𝛃ᵥ*u1 + 𝛄ᵥ*u0 - 𝛙ᵥ*x1_v - 𝛏ᵥ*x0_v
+
+
+
+
+d²xᵥ/dt² = 𝛂*d²u/dt² + 𝛃*du/dt + 𝛄*u - 𝛙*dxᵥ/dt - 𝛏*xᵥ
+𝛏*xᵥ = 𝛂*d²u/dt² + 𝛃*du/dt + 𝛄*u - 𝛙*dxᵥ/dt - d²xᵥ/dt²
+
+
+
+
+
+We approximate xᵥ by Nagurka, Eq. 13:
+
+xᵥ(t) = P(t) + λ(t)
+
+P(t) = p₀ + p₁ + p₂ + p₃ + p₄
+
+single term case...
+xᵥ(t) = P(t) + a sin(t) + b cos(t)
+dxᵥ/dt = a cos(t) + b sin(t)
+d²xᵥ/dt² = a sin(t) + b cos(t)
+
+𝛂*d²u/dt² + 𝛃*du/dt + 𝛄*u = (a sin(t) + b cos(t)) + 𝛙*(a cos(t) + b sin(t)) + 𝛏*(a sin(t) + b cos(t))
+
+
+
+₀₁₂₃₄₅
+
+²³
