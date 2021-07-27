@@ -26,6 +26,14 @@ d²xᵥ/dt² = a sin(t) + b cos(t)
 
 𝛂*d²u/dt² + 𝛃*du/dt + 𝛄*u = (a sin(t) + b cos(t)) + 𝛙*(a cos(t) + b sin(t)) + 𝛏*(a sin(t) + b cos(t))
 
+(the lhs can be simplified).
+
+now that's nothing more than the harmonic oscillator
+
+
+this is a nonhomogenous differential equation
+
+
 
 
 ₀₁₂₃₄₅
