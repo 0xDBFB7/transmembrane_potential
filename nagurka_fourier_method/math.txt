@@ -1,4 +1,14 @@
 
+The fourier series and the polynomial define one time-course of one of the x outputs.
+
+We want to obtain the u control input (and the other x output, of course), and then
+the cost function J.
+Unfortunately, both sympy and maxima choke on solving the DE for U after the fourier series,
+even though this DE really should be analytic.
+
+One could easily numerically integrate the problem, as discussed in one of Nagurka and Yen's examples
+- but that's boring and kinda defeats the purpose of using this high-accuracy analytic method.
+
 
 
 x2_v = 𝛂ᵥ*u2 + 𝛃ᵥ*u1 + 𝛄ᵥ*u0 - 𝛙ᵥ*x1_v - 𝛏ᵥ*x0_v
@@ -10,32 +20,94 @@ d²xᵥ/dt² = 𝛂*d²u/dt² + 𝛃*du/dt + 𝛄*u - 𝛙*dxᵥ/dt - 𝛏*xᵥ
 𝛏*xᵥ = 𝛂*d²u/dt² + 𝛃*du/dt + 𝛄*u - 𝛙*dxᵥ/dt - d²xᵥ/dt²
 
 
-
+𝛏xᵥ = 𝛂ü + 𝛃u̇ + 𝛄u - 𝛙ẋᵥ - ẍᵥ
 
 
 We approximate xᵥ by Nagurka, Eq. 13:
 
 xᵥ(t) = P(t) + λ(t)
 
-P(t) = p₀ + p₁ + p₂ + p₃ + p₄
+    5
+P = ∑ p_j
+   j=0
 
-single term case...
-xᵥ(t) = P(t) + a sin(t) + b cos(t)
-dxᵥ/dt = a cos(t) + b sin(t)
-d²xᵥ/dt² = a sin(t) + b cos(t)
+    M
+λ = ∑ a cos + b sin
+   m=1
 
-𝛂*d²u/dt² + 𝛃*du/dt + 𝛄*u = (a sin(t) + b cos(t)) + 𝛙*(a cos(t) + b sin(t)) + 𝛏*(a sin(t) + b cos(t))
-
-(the lhs can be simplified).
-
-now that's nothing more than the harmonic oscillator
+there is a subtlty here in that the derivative of a fourier series may not equal the term-by-term derivative.
+https://math.stackexchange.com/questions/1754033/integration-and-differentiation-of-fourier-series
+this is explicitly addressed in nagurka. this might be why the CASes choked - the terms that
+ensure differentiability weren't known to it
 
 
-this is a nonhomogenous differential equation
+𝛂ü + 𝛃u̇ + 𝛄u = 𝛏(P + λ)  + 𝛙ẋᵥ + ẍᵥ
 
+
+now that's nothing more than the harmonic oscillator.
+
+http://web.uvic.ca/~monahana/ode_1_flowchart.pdf
+http://web.uvic.ca/~monahana/ode_2_flowchart.pdf
+a brilliant ode flowchart!
+
+this is a nonhomogenous differential equation.
+Is the ODE linear? Yes.
+
+𝛂ü + 𝛃u̇ + 𝛄u = 𝛏(P + λ) + 𝛙d(P + λ)/dt + d²(P + λ)/dt²
+
+let us put it in standard form:
+
+ü + 𝛃/𝛂u̇ + 𝛄/𝛂u = (𝛏/𝛂)(P + λ) + (𝛙/𝛂)d(P + λ)/dt + (1/𝛂)d²(P + λ)/dt²
+
+
+The ODE is non-homogeneous.
+
+"The solution is of form y(x) = yp(x) + yc(x) where yp(x) is a particular solution and yc(x) is
+the solution of the associated homogeneous ODE."
+
+"Find yc(x) by going back to Step 1." Homogeneous ODE:
+
+ü + 𝛃/𝛂u̇ + 𝛄/𝛂u = 0
+
+define two new constants,
+
+A = 𝛃/𝛂
+B = 𝛄/𝛂
+
+typical values for
+𝛂=1.3e-08
+𝛃=5.7
+𝛄=4e7
+
+A² - 4B = 1e17
+therefore, case A:
+
+yc(t) = c₁e^(m₁t) + c₂e^(m₂t)
+
+
+(I knew I would mess up beta and B, man, lack of CAS is hurting).
+
+"Is g(x) a sum/product of constants, polynomials, exponentials, and sine/cosine
+functions?" Yes.
+"Can find yp(x) using method of undetermined coefficients. Let the functions hi(x) be made
+up of the functions in g(x) and their derivatives.
+Do any of the hi(x) belong to the fundamental set y1(x), y2(x) of the homogeneous ODE?"
+
+https://tutorial.math.lamar.edu/classes/de/undeterminedcoefficients.aspx
+
+
+
+
+
+
+
+To double-check, we can numerically integrate.
 
 
 
 ₀₁₂₃₄₅
 
 ²³
+
+combining derivative
+combining third derivative

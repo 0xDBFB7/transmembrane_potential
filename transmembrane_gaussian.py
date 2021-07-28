@@ -16,6 +16,8 @@ t = np.linspace(t0, tstop, int(tstop/dt))
 host_cell = default_host_cell(t)
 virus = default_virus(t)
 
+print(virus.__dict__)
+
 print(epsilon_0)
 
 print(f"Host cell {host_cell.tau_1}, {host_cell.tau_2}")

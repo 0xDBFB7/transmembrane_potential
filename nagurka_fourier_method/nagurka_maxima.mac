@@ -24,9 +24,9 @@ assume(cos(a) >= 0);
 */
 assume(M > 0);
 
-L_: L = sum(a[m]*cos(2*m*%pi*t/t_f), m, 1, M) + sum(b[m]*sin(2*m*%pi*t/t_f), m, 1, M);
+L_: L = sum(a[m]*cos(2*m*%pi*t/t_f), m, 1, 2) + sum(b[m]*sin(2*m*%pi*t/t_f), m, 1, 2);
 
-X_: X = (L);
+X_: X = (P + L);
 diffeq: X + diff(X,t, 1) + diff(X,t, 2) = alpha_v*'diff(u,t, 2) + beta_v*'diff(u,t, 1) + gamma_v*u;
 
 diffeq: subst ([X_], diffeq);
@@ -38,6 +38,7 @@ assume(4*alpha_v*gamma_v-beta_v^2 > 0);
 I don't know enough about DEs,
 I think this means something about placements of poles and zeros in positive
 
+I want to try out fricas (maybe via Sage?), it's supposed to be great
 */
 
 display2d: false;
@@ -48,6 +49,7 @@ load(noninteractive);
 sol: ode2(diffeq, u, t);
 
 /*ps: ic2(sol, x=0, u=0, 'diff(u, x)=0);*/
+
 
 
 
