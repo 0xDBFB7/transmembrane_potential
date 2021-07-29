@@ -7,7 +7,7 @@ wxMaxima is pretty cool
 actually, friCAS scores higher than Maxima in testing. definitely worth a try.
 https://www.12000.org/my_notes/CAS_integration_tests/reports/rubi_4_16_1_graded/inch1.htm#x2-10001
 
-
+at this time, Sage doesn't seem to provide much more than a wrapper.
 
 */
 

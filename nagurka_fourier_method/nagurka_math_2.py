@@ -1,7 +1,6 @@
-
-from joblib import Memory
-cachedir = 'cache/'
-mem = Memory(cachedir)
+import dill
+from pytexit import py2tex
+import pickle
 
 import sys
 sys.path.append('../')
@@ -14,7 +13,7 @@ from sympy.abc import t
 from sympy import Array, Sum, Indexed, IndexedBase, Idx
 init_printing()
 from sympy.abc import t # x is the independent variable
-from sympy import Function, dsolve, Eq, Derivative, sin, cos, symbols, exp, pi, diff
+from sympy import Function, dsolve, Eq, Derivative, sin, cos, symbols, exp, pi, diff, Poly
 
 
 t, 𝛂, 𝛃, 𝛄, 𝛙, 𝛏,C1,C2,M = symbols("t alpha beta gamma phi xi C1 C2  M")
@@ -37,11 +36,13 @@ b = IndexedBase('b')
 sympy.pprint(λ)
 sympy.pprint(diff(λ, t))
 sympy.pprint(diff(λ, t, t))
-print(λ)
-print(diff(λ, t))
-print(diff(λ, t, t))
 
 X = P + λ
+
+sympy.pprint(X )
+sympy.pprint(diff(X , t))
+sympy.pprint(diff(X , t, t))
+
 
 
 '''
@@ -135,6 +136,8 @@ yc(t) = c₁e^(m₁t) + c₂e^(m₂t)
 
 (I knew I would mess up beta and B, man, lack of CAS is hurting).
 
+(spoiler alert: We actually didn't need yc at all, it seems)
+
 "Is g(x) a sum/product of constants, polynomials, exponentials, and sine/cosine
 functions?" Yes.
 "Can find yp(x) using method of undetermined coefficients. Let the functions hi(x) be made
@@ -150,48 +153,92 @@ https://tutorial.math.lamar.edu/classes/de/undeterminedcoefficients.aspx
 # our guess at a solution with undetermined coefficients
 Aun = IndexedBase('Aun') #undetermined
 Bun = IndexedBase('Bun')
-Pun = IndexedBase('Cun')
+Cun = IndexedBase('Cun')
 
 PU = Function('PU')
-PU = Sum(Pun[j]*p[j]*t**j,(j,0,5))
+PU = Sum(Cun[j]*p[j]*t**j,(j,0,5))
 λU = Function('lamda')
 
 λU = Sum(Aun[m] * a[m] * cos(2 * m * pi * t / t_f), (m, 1, M)) + Sum(Bun[m] * b[m] * sin(2 * m * pi * t / t_f), (m, 1, M))
 
 U = PU + λU
 
-simplify = mem.cache(sympy.simplify) # this simplification takes like 5 minutes. memoization time!
+# sympy.pprint(U )
+# sympy.pprint(diff(U , t))
+sympy.pprint(diff(X , t, t))
+sympy.pprint(diff(U , t, t))
 
-@mem.cache
-def eq1(𝛂, 𝛃, U, X, t):
-    RHS = sympy.simplify(diff(U,t,t) + (𝛃/𝛂) * diff(U,t) + (𝛄/𝛂)*U)
-    LHS = sympy.simplify((𝛏/𝛂)*X + (𝛙/𝛂)*diff(X,t) + (1/𝛂)*diff(X,t,t))
+print(sympy.latex(diff(X , t, t)))
+print(sympy.latex(diff(U , t, t)))
 
-    return RHS, LHS
+#
+# filename = 'cache/cache.pkl'
+# try:
+#     dill.load_session(filename)
+# except:
+#     RHS = sympy.simplify(diff(U,t,t) + (𝛃/𝛂) * diff(U,t) + (𝛄/𝛂)*U)
+#     LHS = sympy.simplify((𝛏/𝛂)*X + (𝛙/𝛂)*diff(X,t) + (1/𝛂)*diff(X,t,t))
+#
+#     dill.dump_session(filename)
 
-RHS, LHS = eq1(𝛂, 𝛃, U, X, t)
 
 # Example 4,
 # https://tutorial.math.lamar.edu/classes/de/undeterminedcoefficients.aspx
 # "Now, as we’ve done in the previous examples we will need the coefficients of
 # the terms on both sides of the equal sign to be the same so set coefficients equal and solve."
 
-sympy.pprint(RHS)
-sympy.pprint(LHS)
+# sympy.pprint(RHS)
+# sympy.pprint(LHS)
 
-print(sympy.latex(Eq(RHS,LHS), mode="equation"))
-print(RHS.args)
+# print(sympy.latex(Eq(RHS,LHS), mode="equation"))
+# sympy.pprint(RHS.args[0])
+# sympy.pprint(LHS.args[0])
+
+#https://stackoverflow.com/questions/26927481/finding-coefficient-of-a-specific-term-using-sympy
+
+# print(RHS.coeff(t))
+# print(LHS.coeff(t))
+
+# print(Poly(RHS, t).all_coeffs())
 
 '''
 
-To double-check, we can numerically integrate.
+
+
+So both sides are exactly the same barring the (𝛏/𝛂) and the undetermined coefficients.
+maybe this is simpler than I thought (specifically because we're lucky enough to have the exact same form
+on the input and output, just with different coefficients)
+
+diff(U,t,t) + (𝛃/𝛂) * diff(U,t) + (𝛄/𝛂)*U = (𝛏/𝛂)*X + (𝛙/𝛂)*diff(X,t) + (1/𝛂)*diff(X,t,t)
+
+do the undetermined coefficients have to be inside the sum (i.e. with an index?)
+https://tutorial.math.lamar.edu/classes/calci/summationnotation.aspx
+I think they can probably be outside.
+
+(re-ordered RHS for convenience)
+Q*diff(X,t,t) + (𝛃/𝛂)*R*diff(X,t) + (𝛄/𝛂)*S*X = (1/𝛂)*diff(X,t,t) + (𝛙/𝛂)*diff(X,t) + (𝛏/𝛂)*X
+(...is that right?)
+
+Q = (1/𝛂)
+
+(𝛃/𝛂)*R = (𝛙/𝛂)
+R = (𝛙/𝛂)/(𝛃/𝛂)
+
+S = (𝛏/𝛂)/(𝛄/𝛂)
+
+'''
+
+
+
+'''
+
 
 
 
 ₀₁₂₃₄₅
 
 ²³
-
-combining derivative
+cool unicode combining derivative,
 combining third derivative
+a bit small though
 '''

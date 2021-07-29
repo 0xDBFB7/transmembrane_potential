@@ -41,9 +41,9 @@ from transmembrane_lib import *
 import matplotlib.pyplot as plt
 
 
-t_end = 5e-10
-num_time_nodes = 5000
-t = np.linspace(0, t_end, num_time_nodes, dtype=np.float128) # integration span time vector
+# t_end = 5e-10
+# num_time_nodes = 5000
+# t = np.linspace(0, t_end, num_time_nodes, dtype=np.float128) # integration span time vector
 
 virus = default_virus(t)
 host_cell = default_host_cell(t)
@@ -52,7 +52,8 @@ host_cell = default_host_cell(t)
 
 
 
+
 # Tmin = minimize(cost_function, T, method="Powell", options={"disp":True}, callback=diagnostics, bounds=bounds, tol=1e-12).x
-tubthumper = basinhopping
-minimizer_kwargs = dict(method="Powell", options={"disp":True}, bounds=bounds, callback=diagnostics,  tol=1e-12)
-Tmin = tubthumper(cost_function, T, stepsize=t_end/10, minimizer_kwargs=minimizer_kwargs, disp=True, niter_success=2)["x"]
+# tubthumper = basinhopping
+# minimizer_kwargs = dict(method="Powell", options={"disp":True}, bounds=bounds, callback=diagnostics,  tol=1e-12)
+# Tmin = tubthumper(cost_function, T, stepsize=t_end/10, minimizer_kwargs=minimizer_kwargs, disp=True, niter_success=2)["x"]
