@@ -170,6 +170,11 @@ sympy.pprint(diff(U , t, t))
 
 print(sympy.latex(diff(X , t, t)))
 print(sympy.latex(diff(U , t, t)))
+print()
+print(X)
+
+print(diff(X , t))
+print(diff(X , t, t))
 
 #
 # filename = 'cache/cache.pkl'
@@ -241,4 +246,6 @@ S = (𝛏/𝛂)/(𝛄/𝛂)
 cool unicode combining derivative,
 combining third derivative
 a bit small though
+
+https://github.com/kragen/xcompose - maths-base
 '''
