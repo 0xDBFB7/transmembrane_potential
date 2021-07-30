@@ -168,13 +168,16 @@ U = PU + λU
 sympy.pprint(diff(X , t, t))
 sympy.pprint(diff(U , t, t))
 
+print(sympy.latex(X))
+print(sympy.latex(diff(X, t)))
 print(sympy.latex(diff(X , t, t)))
-print(sympy.latex(diff(U , t, t)))
-print()
-print(X)
+# print(sympy.latex(diff(U , t, t)))
+# print()
+# print(X)
+# print(diff(X , t))
+# print(diff(X , t, t))
 
-print(diff(X , t))
-print(diff(X , t, t))
+# sympy.pprint(sympy.integrate(X, t))
 
 #
 # filename = 'cache/cache.pkl'
@@ -230,6 +233,20 @@ Q = (1/𝛂)
 R = (𝛙/𝛂)/(𝛃/𝛂)
 
 S = (𝛏/𝛂)/(𝛄/𝛂)
+
+
+wait, but what is X?
+no, this is all wrong.
+'''
+
+
+
+
+
+
+'''
+integration:
+https://math.stackexchange.com/questions/188567/when-can-a-series-be-integrated-term-by-term
 
 '''
 

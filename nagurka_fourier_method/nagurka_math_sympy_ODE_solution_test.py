@@ -46,7 +46,7 @@ sympy.pprint(P)
 
 lamda = a_1 * cos(2 * 1 * pi * t / t_f) + b_1 * sin(2 * 1 * pi * t / t_f)
 
-rhs = (P + lamda) + Derivative(P + lamda, t) + Derivative(P + lamda, t, t)
+rhs = (lamda) + Derivative(lamda, t) + Derivative(lamda, t, t)
 # rhs = P + lamda
 
 lhs = (alpha_v*Derivative(u(t),t,t) + beta_v*Derivative(u(t),t) + gamma_v*u(t))
