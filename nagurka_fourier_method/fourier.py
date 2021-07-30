@@ -8,8 +8,8 @@ from naguka_fourier_lib import *
 t_f = 1e-6
 
 
-a = np.array([0.0])
-b = np.array([0.1])
+a = np.array([1.0])
+b = np.array([0.0])
 
 M = a.shape[0]
 
@@ -18,8 +18,8 @@ t = np.linspace(0, t_f, 100)
 virus = default_virus(t)
 host_cell = default_host_cell(t)
 
-X_t0 = 0.0
-X_tf = 0.0
+X_t0 = 1.0
+X_tf = 2.0
 d_X_t0 = 0.0
 d_X_tf = 0.0
 d_d_X_t0 = 0.0

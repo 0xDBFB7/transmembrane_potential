@@ -32,6 +32,7 @@ x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - 
 from autograd.scipy.integrate import odeint
 # import autograd.numpy as np  # Thinly-wrapped numpy
 import numpy as np
+import scipy.integrate as integrate
 #maybe jax someday?
 
 # from autograd import grad    # The only autograd function you may ever need
@@ -41,6 +42,7 @@ sys.path.append('../')
 from transmembrane_lib import *
 
 import matplotlib.pyplot as plt
+
 
 
 
@@ -67,17 +69,19 @@ def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
     p = np.zeros((6))
 
     p[0] = X_t0 - np.sum(a)
+    #
     p[1] = d_X_t0 - (2 * pi / t_f) * np.sum(m * b)
+    #
     p[2] = (d_d_X_t0/2.0) + (2 * (pi**2.0) / (t_f**2.0)) * np.sum((m**2.0) * a)
-
+    #
     p[3] = ((10.0*(X_tf - X_t0)) + (20.0*pi*np.sum(m * b)) - 4.0*(pi**2.0)*np.sum((m**2.0)*a))/(t_f**3.0)
     p[3] += -(6*d_X_t0 + 4*d_X_tf)/(t_f**2.0)
     p[3] += -((3.0/2.0)*d_d_X_t0 - (0.5*d_d_X_tf))/(t_f)
-
+    #
     p[4] = (15*(X_t0 - X_tf) - (30*pi*np.sum(m*b))+(2*(pi**2.0)*np.sum((m**2.0)*a)))/(t_f**4.0)
     p[4] += (8.0*d_X_t0 + 7*d_X_tf)/(t_f**3.0)
     p[4] += (3/2.0*d_d_X_t0 - d_d_X_tf)/(t_f**2.0)
-
+    #
     p[5] = (6.0*(X_tf-X_t0) + (4.0*pi*np.sum(m*b)))/(t_f**5.0)
     p[5] += -(3*d_X_t0 + 3*d_X_tf)/(t_f**4.0) - 0.5*(d_d_X_t0 - d_d_X_tf)/(t_f**3.0)
 
@@ -100,8 +104,9 @@ def d_d_P_(t, p, M):
     P = t*0.0
     for j in range(0,6): #inclusive?
         P += j*(t**j)*(j - 1)*p[j]
-
-    P /= (t**2)
+    #weird division returning nan here - there's no value of the second derivative at 0? that
+    # doesn't seem right...
+    P = np.divide(P, (t**2), out=np.zeros_like(P), where=(t**2)!=0)
     return P
 
 def L_(t,a,b,M,t_f): # lambda
@@ -115,9 +120,9 @@ def L_(t,a,b,M,t_f): # lambda
 def d_L_(t,a,b,M,t_f):
     L = t*0.0
     for m in range(1,M+1):
-        L += -2*pi*m*np.sin(2*pi*m*t/t_f)*a[m]/t_f
+        L += -2*pi*m*np.sin(2*pi*m*t/t_f)*a[m-1]/t_f
     for m in range(1,M+1):
-        L += 2*pi*m*np.cos(2*pi*m*t/t_f)*b[m]/t_f
+        L += 2*pi*m*np.cos(2*pi*m*t/t_f)*b[m-1]/t_f
     return L
 
 #sympy lambdify would probably be more straightforward
@@ -125,9 +130,9 @@ def d_d_L_(t,a,b,M,t_f):
     L = t*0.0
 
     for m in range(1,M+1):
-        L+= m**2*np.sin(2*pi*m*t/t_f)*b[m], (m, 1, M)
+        L+= m**2*np.sin(2*pi*m*t/t_f)*b[m-1]
     for m in range(1,M+1):
-        L+= m**2*np.cos(2*pi*m*t/t_f)*a[m], (m, 1, M)
+        L+= m**2*np.cos(2*pi*m*t/t_f)*a[m-1]
 
     L /= -4*(pi**2)*(t_f**2)
     return L
