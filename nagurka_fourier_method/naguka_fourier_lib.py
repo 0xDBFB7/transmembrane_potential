@@ -79,7 +79,7 @@ def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
     p[4] += (3/2.0*d_d_X_t0 - d_d_X_tf)/(t_f**2.0)
 
     p[5] = (6.0*(X_tf-X_t0) + (4.0*pi*np.sum(m*b)))/(t_f**5.0)
-    p[5] = -(3*d_X_t0 + 3*d_X_tf)/(t_f**4.0) - 0.5*(d_d_X_t0 - d_d_X_tf)/(t_f**3.0)
+    p[5] += -(3*d_X_t0 + 3*d_X_tf)/(t_f**4.0) - 0.5*(d_d_X_t0 - d_d_X_tf)/(t_f**3.0)
 
     return p
 # unit test - take numerical derivative and compare?

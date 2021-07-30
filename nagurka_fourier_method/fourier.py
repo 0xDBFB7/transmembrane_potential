@@ -8,8 +8,8 @@ from naguka_fourier_lib import *
 t_f = 1e-6
 
 
-a = np.array([-1.0])
-b = np.array([0.0])
+a = np.array([0.0])
+b = np.array([0.1])
 
 M = a.shape[0]
 
