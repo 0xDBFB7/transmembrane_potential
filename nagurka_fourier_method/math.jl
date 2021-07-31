@@ -7,6 +7,7 @@ gr(show = true)
 # or
 # PackageCompiler.restore_default_sysimage()
 # Unfortunately Symbolics.jl doesn't seem to support symbolic ODE solving at this point.
+
 @parameters t σ ρ β
 @variables x(t) y(t) z(t)
 D = Differential(t)

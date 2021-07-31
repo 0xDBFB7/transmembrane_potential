@@ -2,11 +2,19 @@ from naguka_fourier_lib import *
 import pytest
 
 
+# N&Y 1988: "This problem can be solved by standard
+# linear optimal control methods employing the Hamilton-Jacobi approach via the Riccati equation."
+
 def Kirk_A_optimal(t):
     return 7.289*t -6.103 + 6.696*np.exp(-t)-0.593*np.exp(t)
 
 def d_Kirk_A_optimal(t):
     return 7.289 -6.696*np.exp(-t)-0.593*np.exp(t)
+
+def d_d_Kirk_A_optimal(t):
+    # not discussed in the paper - just a guess
+    return 6.696*np.exp(-t)-0.593*np.exp(t)
+
 
 def test_Kirk_example():
     '''
@@ -52,24 +60,28 @@ def test_Kirk_example():
     # integral formula with a step size of 1/30 (consistent unit of
     # time).
 
-    # all of these are perfect except U, need asserts 
+    # all of these are perfect except U, need asserts
     # plt.plot(t,U)
     # plt.plot(t,X)
     # plt.plot(t[:-1],np.diff(X)/(1/30))
     # plt.plot(t,d_X)
     # plt.show()
     # plt.plot(t[:-2],np.diff(np.diff(X))/((1/30)**2.0))
-    # plt.plot(t,d_d_X)
+    plt.plot(t,d_d_X)
     # plt.plot(t,Kirk_A_optimal(t))
     # plt.plot(t,d_Kirk_A_optimal(t))
-    # plt.show()
+    plt.plot(t,d_d_Kirk_A_optimal(t))
+    plt.show()
 
 
     U = X + d_d_X
 
-    # this test fails. the derivatives all seem to work out, it's just the
-    # U control has a completely different shape!
-    # must be misunderstanding the U
+    # this test fails. the derivatives all work out perfectly, it's just the
+    # U control has a completely different shape as fig 1a
+    # must be misunderstanding the U completely somehow.
 
     J = 0.5*integrate.simpson(U**2.0,t)
     assert J == pytest.approx(1.675e1)
+
+def test_():
+    tets

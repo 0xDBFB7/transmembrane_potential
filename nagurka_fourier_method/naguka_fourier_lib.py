@@ -26,6 +26,9 @@ The computational cost is thus significantly reduced."
 
 x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - phi_v*(SX0 / ST0)*x1_v - xi_v*SX0*x0_v)/(SX0 / (ST0**2)))
 
+
+#Note: N&Y 1988 vs 1990 uses confusingly different notation. beware!
+
 '''
 
 
@@ -86,8 +89,7 @@ def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
     p[5] += -(3*d_X_t0 + 3*d_X_tf)/(t_f**4.0) - 0.5*(d_d_X_t0 - d_d_X_tf)/(t_f**3.0)
 
     return p
-# unit test - take numerical derivative and compare?
-#
+
 def P_(t, p, M):
     P = t*0.0 # supports both float and array type
     for j in range(0,6):
@@ -136,3 +138,5 @@ def d_d_L_(t,a,b,M,t_f):
 
     L /= -4*(pi**2)*(t_f**2)
     return L
+
+# def Xv_to_
