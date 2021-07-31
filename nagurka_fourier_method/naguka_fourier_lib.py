@@ -42,7 +42,7 @@ sys.path.append('../')
 from transmembrane_lib import *
 
 import matplotlib.pyplot as plt
-
+epsilon = 1e-10
 
 
 
@@ -97,7 +97,7 @@ def P_(t, p, M):
 def d_P_(t, p, M):
     P = t*0.0
     for j in range(0,6):
-        P += (j*(t**j)*p[j])/t
+        P += np.divide((j*(t**j)*p[j]),t, out=np.zeros_like(P), where=(t**2)!=0)
     return P
 
 def d_d_P_(t, p, M):
