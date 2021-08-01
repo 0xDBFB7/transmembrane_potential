@@ -36,6 +36,7 @@ from autograd.scipy.integrate import odeint
 # import autograd.numpy as np  # Thinly-wrapped numpy
 import numpy as np
 import scipy.integrate as integrate
+from icecream import ic
 #maybe jax someday?
 
 # from autograd import grad    # The only autograd function you may ever need
@@ -88,6 +89,8 @@ def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
     p[5] = (6.0*(X_tf-X_t0) + (4.0*pi*np.sum(m*b)))/(t_f**5.0)
     p[5] += -(3*d_X_t0 + 3*d_X_tf)/(t_f**4.0) - 0.5*(d_d_X_t0 - d_d_X_tf)/(t_f**3.0)
 
+
+    ic(p)
     return p
 
 def P_(t, p, M):
@@ -138,5 +141,16 @@ def d_d_L_(t,a,b,M,t_f):
 
     L /= -4*(pi**2)*(t_f**2)
     return L
+
+def X_(t,p,a,b,M,t_f):
+    return P_(t,p,M) + L_(t,a,b,M,t_f)
+
+def d_X_(t,p,a,b,M,t_f):
+    return d_P_(t,p,M) + d_L_(t,a,b,M,t_f)
+
+def d_d_X_(t,p,a,b,M,t_f):
+    return d_d_P_(t,p,M) + d_d_L_(t,a,b,M,t_f)
+
+
 
 # def Xv_to_
