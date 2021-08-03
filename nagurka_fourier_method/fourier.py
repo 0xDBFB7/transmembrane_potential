@@ -1,4 +1,4 @@
-from naguka_fourier_lib import *
+from nagurka_fourier_lib import *
 
 
 
@@ -38,5 +38,3 @@ plt.show()
 # tubthumper = basinhopping
 # minimizer_kwargs = dict(method="Powell", options={"disp":True}, bounds=bounds, callback=diagnostics,  tol=1e-12)
 # Tmin = tubthumper(cost_function, T, stepsize=t_end/10, minimizer_kwargs=minimizer_kwargs, disp=True, niter_success=2)["x"]
-
- 

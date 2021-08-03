@@ -29,10 +29,20 @@ x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - 
 
 #Note: N&Y 1988 vs 1990 uses confusingly different notation. beware!
 
+There are a number of different versions of the papers by N&Y.
+
+Fourier-Based Optimal Control of Nonlinear Dynamic Systems, 1990 -
+Journal of Dynamic Systems, Measurement, and Control,
+primary source used here
+
+
+
+
 '''
 
 
-from autograd.scipy.integrate import odeint
+# from autograd.scipy.integrate import odeint
+from scipy.integrate import odeint
 # import autograd.numpy as np  # Thinly-wrapped numpy
 import numpy as np
 import scipy.integrate as integrate
@@ -46,7 +56,7 @@ sys.path.append('../')
 from transmembrane_lib import *
 
 import matplotlib.pyplot as plt
-epsilon = 1e-10
+epsilon = 1e-20
 
 
 
@@ -66,7 +76,8 @@ epsilon = 1e-10
 
 def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
     '''
-    Eqs 22 to 27, Nagurka&Yen
+    Eqs 22 to 27, Nagurka&Yen 1990
+    1988 has an alternate setup
     '''
 
     m = np.arange(1, M+1)
@@ -89,9 +100,13 @@ def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
     p[5] = (6.0*(X_tf-X_t0) + (4.0*pi*np.sum(m*b)))/(t_f**5.0)
     p[5] += -(3*d_X_t0 + 3*d_X_tf)/(t_f**4.0) - 0.5*(d_d_X_t0 - d_d_X_tf)/(t_f**3.0)
 
-
-    ic(p)
     return p
+
+
+
+
+
+
 
 def P_(t, p, M):
     P = t*0.0 # supports both float and array type
