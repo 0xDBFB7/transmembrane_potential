@@ -16,18 +16,28 @@ from icecream import ic
 from math import pi
 import numpy as np
 
-def P_restate(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
+
+def P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
+    '''
+    as opposed to the other formulation, here the coefficients make real sense
+    '''
     m = np.arange(1, M+1)
     p = np.zeros((6))
 
     p0 = X_t0 - np.sum(a)
     pf = X_tf - np.sum(a)
 
-    d_p0 = d_X_t0 + 2.0 * np.sum(pi*m*b / t_f)
-    d_pf = d_X_tf + 2.0 * np.sum(pi*m*b / t_f)
+    d_p0 = (d_X_t0 + 2.0 * np.sum(pi*m*b / t_f))
+    d_pf = (d_X_tf + 2.0 * np.sum(pi*m*b / t_f))
 
     d_d_p0 = d_d_X_t0 + 4.0 * np.sum((pi**2.0)*(m**2.0)*a / (t_f**2.0))
     d_d_pf = d_d_X_tf + 4.0 * np.sum((pi**2.0)*(m**2.0)*a / (t_f**2.0))
+
+    return p0, pf, d_p0, d_pf, d_d_p0, d_d_pf
+
+def P_restate(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
+    p0, pf, d_p0, d_pf, d_d_p0, d_d_pf = P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf,
+                                d_X_tf, d_d_X_tf, t_f, a, b, M)
 
     # how can I stop making these stupid mistakes?
     '''
