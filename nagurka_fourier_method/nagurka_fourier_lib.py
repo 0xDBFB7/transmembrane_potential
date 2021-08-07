@@ -1,6 +1,9 @@
 
 '''
 
+Fourier-Based Optimal Control of Nonlinear Dynamic Systems, 1990 -
+Journal of Dynamic Systems, Measurement, and Control,
+
 
 F[..] = U(t)
 
@@ -30,12 +33,6 @@ x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - 
 #Note: N&Y 1988 vs 1990 uses confusingly different notation. beware!
 
 There are a number of different versions of the papers by N&Y.
-
-Fourier-Based Optimal Control of Nonlinear Dynamic Systems, 1990 -
-Journal of Dynamic Systems, Measurement, and Control,
-primary source used here
-
-
 
 
 '''

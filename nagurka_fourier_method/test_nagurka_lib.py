@@ -8,6 +8,9 @@ import pytest_check as check
 # N&Y 1988: "This problem can be solved by standard
 # linear optimal control methods employing the Hamilton-Jacobi approach via the Riccati equation."
 
+# python -m pytest test_nagurka_lib.py --tb=short -s
+
+
 def Kirk_A_optimal(t):
     return 7.289*t -6.103 + 6.696*np.exp(-t)-0.593*np.exp(t)
 
@@ -19,7 +22,7 @@ def d_d_Kirk_A_optimal(t):
     return 6.696*np.exp(-t)-0.593*np.exp(t)
 
 
-def test_Kirk_example():
+def test_Kirk_A_example_statement_one():
     '''
     Equation 32, Nagurka&Yen 1990, Case A
     '''
@@ -39,8 +42,8 @@ def test_Kirk_example():
     X_tf = 5.0
     d_X_t0 = 0.0
     d_X_tf = 2.0
-    d_d_X_t0 = 6.102
-    d_d_X_tf = -3.479
+    d_d_X_t0 = 6.1025137
+    d_d_X_tf = -3.4798053
 
 
     p = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
@@ -48,20 +51,6 @@ def test_Kirk_example():
     X = X_(t,p,a,b,M,t_f)
     d_X = d_X_(t,p,a,b,M,t_f)
     d_d_X = d_d_X_(t,p,a,b,M,t_f)
-
-    X = P_restate(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M) + L_(t,a,b,M,t_f)
-
-    # print(X_(epsilon,p,a,b,M,t_f))
-    # print(X_(2.0,p,a,b,M,t_f))
-    #
-    # print(d_P_(epsilon,p,M) + d_L_(epsilon,a,b,M,t_f))
-    # print(d_P_(2.0,p,M) + d_L_(2.0,a,b,M,t_f))
-    #
-    # print(d_d_P_(epsilon,p,M) + d_d_L_(epsilon,a,b,M,t_f))
-    # print(d_d_P_(2.0,p,M) + d_d_L_(2.0,a,b,M,t_f))
-    # The performance index was evaluated by means of Simpson's composite
-    # integral formula with a step size of 1/30 (consistent unit of
-    # time).
 
     U = X + d_d_X
 
@@ -80,8 +69,6 @@ def test_Kirk_example():
     # plt.plot(t,U)
     # plt.show()
 
-
-
     # this test fails. the derivatives all work out perfectly, it's just the
     # U control has a completely different shape as fig 1a 1990.
     # must be misunderstanding the U completely somehow.
@@ -89,8 +76,7 @@ def test_Kirk_example():
     print(np.max(np.abs(X-Kirk_A_optimal(t))))
     assert np.allclose(X,Kirk_A_optimal(t),rtol=0.004)
     assert np.allclose(d_X,d_Kirk_A_optimal(t),rtol=0.004)
-    # assert np.allclose(d_d_X,d_d_Kirk_A_optimal(t),rtol=0.004)
-
+    assert np.allclose(d_d_X,d_d_Kirk_A_optimal(t),rtol=0.004)
 
     J = 0.5*integrate.simpson(U**2.0,t)
     assert J == pytest.approx(1.675e1)
@@ -112,8 +98,8 @@ def test_transmembrane_compare():
     X_tf = 5.0
     d_X_t0 = 0.0
     d_X_tf = 2.0
-    d_d_X_t0 = 6.102
-    d_d_X_tf = -3.479
+    d_d_X_t0 = 6.1025137
+    d_d_X_tf = -3.4798053
 
     p = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 
@@ -158,6 +144,39 @@ def test_BCs():
                         L_(t_f,a,b,M,t_f) == pytest.approx(X_tf)
 
 
+def test_P_coeffs():
+    t_f = 2.0
+
+    a = np.array([-1.95643e-3])
+    b = np.array([1.442172e-3])
+    a_ = -1.95643e-3
+    b_ = 1.442172e-3
+    M = 1
+
+    t = np.linspace(epsilon, t_f, 100)
+
+    virus = default_virus(t)
+    host_cell = default_host_cell(t)
+
+    X_t0 = 0.0
+    X_tf = 5.0
+    d_X_t0 = 0.0
+    d_X_tf = 2.0
+    d_d_X_t0 = 6.1025137
+    d_d_X_tf = -3.4798053
+
+    p = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+
+    check.almost_equal(P_(0.0,p,M), X_t0 - L_(0.0,a,b,M,t_f))
+    check.almost_equal(P_(t_f,p,M), X_tf - L_(t_f,a,b,M,t_f))
+
+    check.almost_equal(d_P_(0.0,p,M), d_X_t0 - d_L_(0.0,a,b,M,t_f), 1e-4)
+    check.almost_equal(d_P_(t_f,p,M), d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
+
+    check.almost_equal(d_d_P_(0.0,p,M), d_X_t0 - d_d_L_(0.0,a,b,M,t_f), 1e-4)
+    check.almost_equal(d_d_P_(t_f,p,M), d_X_tf - d_d_L_(t_f,a,b,M,t_f), 1e-4)
+
+
 def test_P_restate_coeffs():
     t_f = 2.0
 
@@ -183,8 +202,8 @@ def test_P_restate_coeffs():
     X_tf = 5.0
     d_X_t0 = 0.0
     d_X_tf = 2.0
-    d_d_X_t0 = 6.102
-    d_d_X_tf = -3.479
+    d_d_X_t0 = 6.1025137
+    d_d_X_tf = -3.4798053
 
     p0, pf, d_p0, d_pf, d_d_p0, d_d_pf = P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 
@@ -194,7 +213,11 @@ def test_P_restate_coeffs():
     # d_L_tf = ((a_ * -2 * pi * sin(2 * pi * t_f / t_f)/t_f) + (b_ * 2 * pi * cos(2 * pi * t_f / t_f)/t_f))
 
     check.almost_equal(p0, X_t0 - L_(0.0,a,b,M,t_f))
+    check.almost_equal(P_restate(0.0, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M), X_t0 - L_(0.0,a,b,M,t_f))
+
     check.almost_equal(pf, X_tf - L_(t_f,a,b,M,t_f))
+    check.almost_equal(P_restate(t_f, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M), X_tf - L_(t_f,a,b,M,t_f))
+
     check.almost_equal(d_p0, d_X_t0 - d_L_(0.0,a,b,M,t_f), 1e-4)
     check.almost_equal(d_pf, d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
     check.almost_equal(d_d_p0, d_X_t0 - d_d_L_(0.0,a,b,M,t_f), 1e-4)

@@ -56,3 +56,19 @@ def P_restate(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
     P += (d_p0*t_f)*(tau)
     P += p0
     return P
+
+
+    '''
+    Wait, there's even another restatement using alpha and beta coefficients in the fourier summation
+
+    So, 4 papers and ~three conference proceedings, each using a different statement of the same technique.
+
+    1988 American Control Conference - fifth order polynomial,
+    alphas and beta coefficients on the sine terms
+
+    1988 ASME publication presented at Winter Annual Meeting -
+    third order polynomial, four boundary conditions,
+    alpha and beta coefficients on the sine terms
+
+    there's also a "multi segment" verson
+    '''
