@@ -1,0 +1,12 @@
+
+something seems to be going wrong with the boundary conditions.
+
+p = p0 t + p1 t_1 + p2 t_2 + p3 t^3 + p4 t^4 + p5 t^5
+
+
+
+
+
+
+
+d

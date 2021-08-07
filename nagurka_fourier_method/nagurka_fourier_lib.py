@@ -70,6 +70,11 @@ epsilon = 1e-20
 # along the lines of what's recommended by N&Y.
 
 # M = a.shape[0]+1 # is this right?
+#
+# class parametrization():
+
+# def __init__(s, t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
+
 
 def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
     '''
@@ -98,12 +103,6 @@ def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
     p[5] += -(3*d_X_t0 + 3*d_X_tf)/(t_f**4.0) - 0.5*(d_d_X_t0 - d_d_X_tf)/(t_f**3.0)
 
     return p
-
-
-
-
-
-
 
 def P_(t, p, M):
     P = t*0.0 # supports both float and array type
@@ -147,11 +146,10 @@ def d_d_L_(t,a,b,M,t_f):
     L = t*0.0
 
     for m in range(1,M+1):
-        L+= m**2*np.sin(2*pi*m*t/t_f)*b[m-1]
+        L+= m**2*np.sin(2*pi*m*t/t_f)*b[m-1] * -4*(pi**2.0)/(t_f**2.0)
     for m in range(1,M+1):
-        L+= m**2*np.cos(2*pi*m*t/t_f)*a[m-1]
+        L+= m**2*np.cos(2*pi*m*t/t_f)*a[m-1] * -4*(pi**2.0)/(t_f**2.0)
 
-    L /= -4*(pi**2)*(t_f**2)
     return L
 
 def X_(t,p,a,b,M,t_f):
