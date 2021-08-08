@@ -166,7 +166,7 @@ U = PU + λU
 # sympy.pprint(U )
 # sympy.pprint(diff(U , t))
 sympy.pprint(diff(X , t, t))
-sympy.pprint(diff(U , t, t))
+# sympy.pprint(diff(U , t, t))
 
 print(sympy.latex(X))
 print(sympy.latex(diff(X, t)))
