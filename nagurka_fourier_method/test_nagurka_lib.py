@@ -35,9 +35,6 @@ def test_Kirk_A_example():
 
     t = np.linspace(epsilon, t_f, 60)
 
-    virus = default_virus(t)
-    host_cell = default_host_cell(t)
-
     X_t0 = 0.0
     X_tf = 5.0
     d_X_t0 = 0.0
@@ -56,7 +53,7 @@ def test_Kirk_A_example():
 
     # all of these are perfect except U, need asserts
     # plt.plot(t,X)
-    # plt.plot(t,P_restate(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M))
+    # plt.plot(t,P_(t, p, M))
     # plt.plot(t,
     # plt.plot(t[:-1],np.diff(X)/(1/30))
     # plt.plot(t,d_X)
@@ -79,6 +76,49 @@ def test_Kirk_A_example():
 
     J = 0.5*integrate.simpson(U**2.0,t)
     assert J == pytest.approx(1.675e1)
+
+
+
+def test_Kirk_C_example():
+    '''
+    Equation 42, Nagurka&Yen 1990, Case C
+    '''
+
+    t_f = 2.0
+    a = np.array([4.3833045e-4])
+    b = np.array([1.4015869e-3])
+    M = a.shape[0]
+    t = np.linspace(epsilon, t_f, 60)
+
+    X_t0 = 0.0
+    X_tf = 2.3530569
+    d_X_t0 = 0.0
+    d_X_tf = 2.5293861
+    d_d_X_t0 = 1.3739699
+    d_d_X_tf = 1.9403533
+
+
+
+    p = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+
+    X = L_(t,a,b,M,t_f) + P_restate(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+    # d_X = d_X_(t,p,a,b,M,t_f)
+    # d_d_X = d_d_X_(t,p,a,b,M,t_f)
+    #
+    U = X + d_d_X
+
+    # plt.plot(t,X)
+    # plt.plot(t,L_(t,a,b,M,t_f))
+
+    # plt.plot(t,P_(t, p, M))
+    # plt.show()
+
+    # assert np.allclose(X,Kirk_A_optimal(t),rtol=0.004)
+    # assert np.allclose(d_X,d_Kirk_A_optimal(t),rtol=0.004)
+    # assert np.allclose(d_d_X,d_d_Kirk_A_optimal(t),rtol=0.004)
+
+    J = 0.5*integrate.simpson(U**2.0,t)
+    assert J == pytest.approx(6.708092)
 
 # def test_transmembrane_compare():
 #
@@ -109,8 +149,6 @@ def test_polynomial_BCs():
 
     a = np.array([1.0])
     b = np.array([-0.3])
-    a_ = 1.0
-    b_ = -0.3
     M = 1
 
     t = np.linspace(epsilon, t_f, 100)
@@ -131,13 +169,12 @@ def test_polynomial_BCs():
     check.almost_equal(P_(t_f,p,M), X_tf - L_(t_f,a,b,M,t_f))
 
     check.almost_equal(d_P_(epsilon,p,M), d_X_t0 - d_L_(epsilon,a,b,M,t_f), 1e-4)
-    check.almost_equal(d_P_(t_f/t_f,p,M), d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
+    check.almost_equal(d_P_(t_f,p,M), d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
 
     check.almost_equal(d_d_P_(epsilon,p,M), d_d_X_t0 - d_d_L_(epsilon,a,b,M,t_f), 1e-4)
     check.almost_equal(d_d_P_(t_f,p,M), d_d_X_tf - d_d_L_(t_f,a,b,M,t_f), 1e-4)
 
     # p0, pf, d_p0, d_pf, d_d_p0, d_d_pf = P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
-    #
     # check.almost_equal(P_restate(epsilon, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M), X_t0 - L_(epsilon,a,b,M,t_f))
     # check.almost_equal(P_restate(t_f, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M), X_tf - L_(t_f,a,b,M,t_f))
 
@@ -183,14 +220,41 @@ def test_L_sin_series():
     check.almost_equal(0.0, d_d_L_(t_f,np.array([0.0]),np.array([1.0]),M,t_f))
 
 
+
+def test_P_restate_coeffs():
+    t_f = 2.0
+
+    a = np.array([-1.95643e-3])
+    b = np.array([1.442172e-3])
+    M = 1
+
+    t = np.linspace(epsilon, t_f, 100)
+
+    virus = default_virus(t)
+    host_cell = default_host_cell(t)
+
+    X_t0 = 1.0 # is it possible that this is overconstrained?
+    X_tf = 2.0
+    d_X_t0 = 0
+    d_X_tf = 3.0
+    d_d_X_t0 = 0
+    d_d_X_tf = -3.0
+
+    p0, pf, d_p0, d_pf, d_d_p0, d_d_pf = P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+
+    check.almost_equal(p0, X_t0 - L_(0.0,a,b,M,t_f))
+    check.almost_equal(pf, X_tf - L_(t_f,a,b,M,t_f))
+
+    check.almost_equal(d_p0, d_X_t0 - d_L_(epsilon,a,b,M,t_f), 1e-4)
+    check.almost_equal(d_pf, d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
+    check.almost_equal(d_d_p0, d_X_t0 - d_d_L_(epsilon,a,b,M,t_f), 1e-4)
+    check.almost_equal(d_d_pf, d_X_tf - d_d_L_(t_f,a,b,M,t_f), 1e-4)
+
+
+# def test_compare_P():
 #
-# def test_P_restate_coeffs():
-#     t_f = 1.0
-#
-#     a = np.array([-1.95643e-3])
-#     b = np.array([1.442172e-3])
-#     a_ = 1.0
-#     b_ = 0.0
+#     a = np.array([1.0])
+#     b = np.array([-0.3])
 #     M = 1
 #
 #     t = np.linspace(epsilon, t_f, 100)
@@ -198,29 +262,16 @@ def test_L_sin_series():
 #     virus = default_virus(t)
 #     host_cell = default_host_cell(t)
 #
-#     X_t0 = 1.0 # is it possible that this is overconstrained?
-#     X_tf = 2.0
-#     d_X_t0 = 0
-#     d_X_tf = 3.0
-#     d_d_X_t0 = 0
-#     d_d_X_tf = -3.0
+#     X_t0 = 0.0
+#     X_tf = 5.0
+#     d_X_t0 = 0.0
+#     d_X_tf = 2.0
+#     d_d_X_t0 = 6.1025137
+#     d_d_X_tf = -3.4798053
 #
-#     p0, pf, d_p0, d_pf, d_d_p0, d_d_pf = P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+#     P_restate(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 #
-#     check.almost_equal(p0, X_t0 - L_(0.0,a,b,M,t_f))
-#     check.almost_equal(pf, X_tf - L_(t_f,a,b,M,t_f))
-#
-#     check.almost_equal(d_p0, d_X_t0 - d_L_(0.0,a,b,M,t_f), 1e-4)
-#     check.almost_equal(d_pf, d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
-#     check.almost_equal(d_d_p0, d_X_t0 - d_d_L_(0.0,a,b,M,t_f), 1e-4)
-#     check.almost_equal(d_d_pf, d_X_tf - d_d_L_(t_f,a,b,M,t_f), 1e-4)
-#
-#
-#     check.almost_equal(pf, X_tf - L_(t_f,a,b,M,t_f))
-#
-#     # # check.almost_equal(P_restate(0.0, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M), X_t0 - L_(0.0,a,b,M,t_f))
-#     # check.almost_equal(P_restate(t_f, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M), X_tf - L_(t_f,a,b,M,t_f))
-#
+
 
 '''
 

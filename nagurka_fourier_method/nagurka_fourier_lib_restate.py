@@ -23,8 +23,8 @@ def P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, 
     m = np.arange(1, M+1)
     p = np.zeros((6))
 
-    p0 = X_t0 - np.sum(a)
-    pf = X_tf - np.sum(a)
+    p0 = X_t0 - np.sum(a)#hey, why doesn't b factor in here?
+    pf = X_tf - np.sum(a)# because sin at the edges is 0, so that term drops out
 
     d_p0 = (d_X_t0 + 2.0 * np.sum(pi*m*b / t_f))
     d_pf = (d_X_tf + 2.0 * np.sum(pi*m*b / t_f))
