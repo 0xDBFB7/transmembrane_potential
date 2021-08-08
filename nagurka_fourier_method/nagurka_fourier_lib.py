@@ -113,17 +113,30 @@ def P_(t, p, M):
 def d_P_(t, p, M):
     P = t*0.0
     for j in range(0,6):
-        P += np.divide((j*(t**j)*p[j]),t, out=np.zeros_like(P), where=(t**2)!=0)
+        P += (j*(t**j)*p[j])
+
+    if(isinstance(t,np.ndarray)):
+        P = np.divide(P, t, out=np.zeros_like(P), where=(t)!=0)
+    else:
+        P = P / t
+
     return P
 
 def d_d_P_(t, p, M):
     P = t*0.0
-    for j in range(0,6): #inclusive?
+
+    for j in range(0,6):
         P += j*(t**j)*(j - 1)*p[j]
-    #weird division returning nan here - there's no value of the second derivative at 0? that
-    # doesn't seem right...
-    P = np.divide(P, (t**2), out=np.zeros_like(P), where=(t**2)!=0)
+
+    if(isinstance(t,np.ndarray)):
+        P = np.divide(P, (t**2), out=np.zeros_like(P), where=(t**2)!=0)
+    else:
+        P = P / (t**2.0)
+
+
     return P
+
+    # if(isinstance(t,np.ndarray)):
 
 def L_(t,a,b,M,t_f): # lambda
     L = t*0.0

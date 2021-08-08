@@ -16,7 +16,6 @@ from icecream import ic
 from math import pi
 import numpy as np
 
-
 def P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
     '''
     as opposed to the other formulation, here the coefficients make real sense
