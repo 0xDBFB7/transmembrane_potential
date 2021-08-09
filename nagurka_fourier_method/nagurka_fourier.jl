@@ -44,11 +44,11 @@ end
 # end;
 
 function L_(t, a, b, M, t_f)
-    # m = [1.0:M;]
-    m = 1:M
+    m = [1.0:M;]
+    #m = 1:M
     alpha_k = -1 .+ 4(m.^2.0)*(pi^2)*((t/t_f)^2 - (2*(t/t_f)^3) + (t/t_f)^4) .+ cos.(2*pi*(m.*t)/t_f)
     beta_k = 2.0*m.*pi*(-(t/t_f) + 10*(t/t_f)^3 - 15*(t/t_f)^4 + 6*(t/t_f)^5) .+ sin.(2*pi*(m.*t)/t_f)
-    return sum(a*alpha_k) + sum(b*beta_k)
+    return sum(a.*alpha_k) + sum(b.*beta_k)
 
 end;
 
@@ -81,11 +81,10 @@ function P_(t, p, a, b, M, t_f)
     p3 = t_f*(-4*tau^3 + 7*tau^4 - 3*tau^5)
     p4 = 0.5*(t_f^2)*(tau^3 - 2*tau^4 + tau^5)
 
-    P = p0 + p1*X_t0 + p2*X_tf + p3*d_X_tf + p3 * d_d_X_tf
+    P = p0 + p1*X_t0 + p2*X_tf + p3*d_X_tf + p4 * d_d_X_tf
 
     return P
 end
-
 
 d_P_(t, p, a, b, M, t_f) = ForwardDiff.derivative(n -> P_(n, p, a, b, M, t_f), t)
 d_d_P_(t, p, a, b, M, t_f) = ForwardDiff.derivative(n -> d_P_(n, p, a, b, M, t_f), t)
@@ -230,7 +229,7 @@ end
 
     plot(t,X, show=true)
 
-    plot(t,U, show=true)
+    # plot(t,U, show=true)
 
     # all of these are perfect except U, need asserts
     # plt.plot(t,X)
