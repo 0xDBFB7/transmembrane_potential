@@ -26,47 +26,48 @@ function P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, 
 
     return p0, pf #d_p0, d_pf, d_d_p0, d_d_pf
 end
-#
-# @testset "Setup" begin
-#
-#     t_f = 2.0
-#
-#     a = [-1.95643e-3]
-#     b = [1.442172e-3]
-#     M = 1
-#
-#     t = range(epsilon,stop=t_f,length=100)
-#
-#     X_t0 = 1.0 # is it possible that this is overconstrained?
-#     X_tf = 2.0
-#     d_X_t0 = 0
-#     d_X_tf = 3.0
-#     d_d_X_t0 = 0
-#     d_d_X_tf = -3.0
-#
-#
-#     @testset "Coefficient BCs" begin
-#
-#         p0, pf = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
-#         @test isapprox(p0, X_t0, atol=1e-8, rtol=1e-8)
-#         @test isapprox(pf, X_tf, atol=1e-8, rtol=1e-8)
-#
-#
-#     end;
-#
-# end;
+
+@testset "Setup" begin
+
+    t_f = 2.0
+
+    a = [-1.95643e-3]
+    b = [1.442172e-3]
+    M = 1
+
+    t = range(epsilon,stop=t_f,length=100)
+
+    X_t0 = 1.0 # is it possible that this is overconstrained?
+    X_tf = 2.0
+    d_X_t0 = 0
+    d_X_tf = 3.0
+    d_d_X_t0 = 0
+    d_d_X_tf = -3.0
+
+
+    @testset "Coefficient BCs" begin
+
+        p0, pf = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+        @test isapprox(p0, X_t0, atol=1e-8, rtol=1e-8)
+        @test isapprox(pf, X_tf, atol=1e-8, rtol=1e-8)
+
+
+    end;
+
+end;
 
 function L_(t, a, b, M, t_f)
-    return sum(a.*cos(2*pi*t/t_f)) + sum(b.*sin(2*pi*t/t_f))
+    m = 1:M
+    return sum(a.*cos.(2*pi*(m*t)/t_f)) + sum(b.*sin.(2*pi*(m*t)/t_f))
 end;
 
 @testset "L_" begin
 
     t_f = 2.0
 
-    a = [1.0 -2]
-    b = [-1.0 3]
-    M = 1
+    a = [1.0, -2]
+    b = [-1.0, 3]
+    M = 2
 
     t = range(epsilon,stop=t_f,length=100)
 
@@ -75,12 +76,24 @@ end;
     v = (2*pi/t_f)
 
     t_ = epsilon
-    @test isapprox(L_(t_, a, b, M, t_f), 1.0*cos(t_) + -2.0*cos(t_) + -1.0*sin(t_) + 3.0*sin(t_), atol=1e-8, rtol=1e-8)
+    @test isapprox(L_(t_, a, b, M, t_f), 1.0*cos(1*v*t_) + -2.0*cos(2*v*t_) + -1.0*sin(1*t_) + 3.0*sin(2*t_), atol=1e-8, rtol=1e-8)
     t_ = 1.0
-    @test isapprox(L_(t_, a, b, M, t_f), 1.0*cos(t_*v) + -2.0*cos(t_*v) + -1.0*sin(t_*v) + 3.0*sin(t_*v), atol=1e-8, rtol=1e-8)
+    @test isapprox(L_(t_, a, b, M, t_f), 1.0*cos(1*t_*v) + -2.0*cos(2*t_*v) + -1.0*sin(1*t_*v) + 3.0*sin(2*t_*v), atol=1e-8, rtol=1e-8)
 
-    t_ = 1.0
-    @test isapprox(d_L_(t_, a, b, M, t_f), -1.0*v*sin(v*t_) + 2.0*v*sin(t_*v) + -1.0*v*cos(t_*v) + 3.0*v*cos(t_*v), atol=1e-8, rtol=1e-8)
+
+    d_L_compare(t) = -1.0*v*sin(v*t) + 2.0*v*2.0*sin(2.0*t*v) + -1.0*v*cos(t*v) + 3.0*v*2.0*cos(2.0*t*v)
+    t_ = 0.5
+    @test isapprox(d_L_(t_, a, b, M, t_f), d_L_compare(t_), atol=1e-8, rtol=1e-8)
+    t_ = 2.0
+    @test isapprox(d_L_(t_, a, b, M, t_f), d_L_compare(t_), atol=1e-8, rtol=1e-8)
+
+    #
+    t_ = [0.5, 2.0]
+    correct = -1.0*v*sin.(v*t_) + 2.0*v*2.0*sin.(2.0*t_*v) + -1.0*v*cos.(t_*v) + 3.0*v*2.0*cos.(2.0*t_*v)
+    @show correct
+    d_L(t) = d_L_(t, a, b, M, t_f)
+    @test isapprox(d_L.(t_), correct, atol=1e-8, rtol=1e-8)
+
 
 end;
 
