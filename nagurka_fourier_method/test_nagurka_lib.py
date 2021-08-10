@@ -1,7 +1,6 @@
 from nagurka_fourier_lib import *
 import pytest
 
-from nagurka_fourier_lib_restate import P_restate, P_restate_coeffs
 from math import sin, cos
 import pytest_check as check
 
@@ -220,57 +219,6 @@ def test_L_sin_series():
     check.almost_equal(0.0, d_d_L_(t_f,np.array([0.0]),np.array([1.0]),M,t_f))
 
 
-
-def test_P_restate_coeffs():
-    t_f = 2.0
-
-    a = np.array([-1.95643e-3])
-    b = np.array([1.442172e-3])
-    M = 1
-
-    t = np.linspace(epsilon, t_f, 100)
-
-    virus = default_virus(t)
-    host_cell = default_host_cell(t)
-
-    X_t0 = 1.0 # is it possible that this is overconstrained?
-    X_tf = 2.0
-    d_X_t0 = 0
-    d_X_tf = 3.0
-    d_d_X_t0 = 0
-    d_d_X_tf = -3.0
-
-    p0, pf, d_p0, d_pf, d_d_p0, d_d_pf = P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
-
-    check.almost_equal(p0, X_t0 - L_(0.0,a,b,M,t_f))
-    check.almost_equal(pf, X_tf - L_(t_f,a,b,M,t_f))
-
-    check.almost_equal(d_p0, d_X_t0 - d_L_(epsilon,a,b,M,t_f), 1e-4)
-    check.almost_equal(d_pf, d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
-    check.almost_equal(d_d_p0, d_X_t0 - d_d_L_(epsilon,a,b,M,t_f), 1e-4)
-    check.almost_equal(d_d_pf, d_X_tf - d_d_L_(t_f,a,b,M,t_f), 1e-4)
-
-
-# def test_compare_P():
-#
-#     a = np.array([1.0])
-#     b = np.array([-0.3])
-#     M = 1
-#
-#     t = np.linspace(epsilon, t_f, 100)
-#
-#     virus = default_virus(t)
-#     host_cell = default_host_cell(t)
-#
-#     X_t0 = 0.0
-#     X_tf = 5.0
-#     d_X_t0 = 0.0
-#     d_X_tf = 2.0
-#     d_d_X_t0 = 6.1025137
-#     d_d_X_tf = -3.4798053
-#
-#     P_restate(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
-#
 
 
 '''

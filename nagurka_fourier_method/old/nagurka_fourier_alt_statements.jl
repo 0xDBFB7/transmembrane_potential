@@ -1,3 +1,14 @@
+"""
+
+N.B.
+
+Implementations of various polynomial formulae from Yen and Nagurka.
+They each appear to be broken in their own ways
+because of mistakes in transcription on my part and typos in the papers.
+
+"""
+
+
 
 function L_(t, a, b, M, t_f)
     """
@@ -25,6 +36,39 @@ function L_(t, a, b, M, t_f)
 
 end;
 
+
+#
+# @testset "L_" begin
+#
+#     t_f = 2.0
+#
+#     a = [1.0, -2]
+#     b = [-1.0, 3]
+#     M = 2
+#
+#     t = range(epsilon,stop=t_f,length=100)
+#
+#     v = (2*pi/t_f)
+#
+#     t_ = epsilon
+#     @test isapprox(L_(t_, a, b, M, t_f), 1.0*cos(1*v*t_) + -2.0*cos(2*v*t_) + -1.0*sin(1*t_) + 3.0*sin(2*t_), atol=1e-8, rtol=1e-8)
+#     t_ = 1.0
+#     @test isapprox(L_(t_, a, b, M, t_f), 1.0*cos(1*t_*v) + -2.0*cos(2*t_*v) + -1.0*sin(1*t_*v) + 3.0*sin(2*t_*v), atol=1e-8, rtol=1e-8)
+#
+#
+#     d_L_compare(t) = -1.0*v*sin(v*t) + 2.0*v*2.0*sin(2.0*t*v) + -1.0*v*cos(t*v) + 3.0*v*2.0*cos(2.0*t*v)
+#     t_ = 0.5
+#     @test isapprox(d_L_(t_, a, b, M, t_f), d_L_compare(t_), atol=1e-8, rtol=1e-8)
+#     t_ = 2.0
+#     @test isapprox(d_L_(t_, a, b, M, t_f), d_L_compare(t_), atol=1e-8, rtol=1e-8)
+#
+#     #
+#     t_ = [0.5, 2.0]
+#     d_L(t) = d_L_(t, a, b, M, t_f)
+#     @test isapprox(d_L.(t_), d_L_compare.(t_), atol=1e-8, rtol=1e-8)
+#
+#
+# end;
 
 function P_(t, p, a, b, M, t_f)
     """

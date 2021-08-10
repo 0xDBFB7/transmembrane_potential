@@ -10,6 +10,9 @@ function P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, 
 end
 
 function P_(t, p, a, b, M, t_f)
+    """
+    Polynomial from polynomial_system_of_equations.py
+    """
     P_t0, d_P_t0, d_d_P_t0, P_tf, d_P_tf, d_d_P_tf = p
 
     p_0 = P_t0

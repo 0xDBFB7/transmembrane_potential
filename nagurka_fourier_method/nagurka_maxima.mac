@@ -1,5 +1,19 @@
 
-/* Switched to maxima because SymPy was, unfortunately, just too slow!
+/*
+N.B.
+
+Contains an attempt to
+
+Conclusion:
+
+
+
+*/
+
+/*
+
+
+Switched to maxima because SymPy was, unfortunately, just too slow!
 I see why julia peeps were interested in their own.
 $ instead of ; doesn't print output in maxima.
 wxMaxima is pretty cool
@@ -53,7 +67,10 @@ sol: ode2(diffeq, u, t);
 
 
 
-/* P = p_0*t**0 + p_1*t**1 + p_2*t**2 + p_3*t**3 + p_4*t**4 + p_5*t**5
+/*
+
+
+P = p_0*t**0 + p_1*t**1 + p_2*t**2 + p_3*t**3 + p_4*t**4 + p_5*t**5
 P = p_5*t**5
 sympy.pprint(P)
 */

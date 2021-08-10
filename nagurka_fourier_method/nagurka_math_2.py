@@ -1,3 +1,11 @@
+'''
+N.B.
+
+Contains:
+
+Derivatives of P and L; attempts at solving the whole diffeq using method of undetermined coefficients
+
+'''
 import dill
 from pytexit import py2tex
 import pickle

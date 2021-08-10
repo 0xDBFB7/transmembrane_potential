@@ -1,3 +1,13 @@
+'''
+
+N.B.
+
+Contains the actual virus optimization routine.
+
+'''
+
+
+
 from nagurka_fourier_lib import *
 
 

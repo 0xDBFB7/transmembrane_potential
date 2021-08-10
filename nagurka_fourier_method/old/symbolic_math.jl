@@ -1,3 +1,13 @@
+"""
+N.B.
+
+Attempt to use Symbolics.jl to obtain the solution to the differential equation.
+And a test of PackageCompiler to speed up JIT compilation.
+This is just the Symbolics.jl tutorial file.
+
+"""
+
+
 using ModelingToolkit, OrdinaryDiffEq
 using Plots;
 gr(show = true)
