@@ -16,7 +16,7 @@ from sympy.abc import t # x is the independent variable
 from sympy import Function, dsolve, Eq, Derivative, sin, cos, symbols, exp, pi, diff, Poly
 
 
-t, 𝛂, 𝛃, 𝛄, 𝛙, 𝛏,C1,C2,M = symbols("t alpha beta gamma phi xi C1 C2  M")
+t, 𝛂, 𝛃, 𝛄, 𝛙, 𝛏,C1,C2,M, J = symbols("t alpha beta gamma phi xi C1 C2  M J")
 p_0, p_1, p_2, p_3, p_4, p_5 = symbols("p_0 p_1 p_2 p_3 p_4 p_5")
 a_1, b_1 = symbols("a_1, b_1")
 t_f = symbols("t_f")
@@ -169,8 +169,18 @@ sympy.pprint(diff(X , t, t))
 # sympy.pprint(diff(U , t, t))
 
 print(sympy.latex(X))
-print(sympy.latex(diff(X, t)))
+print(sympy.latex(diff(X, (t))))
 print(sympy.latex(diff(X , t, t)))
+
+z = symbols("z",  integer = True)
+print()
+print(sympy.latex(diff(P, (t, z)).doit()))
+# doesn't work - sympy doesn't know how to take this arbitrary deterivative?
+
+
+print(sympy.latex(diff(P, t, t, t, t, t, t)))
+
+
 # print(sympy.latex(diff(U , t, t)))
 # print()
 # print(X)
