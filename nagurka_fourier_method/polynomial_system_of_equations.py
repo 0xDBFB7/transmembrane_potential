@@ -20,7 +20,7 @@ from sympy import Function, dsolve, Eq, Derivative, sin, cos, symbols, exp, pi, 
 t, t_f = symbols("t t_f")
 P, p_0, p_1, p_2, p_3, p_4, p_5 = symbols("P p_0 p_1 p_2 p_3 p_4 p_5")
 # P = Function('P')(t)
-P_0, P_tf, d_P_0, d_P_tf, d_d_P_0, d_d_P_tf = symbols("P_0, P_tf, d_P_0, d_P_tf, d_d_P_0, d_d_P_tf ")
+P_0, P_tf, d_P_0, d_P_tf, d_d_P_0, d_d_P_tf = symbols(("{P(0)}", "{P(t_f)}", "{\dot{P}(0)}", "{\dot{P}(t_f)}", "{\ddot{P}(0)}", "{\ddot{P}(t_f)}"))
 
 P = p_0 + p_1*t + p_2*t**2 + p_3*t**3 + p_4*t**4 + p_5*t**5
 
@@ -33,4 +33,11 @@ Exp = [ (P - P_0).subs(t, 0),
 
 sympy.pprint(Exp)
 sympy.pprint(sympy.solve(Exp, p_0, p_1, p_2, p_3, p_4, p_5))
+# print(sympy.latex())
+
+#PAPERID 10
+for key,value in sympy.solve(Exp, p_0, p_1, p_2, p_3, p_4, p_5).items():
+    print(f"$${sympy.latex(key)} = {sympy.latex(value)}$$")
+
+
                                 # Eq(P(0), P0), Eq(P(t_f), P0)]))
