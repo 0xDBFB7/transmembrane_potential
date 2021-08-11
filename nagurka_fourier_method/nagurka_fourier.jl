@@ -213,6 +213,7 @@ end
     # plot!(t,U, show=true)
 
     J = 0.5*integrate(t, U.*U, SimpsonEven())
+    @show J
     @test_broken isapprox(J, 1.675e1, atol=1e-8, rtol=1e-8)
 end
 
@@ -348,3 +349,10 @@ end
 
 
 end
+
+"""
+Switching back to Python because all of the transmembrane stuff is in that and it might be clunky to
+go back and forth with PyCall.
+
+TODO: replace analytic_ as the default; make forwarddiff optional
+"""

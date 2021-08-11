@@ -10,7 +10,7 @@ F[..] = U(t)
 F is the set of ordinary differential equations used to describe
 the system behavior
 
-Here, E represents the cost associated with the terminal states and G represents the cost associated with the trajectory
+Here, E represents the np.cost associated with the terminal states and G represents the np.cost associated with the trajectory
 
 
 The optimal trajectory, X*(/), X*(0, and X*0, is defined
@@ -18,19 +18,19 @@ as the admissible trajectory that minimizes the performance
 index, J.
 
 
-"Since the derivatives of the
+"np.since the derivatives of the
 generalized coordinates are obtained by direct analytical differention of equation (13), the system equations (1) are treated
 as algebraic equations in evaluating the control variables. The
 computational scheme of the proposed approach is therefore an inverse dynamic method.
-As a result, no integration of differential equations (such as state and costate equations) is required.
-The computational cost is thus significantly reduced."
+As a result, no integration of differential equations (such as state and np.costate equations) is required.
+The computational np.cost is thus significantly reduced."
 
 
 
 x2_v == ((SU0 / (ST0**2))*alpha_v*u2 + (SU0 / ST0)*beta_v*u1 + gamma_v*SU0*u0 - phi_v*(SX0 / ST0)*x1_v - xi_v*SX0*x0_v)/(SX0 / (ST0**2)))
 
 
-#Note: N&Y 1988 vs 1990 uses confusingly different notation. beware!
+#Note: N&Y 1988 vs 1990 uses confunp.singly different notation. beware!
 
 There are a number of different versions of the papers by N&Y.
 
@@ -44,22 +44,23 @@ from scipy.integrate import odeint
 import numpy as np
 import scipy.integrate as integrate
 from icecream import ic
+from math import pi
 #maybe jax someday?
 
-# from autograd import grad    # The only autograd function you may ever need
 
-import sys
-sys.path.append('../')
-from transmembrane_lib import *
+# import sys
+# sys.path.app('../')
+# from transmembrane_lib import *
+
 
 import matplotlib.pyplot as plt
-epsilon = 1e-20
+epsilon = 1e-15
 
 
 
-# t_end = 5e-10
+# t_ = 5e-10
 # num_time_nodes = 5000
-# t = np.linspace(0, t_end, num_time_nodes, dtype=np.float128) # integration span time vector
+# t = np.linspace(0, t_, num_time_nodes, dtype=np.float128) # integration span time vector
 
 
 # The problem is solved X_v = P + lambda (that is, we solve for one time-course of the virus,
@@ -67,113 +68,111 @@ epsilon = 1e-20
 # Xv -> U (obtain the control required to produce that time course
 # then U ->
 # this is a little clunky, not sure why I chose this, but it's
-# along the lines of what's recommended by N&Y.
+# along the lines of what's recommed by N&Y.
 
 # M = a.shape[0]+1 # is this right?
-#
-# class parametrization():
-
-# def __init__(s, t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
 
 
-def P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
-    '''
-    Eqs 22 to 27, Nagurka&Yen 1990
-    1988 has an alternate setup
-    '''
-
+def L_(t, a, b, M, t_f):
+    L = t*0.0
     m = np.arange(1, M+1)
-    p = np.zeros((6))
-
-    p[0] = X_t0 - np.sum(a)
-    #
-    p[1] = d_X_t0 - (2 * pi / t_f) * np.sum(m * b)
-    #
-    p[2] = (d_d_X_t0/2.0) + (2 * (pi**2.0) / (t_f**2.0)) * np.sum((m**2.0) * a)
-    #
-    p[3] = ((10.0*(X_tf - X_t0)) + (20.0*pi*np.sum(m * b)) - 4.0*(pi**2.0)*np.sum((m**2.0)*a))/(t_f**3.0)
-    p[3] += -(6*d_X_t0 + 4*d_X_tf)/(t_f**2.0)
-    p[3] += -((3.0/2.0)*d_d_X_t0 - (0.5*d_d_X_tf))/(t_f)
-    #
-    p[4] = (15*(X_t0 - X_tf) - (30*pi*np.sum(m*b))+(2*(pi**2.0)*np.sum((m**2.0)*a)))/(t_f**4.0)
-    p[4] += (8.0*d_X_t0 + 7*d_X_tf)/(t_f**3.0)
-    p[4] += (((3/2.0)*d_d_X_t0) - d_d_X_tf)/(t_f**2.0)
-    #
-    p[5] = (6.0*(X_tf-X_t0) + (4.0*pi*np.sum(m*b)))/(t_f**5.0)
-    p[5] += -(3*d_X_t0 + 3*d_X_tf)/(t_f**4.0) - 0.5*(d_d_X_t0 - d_d_X_tf)/(t_f**3.0)
-
-    return p
-
-def P_(t, p, M):
-    P = t*0.0 # supports both float and array type
-    for j in range(0,6):
-        P += p[j]*(t**j)
-    return P
-
-def d_P_(t, p, M):
-    P = t*0.0
-    for j in range(0,6):
-        P += (j*(t**j)*p[j])
-
-    if(isinstance(t,np.ndarray)):
-        P = np.divide(P, t, out=np.zeros_like(P), where=(t)!=0)
-    else:
-        P = P / t
-
-    return P
-
-def d_d_P_(t, p, M):
-    P = t*0.0
-
-    for j in range(0,6):
-        P += j*(t**j)*(j - 1)*p[j]
-
-    if(isinstance(t,np.ndarray)):
-        P = np.divide(P, (t**2), out=np.zeros_like(P), where=(t**2)!=0)
-    else:
-        P = P / (t**2.0)
-
-
-    return P
-
-    # if(isinstance(t,np.ndarray)):
-
-def L_(t,a,b,M,t_f): # lambda
-    L = t*0.0
-    for m in range(1,M+1):
-        L+= np.sin(2*pi*m*t/t_f)*b[m-1]
-    for m in range(1,M+1):
-        L+= np.cos(2*pi*m*t/t_f)*a[m-1]
+    for i in m:
+        v = i*(2*pi / t_f)
+        L += np.sum(a*np.cos(v*t)) + np.sum(b*np.sin(v*t))
     return L
 
-def d_L_(t,a,b,M,t_f):
+
+# d_L_(t, a, b, M, t_f) = ForwardDiff.derivative(n -> L_(n, a, b, M, t_f), t)
+# d_d_L_(t, a, b, M, t_f) = ForwardDiff.derivative(n -> d_L_(n, a, b, M, t_f), t)
+
+def d_L_(t, a, b, M, t_f):
     L = t*0.0
-    for m in range(1,M+1):
-        L += -2*pi*m*np.sin(2*pi*m*t/t_f)*a[m-1]/t_f
-    for m in range(1,M+1):
-        L += 2*pi*m*np.cos(2*pi*m*t/t_f)*b[m-1]/t_f
+    m = np.arange(1, M+1)
+    for i in m:
+        v = i*(2*pi / t_f)
+        L += np.sum(v * -1.0 * a*np.sin(v*t)) + np.sum(v * b*np.cos(v*t))
     return L
 
-#sympy lambdify would probably be more straightforward
-def d_d_L_(t,a,b,M,t_f):
+
+def d_d_L_(t, a, b, M, t_f):
     L = t*0.0
-
-    for m in range(1,M+1):
-        L+= m**2*np.sin(2*pi*m*t/t_f)*b[m-1] * -4*(pi**2.0)/(t_f**2.0)
-    for m in range(1,M+1):
-        L+= m**2*np.cos(2*pi*m*t/t_f)*a[m-1] * -4*(pi**2.0)/(t_f**2.0)
-
+    m = np.arange(1, M+1)
+    for i in m:
+        v = i*(2*pi / t_f)
+        L += np.sum((v**2) * -1.0 * a*np.cos(v*t)) + np.sum((v**2) * -1.0 * b*np.sin(2*pi*(m*t)/t_f))
     return L
+
 
 def X_(t,p,a,b,M,t_f):
-    return P_(t,p,M) + L_(t,a,b,M,t_f)
+    return P_(t, p, a, b, M, t_f) + L_(t, a, b, M, t_f)
+
 
 def d_X_(t,p,a,b,M,t_f):
-    return d_P_(t,p,M) + d_L_(t,a,b,M,t_f)
+    return d_P_(t, p, a, b, M, t_f) + d_L_(t, a, b, M, t_f)
+
 
 def d_d_X_(t,p,a,b,M,t_f):
-    return d_d_P_(t,p,M) + d_d_L_(t,a,b,M,t_f)
+    return d_d_P_(t, p, a, b, M, t_f) + d_d_L_(t, a, b, M, t_f)
 
 
+# should the fourier series be always be *zero* at the edges, or simply *the same*?
 
-# def Xv_to_
+def X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M):
+    """
+    Moves polynomial boundary conditions so that the fourier series is
+    always zero at the edges for convergence
+    """
+    return (X_t0 - L_(epsilon, a, b, M, t_f),
+            d_X_t0 - d_L_(epsilon, a, b, M, t_f),
+            d_d_X_t0 - d_d_L_(epsilon, a, b, M, t_f),
+
+            X_tf - L_(t_f, a, b, M, t_f),
+            d_X_tf - d_L_(t_f, a, b, M, t_f),
+            d_d_X_tf - d_d_L_(t_f, a, b, M, t_f))
+
+
+def P_BCs_to_p_coefficients(P_BCs, t_f):
+    """
+    Converts the polynomial boundary conditions that must be enforced into
+    the polynomial coefficients
+    """
+    P_t0, d_P_t0, d_d_P_t0, P_tf, d_P_tf, d_d_P_tf = P_BCs
+
+    p_0 = P_t0
+    p_1 = d_P_t0
+    p_2 = d_d_P_t0/2
+    p_3 = (t_f**2*(-3*d_d_P_t0 + d_d_P_tf) - 4*t_f*(3*d_P_t0 + 2*d_P_tf) - 20*P_t0 + 20*P_tf)/(2*t_f**3)
+    p_4 = (t_f**2*(3*d_d_P_t0 - 2*d_d_P_tf)/2 + t_f*(8*d_P_t0 + 7*d_P_tf) + 15*P_t0 - 15*P_tf)/t_f**4
+    p_5 = (t_f**2*(-d_d_P_t0 + d_d_P_tf) - 6*t_f*(d_P_t0 + d_P_tf) - 12*P_t0 + 12*P_tf)/(2*t_f**5)
+
+    return (p_0, p_1, p_2, p_3, p_4, p_5)
+
+
+def P_(t, P_BCs, a, b, M, t_f):
+    """
+    Polynomial from polynomial_system_of_equations.py
+    """
+    p_0, p_1, p_2, p_3, p_4, p_5 = P_BCs_to_p_coefficients(P_BCs, t_f)
+
+    return p_0 + p_1*t + p_2*t**2 + p_3*t**3 + p_4*t**4 + p_5*t**5
+
+
+# d_P_(t, P_BCs, a, b, M, t_f) = ForwardDiff.derivative(n -> P_(n, P_BCs, a, b, M, t_f), t)
+# d_d_P_(t, P_BCs, a, b, M, t_f) = ForwardDiff.derivative(n -> d_P_(n, P_BCs, a, b, M, t_f), t)
+
+def d_P_(t, P_BCs, a, b, M, t_f):
+    """
+    Polynomial from polynomial_system_of_equations.py
+    """
+    p_0, p_1, p_2, p_3, p_4, p_5 = P_BCs_to_p_coefficients(P_BCs, t_f)
+
+    return p_1 + 2*p_2*t + 3*p_3*t**2 + 4*p_4*t**3 + 5*p_5*t**4
+
+
+def d_d_P_(t, P_BCs, a, b, M, t_f):
+    """
+    Polynomial from polynomial_system_of_equations.py
+    """
+    p_0, p_1, p_2, p_3, p_4, p_5 = P_BCs_to_p_coefficients(P_BCs, t_f)
+
+    return 2*p_2 + 6*p_3*t + 12*p_4*t**2 + 20*p_5*t**3
