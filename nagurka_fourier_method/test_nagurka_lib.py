@@ -50,7 +50,7 @@ def test_Kirk_A_example():
 
     U = X + d_d_X
 
-    # all of these are perfect except U, need asserts
+    # all of these are perfect except U
     # plt.plot(t,X)
     # plt.plot(t,P_(t, p, M))
     # plt.plot(t,
