@@ -78,6 +78,9 @@ def test_Kirk_A_example():
     assert J == pytest.approx(1.675e1)
 
 
+
+
+
 #
 # def test_Kirk_C_example():
 #     '''
@@ -142,51 +145,35 @@ def test_Kirk_A_example():
 # #
 # #     p = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 #
-#
-# def test_polynomial_BCs():
-#     t_0 = epsilon
-#     t_f = 2.0
-#
-#     a = np.array([1.0])
-#     b = np.array([-0.3])
-#     M = 1
-#
-#     t = np.linspace(epsilon, t_f, 100)
-#
-#     virus = default_virus(t)
-#     host_cell = default_host_cell(t)
-#
-#     X_t0 = 0.0
-#     X_tf = 5.0
-#     d_X_t0 = 0.0
-#     d_X_tf = 2.0
-#     d_d_X_t0 = 6.1025137
-#     d_d_X_tf = -3.4798053
-#
-#     p = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
-#
-#     check.almost_equal(P_(epsilon,p,M), X_t0 - L_(epsilon,a,b,M,t_f))
-#     check.almost_equal(P_(t_f,p,M), X_tf - L_(t_f,a,b,M,t_f))
-#
-#     check.almost_equal(d_P_(epsilon,p,M), d_X_t0 - d_L_(epsilon,a,b,M,t_f), 1e-4)
-#     check.almost_equal(d_P_(t_f,p,M), d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
-#
-#     check.almost_equal(d_d_P_(epsilon,p,M), d_d_X_t0 - d_d_L_(epsilon,a,b,M,t_f), 1e-4)
-#     check.almost_equal(d_d_P_(t_f,p,M), d_d_X_tf - d_d_L_(t_f,a,b,M,t_f), 1e-4)
-#
-#     # p0, pf, d_p0, d_pf, d_d_p0, d_d_pf = P_restate_coeffs(t, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
-#     # check.almost_equal(P_restate(epsilon, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M), X_t0 - L_(epsilon,a,b,M,t_f))
-#     # check.almost_equal(P_restate(t_f, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M), X_tf - L_(t_f,a,b,M,t_f))
-#
-#     # check.almost_equal(P_(t_f,p,M), X_tf - L_(t_f,a,b,M,t_f))
-#     #
-#     # check.almost_equal(d_P_(epsilon,p,M), d_X_t0 - d_L_(epsilon,a,b,M,t_f), 1e-4)
-#     # check.almost_equal(d_P_(t_f,p,M), d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
-#     #
-#     # check.almost_equal(d_d_P_(epsilon,p,M), d_d_X_t0 - d_d_L_(epsilon,a,b,M,t_f), 1e-4)
-#     # check.almost_equal(d_d_P_(t_f,p,M), d_d_X_tf - d_d_L_(t_f,a,b,M,t_f), 1e-4)
-#
-#
+
+def test_polynomial_BCs():
+    t_0 = epsilon
+    t_f = 2.0
+
+    a = np.array([1.0, 4.0])
+    b = np.array([-0.3,-2])
+    M = 2
+
+    t = np.linspace(epsilon, t_f, 100)
+
+    X_t0 = 3.0
+    X_tf = 5.0
+    d_X_t0 = 4.0
+    d_X_tf = 2.0
+    d_d_X_t0 = 6.1025137
+    d_d_X_tf = -3.4798053
+
+    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+
+    check.almost_equal(P_(epsilon, P_BCs, a, b, M, t_f), X_t0 - L_(epsilon,a,b,M,t_f))
+    check.almost_equal(P_(t_f, P_BCs, a, b, M, t_f), X_tf - L_(t_f,a,b,M,t_f))
+
+    check.almost_equal(d_P_(epsilon, P_BCs, a, b, M, t_f), d_X_t0 - d_L_(epsilon,a,b,M,t_f), 1e-4)
+    check.almost_equal(d_P_(t_f, P_BCs, a, b, M, t_f), d_X_tf - d_L_(t_f,a,b,M,t_f), 1e-4)
+
+    check.almost_equal(d_d_P_(epsilon, P_BCs, a, b, M, t_f), d_d_X_t0 - d_d_L_(epsilon,a,b,M,t_f), 1e-4)
+    check.almost_equal(d_d_P_(t_f, P_BCs, a, b, M, t_f), d_d_X_tf - d_d_L_(t_f,a,b,M,t_f), 1e-4)
+
 #
 # def test_L_sin_series():
 #     t_f = 1.5
