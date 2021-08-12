@@ -75,7 +75,7 @@ def L_(t, a, b, M, t_f):
     m = np.arange(1, M+1)
     for i in m:
         v = i*(2*pi / t_f)
-        L += np.sum(a[i-1]*np.cos(v*t)) + np.sum(b[i-1]*np.sin(v*t))
+        L += a[i-1]*np.cos(v*t)) + b[i-1]*np.sin(v*t)
     return L
 
 
@@ -87,7 +87,7 @@ def d_L_(t, a, b, M, t_f):
     m = np.arange(1, M+1)
     for i in m:
         v = i*(2*pi / t_f)
-        L += np.sum(v * -1.0 * a[i-1]*np.sin(v*t)) + np.sum(v * b[i-1]*np.cos(v*t))
+        L += v * -1.0 * a[i-1]*np.sin(v*t) + v * b[i-1]*np.cos(v*t)
     return L
 
 
@@ -96,7 +96,7 @@ def d_d_L_(t, a, b, M, t_f):
     m = np.arange(1, M+1)
     for i in m:
         v = i*(2*pi / t_f)
-        L += np.sum((v**2) * -1.0 * a[i-1]*np.cos(v*t)) + np.sum((v**2) * -1.0 * b[i-1]*np.sin(2*pi*(m*t)/t_f))
+        L += (v**2) * -1.0 * a[i-1]*np.cos(v*t)) + (v**2) * -1.0 * b[i-1]*np.sin(2*pi*(m*t)/t_f)
     return L
 
 
