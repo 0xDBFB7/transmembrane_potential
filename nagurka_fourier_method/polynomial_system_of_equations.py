@@ -39,5 +39,5 @@ sympy.pprint(sympy.solve(Exp, p_0, p_1, p_2, p_3, p_4, p_5))
 for key,value in sympy.solve(Exp, p_0, p_1, p_2, p_3, p_4, p_5).items():
     print(f"$${sympy.latex(key)} = {sympy.latex(value)}$$")
 
-
                                 # Eq(P(0), P0), Eq(P(t_f), P0)]))
+                                

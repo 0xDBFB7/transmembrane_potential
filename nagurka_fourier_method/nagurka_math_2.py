@@ -258,7 +258,55 @@ no, this is all wrong.
 '''
 
 
+"""
+Much later:
 
+Introducing two new variables R and W as placeholders for U and X, whichever order is chosen,
+
+
+SymPy doesn't like floating-point exponents! doesn't work at all!
+"""
+
+a1,b1,a2,b2,p_0,p_1,p_2 = symbols("a1 b1 a2 b2 p_0 p_1 p_2", real=True)
+R = t**2 #p_2*t**2 #cos(a1*t) #+ sin(b1*t) #cos(a2*t) + sin(b2*t) + p0 + p1*t
+# U = sin(t) + cos(t)
+W = Function('W') #previously U
+A,B,C,D,E = symbols("A,B,C,D,E",real=True)
+LHS = diff(W(t),t,t) + A * diff(W(t),t) + B*W(t)
+RHS = C*diff(R,t,t) + D*diff(R,t) + E*R
+
+sympy.pprint(Eq(LHS, RHS))
+
+W_0, d_W_0 = symbols("W_0 d_W_0", real=True)
+
+solution = dsolve(Eq(LHS, RHS), W(t), ics={W(0): W_0, W(t).diff(t,1).subs(t,0): d_W_0})
+sympy.pprint(solution)
+# sympy.pprint(sympy.simplify(solution))
+print(len(solution.args[1].args)) #first arg is just u
+# a1b1 single term, 18 + 2 for the IC particular
+# a1b1+a2b2; 36 + 2
+
+
+
+"""
+That produces a huge amount of algebra. Can the Laplace transform cut down on that?
+http://josephcslater.github.io/solve-ode.html
+"""
+
+print("ilt----------------")
+s = sympy.symbols('s')
+
+LHS = W(s)*s**2 + A * W(s)*s + B*W(s)
+lt = Eq(LHS, sympy.laplace_transform(RHS, t, s, noconds = True))
+sympy.pprint(lt)
+
+Ult = sympy.solve(lt,W(s))
+sympy.pprint(Ult)
+sympy.pprint(sympy.inverse_laplace_transform(Ult[0],s,t))
+
+"""
+Nope! That's way less manageable. okay!
+"""
 
 
 

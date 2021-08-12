@@ -123,28 +123,7 @@ def test_Kirk_A_example():
 #     J = 0.5*integrate.simpson(U**2.0,t)
 #     assert J == pytest.approx(6.708092)
 #
-# # def test_transmembrane_compare():
-# #
-# #     t_f = 2.0
-# #     a = np.array([-1.95643e-3])
-# #     b = np.array([1.442172e-3])
-# #
-# #     M = a.shape[0]
-# #
-# #     t = np.linspace(epsilon, t_f, 60)
-# #
-# #     virus = default_virus(t)
-# #     host_cell = default_host_cell(t)
-# #
-# #     X_t0 = 0.0
-# #     X_tf = 5.0
-# #     d_X_t0 = 0.0
-# #     d_X_tf = 2.0
-# #     d_d_X_t0 = 6.1025137
-# #     d_d_X_tf = -3.4798053
-# #
-# #     p = P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
-#
+
 
 def test_polynomial_BCs():
     t_0 = epsilon

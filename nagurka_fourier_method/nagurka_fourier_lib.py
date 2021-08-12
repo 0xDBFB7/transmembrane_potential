@@ -48,9 +48,6 @@ from math import pi
 #maybe jax someday?
 
 
-# import sys
-# sys.path.app('../')
-# from transmembrane_lib import *
 
 
 import matplotlib.pyplot as plt
