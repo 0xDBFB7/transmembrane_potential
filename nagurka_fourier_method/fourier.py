@@ -23,7 +23,7 @@ def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = guess[2*M]
+    t_f = 1e-7
 
 
     X_t0 = 0.0
@@ -41,7 +41,7 @@ def get_output(guess):
 
     P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 
-    t = np.linspace(epsilon, t_f, 1500, dtype=np.float128)#300 before - really running into resolution issues
+    t = np.linspace(epsilon, t_f, 15000, dtype=np.float128)#300 before - really running into resolution issues
 
     virus = default_virus(t)
     host_cell = default_host_cell(t)
@@ -67,9 +67,20 @@ def cost_function(guess):
     # h1 = np.abs(np.sum(host_cell_output))
 
     #0.25 threshold almost works but of course it can jump quickly
-    v1 = np.sum(np.where([virus_output*1e7 > 0.5*np.max(virus_output*1e7)])) + epsilon
-    h1 = np.sum(np.where(np.logical_or([host_cell_output*1e7 > 0.5*np.max(host_cell_output*1e7)],
-                        [host_cell_output*1e7 < 0.5*np.min(host_cell_output*1e7)]))) + epsilon
+    # honestly this works way better than you might expect
+    # v1 = np.sum(np.where([virus_output*1e7 > 0.5*np.max(virus_output*1e7)])) + epsilon
+    # h1 = np.sum(np.where(np.logical_or([host_cell_output*1e7 > 0.5*np.max(host_cell_output*1e7)],
+    #                     [host_cell_output*1e7 < 0.5*np.min(host_cell_output*1e7)]))) + epsilon
+
+
+    #0.25 threshold almost works but of course it can jump quickly
+    # v1 = np.sum(np.where([virus_output*1e7 > host_cell_output*1e7])) + epsilon
+    # h1 = np.sum(np.where([host_cell_output*1e7 > virus_output*1e7]
+    #                     )) + epsilon
+
+    v1 = np.sum(np.abs(virus_output*1e7 - 1.0))
+    h1 = np.sum(np.abs(host_cell_output*1e7 - 0.0))
+
 
     u1 = np.sum(U*U)
 
@@ -90,7 +101,7 @@ guess_initial[2*M] = 10**(-np.random.random()*15)
 
 bounds = [(-1000, 1000.0)]*(2*M) + [(1e-10, 1e-4)] + [(-10, 10)] + [(-100, 100)] + [(-100, 100)] + [(-100, 100)] #+ [(-10, 10)]
 
-Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":1000}, bounds=bounds).x #, "maxiter":1000
+Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, bounds=bounds).x #, "maxiter":1000
 # tubthumper = basinhopping
 # minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":100}, bounds=bounds) #, tol=1e-12
 # Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
