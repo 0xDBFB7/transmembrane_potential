@@ -23,7 +23,7 @@ def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-9
+    t_f = 1e-8
 
 
     X_t0 = 0.0
@@ -41,7 +41,7 @@ def get_output(guess):
 
     P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 
-    t = np.linspace(epsilon, t_f, 500, dtype=np.float128)#300 before - really running into resolution issues
+    t = np.linspace(epsilon, t_f, 1000, dtype=np.float128)#300 before - really running into resolution issues
 
     virus = default_virus(t)
     host_cell = default_host_cell(t)
@@ -73,13 +73,16 @@ def cost_function(guess):
     #                     [host_cell_output*1e7 < 0.5*np.min(host_cell_output*1e7)]))) + epsilon
 
 
-    #0.25 threshold almost works but of course it can jump quickly
+    #0.25 threshold almost works but of course it can jump quickly # M=40
     # v1 = np.sum(np.where([virus_output*1e7 > host_cell_output*1e7])) + epsilon
     # h1 = np.sum(np.where([host_cell_output*1e7 > virus_output*1e7]
     #                     )) + epsilon
 
-    v1 = np.sum(np.abs(virus_output*1e7 - 1.0))
+    v1 = np.sum(np.abs(virus_output*1e7 - 10.0))
     h1 = np.sum(np.abs(host_cell_output*1e7 - 0.0))
+
+    v1 = np.abs(np.sum(virus_output*1e7 - 10.0))
+    h1 = np.abs(np.sum(host_cell_output*1e7 - 0.0))
 
 
     u1 = np.sum(U*U)
@@ -90,7 +93,7 @@ def cost_function(guess):
     print("t_f = ", guess[2*M])
     print("val = ", abs(h1/v1), v1, h1)
 
-    return -v1 + h1
+    return v1 + h1
     # return abs(h1/v1) # settles invariably at 35.8 if t bound is low
     # return abs(abs(host_cell_output[-1])/abs(virus_output[-1]))
 
