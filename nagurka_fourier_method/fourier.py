@@ -54,8 +54,8 @@ def cost_function(guess):
 
     U, virus_output, host_cell_output, t = get_output(guess)
 
-    v1 = np.sum(virus_output*virus_output)
-    h1 = np.sum(host_cell_output*host_cell_output)
+    v1 = np.sum(np.abs(virus_output))
+    h1 = np.sum(np.abs(host_cell_output))
     u1 = np.sum(U*U)
 
     # print(guess[0:M], guess[M:(2*M)])
@@ -75,7 +75,7 @@ guess_initial[2*M] = 10**(-np.random.random()*15)
 
 bounds = [(-1000, 1000.0)]*(2*M) + [(1e-17, 1e-9)] + [(-10, 10)] + [(-100, 100)] + [(-100, 100)] + [(-100, 100)] + [(-10, 10)]
 
-Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True}, bounds=bounds, tol=1e-30).x #, "maxiter":1000
+Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True}, bounds=bounds).x #, "maxiter":1000
 # tubthumper = basinhopping
 # minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":100}, bounds=bounds) #, tol=1e-12
 # Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
