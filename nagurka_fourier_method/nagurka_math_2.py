@@ -267,8 +267,8 @@ Introducing two new variables R and W as placeholders for U and X, whichever ord
 SymPy doesn't like floating-point exponents! doesn't work at all!
 """
 
-a1,b1,a2,b2,p_0,p_1,p_2 = symbols("a1 b1 a2 b2 p_0 p_1 p_2", real=True)
-R = t**2 #p_2*t**2 #cos(a1*t) #+ sin(b1*t) #cos(a2*t) + sin(b2*t) + p0 + p1*t
+a1,b1,a2,b2,p_0,p_1,p_2,p_3,p_4,p_5 = symbols("a1 b1 a2 b2 p_0 p_1 p_2 p_3 p_4 p_5", real=True)
+R = p_5*t**5 #p_2*t**2 #cos(a1*t) #+ sin(b1*t) #cos(a2*t) + sin(b2*t) + p0 + p1*t
 # U = sin(t) + cos(t)
 W = Function('W') #previously U
 A,B,C,D,E = symbols("A,B,C,D,E",real=True)
@@ -277,14 +277,23 @@ RHS = C*diff(R,t,t) + D*diff(R,t) + E*R
 
 sympy.pprint(Eq(LHS, RHS))
 
-W_0, d_W_0 = symbols("W_0 d_W_0", real=True)
+W_0, d_W_0, W_tf, d_W_tf = symbols("W_0 d_W_0 W_tf d_W_tf", real=True)
 
-solution = dsolve(Eq(LHS, RHS), W(t), ics={W(0): W_0, W(t).diff(t,1).subs(t,0): d_W_0})
+solution = dsolve(Eq(LHS, RHS), W(t), ics={W(0): 0, W(t).diff(t,1).subs(t,0): 0})
+
+# adding W(t_f): W_tf, W(t).diff(t,1).subs(t,t_f): d_W_tf}
+# raises ValueError: Couldn't solve for initial conditions
 sympy.pprint(solution)
-# sympy.pprint(sympy.simplify(solution))
+sympy.pprint(diff(solution.args[1], t,t))
+sympy.pprint(sympy.simplify(solution))
 print(len(solution.args[1].args)) #first arg is just u
 # a1b1 single term, 18 + 2 for the IC particular
 # a1b1+a2b2; 36 + 2
+
+
+"""
+So everything is nicely analytic, but the whole equation is algebraicly tricky.
+"""
 
 
 

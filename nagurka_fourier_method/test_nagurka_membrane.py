@@ -9,14 +9,9 @@ Contains the actual virus optimization routine.
 
 '''
 
-from nagurka_fourier_lib import *
-
-import sys
-sys.path.app('../')
-from transmembrane_lib import *
+from nagurka_membrane_extensions import *
 
 
-def X_to_
 
 
 def test_transmembrane_compare():
