@@ -23,7 +23,7 @@ def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-7
+    t_f = 1e-9
 
 
     X_t0 = 0.0
@@ -41,7 +41,7 @@ def get_output(guess):
 
     P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 
-    t = np.linspace(epsilon, t_f, 15000, dtype=np.float128)#300 before - really running into resolution issues
+    t = np.linspace(epsilon, t_f, 500, dtype=np.float128)#300 before - really running into resolution issues
 
     virus = default_virus(t)
     host_cell = default_host_cell(t)
