@@ -5,6 +5,8 @@ N.B.
 Contains the actual virus optimization routine.
 
 '''
+import dill
+import pickle
 
 from nagurka_membrane_extensions import *
 
@@ -16,14 +18,18 @@ def new_virus(t):
 
 
 
+"""
+One main improvement is the use of non-gradient-based solvers, which allows the
+use of non-smooth cost functions without well-defined gradients. Many solvers use pseudo-abs functions 
 
+"""
 M = 20
 
 def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-8
+    t_f = 1e-7
 
 
     X_t0 = 0.0
@@ -41,7 +47,7 @@ def get_output(guess):
 
     P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 
-    t = np.linspace(epsilon, t_f, 1000, dtype=np.float128)#300 before - really running into resolution issues
+    t = np.linspace(epsilon, t_f, 10000, dtype=np.float128)#300 before - really running into resolution issues
 
     virus = default_virus(t)
     host_cell = default_host_cell(t)
@@ -68,22 +74,22 @@ def cost_function(guess):
 
     #0.25 threshold almost works but of course it can jump quickly
     # honestly this works way better than you might expect
-    # v1 = np.sum(np.where([virus_output*1e7 > 0.5*np.max(virus_output*1e7)])) + epsilon
-    # h1 = np.sum(np.where(np.logical_or([host_cell_output*1e7 > 0.5*np.max(host_cell_output*1e7)],
-    #                     [host_cell_output*1e7 < 0.5*np.min(host_cell_output*1e7)]))) + epsilon
+    #previously had np.where after sum
+    v1 = np.sum(([virus_output*1e7 > 0.5*np.max(virus_output*1e7)])) + epsilon
+    h1 = np.sum((np.logical_or([host_cell_output*1e7 > 0.5*np.max(host_cell_output*1e7)],
+                        [host_cell_output*1e7 < 0.5*np.min(host_cell_output*1e7)]))) + epsilon
 
 
     #0.25 threshold almost works but of course it can jump quickly # M=40
+    # np. where isn't actually right, not what I was going for
     # v1 = np.sum(np.where([virus_output*1e7 > host_cell_output*1e7])) + epsilon
     # h1 = np.sum(np.where([host_cell_output*1e7 > virus_output*1e7]
     #                     )) + epsilon
 
-    v1 = np.sum(np.abs(virus_output*1e7 - 10.0))
-    h1 = np.sum(np.abs(host_cell_output*1e7 - 0.0))
-
-    v1 = np.abs(np.sum(virus_output*1e7 - 10.0))
-    h1 = np.abs(np.sum(host_cell_output*1e7 - 0.0))
-
+    #can also reverse order of sum abs
+    # v1 = np.sum(np.abs(virus_output*1e7 - 1.0)) # note with these the val is reversed (needs to increase)
+    # h1 = np.sum(np.abs(host_cell_output*1e7 - 0.0))
+    # generated 212.75299946576507.png
 
     u1 = np.sum(U*U)
 
@@ -93,7 +99,7 @@ def cost_function(guess):
     print("t_f = ", guess[2*M])
     print("val = ", abs(h1/v1), v1, h1)
 
-    return v1 + h1
+    return -v1 + h1 #-v1
     # return abs(h1/v1) # settles invariably at 35.8 if t bound is low
     # return abs(abs(host_cell_output[-1])/abs(virus_output[-1]))
 
@@ -104,7 +110,20 @@ guess_initial[2*M] = 10**(-np.random.random()*15)
 
 bounds = [(-1000, 1000.0)]*(2*M) + [(1e-10, 1e-4)] + [(-10, 10)] + [(-100, 100)] + [(-100, 100)] + [(-100, 100)] #+ [(-10, 10)]
 
-Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, bounds=bounds).x #, "maxiter":1000
+
+
+filename = 'globalsave.pkl'
+try:
+    dill.load_session(filename)
+    print("LOADED PREVIOUS SESSION")
+except:
+    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, bounds=bounds).x #, "maxiter":1000
+
+    dill.dump_session(filename)
+
+
+
+
 # tubthumper = basinhopping
 # minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":100}, bounds=bounds) #, tol=1e-12
 # Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
@@ -113,12 +132,16 @@ U, virus_output, host_cell_output, t = get_output(Tmin)
 U = U/np.max(U)
 virus = default_virus(t)
 host_cell = default_host_cell(t)
-plt.subplot(2, 1, 1)
+plt.subplot(3, 1, 1)
 plt.plot(t, U)
-plt.subplot(2, 1, 2)
+plt.subplot(3, 1, 2)
 plt.plot(t, virus_output*1e7)
 plt.plot(t, host_cell_output*1e7)
 v1 = np.abs(np.sum(virus_output))
 h1 = np.abs(np.sum(host_cell_output))
+plt.subplot(3, 1, 3)
+plt.plot(t, np.cumsum((([virus_output*1e8 > 0.25]))))
+plt.plot(t, np.cumsum((([host_cell_output*1e8 > 0.25]))))
+
 plt.savefig(f"plots/{ abs(h1/v1)}.png")
 plt.show()
