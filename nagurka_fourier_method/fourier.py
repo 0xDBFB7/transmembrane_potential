@@ -7,7 +7,7 @@ Contains the actual virus optimization routine.
 '''
 import dill
 import pickle
-
+import os
 from nagurka_membrane_extensions import *
 
 """
@@ -20,22 +20,24 @@ def new_virus(t):
 
 """
 One main improvement is the use of non-gradient-based solvers, which allows the
-use of non-smooth cost functions without well-defined gradients. Many solvers use pseudo-abs functions 
+use of non-smooth cost functions without well-defined gradients. Many solvers use pseudo-abs functions
 
 """
-M = 20
+M = 30
+
 
 def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-7
+    t_f = 1e-7#abs(guess[2*M])
 
+    ts = int(((2*pi*M))*5)
 
     X_t0 = 0.0
-    X_tf = guess[2*M+1]
-    d_X_t0 = 0.0 #guess[2*M+5]*(1/t_f)
-    d_X_tf = guess[2*M+2]*(1/t_f)
+    X_tf = 0.0#guess[2*M+1]
+    d_X_t0 = 0.0 # - beforeguess[2*M+5]*(1/t_f)
+    d_X_tf = 0.0#guess[2*M+2]*(1/t_f)
     d_d_X_t0 = guess[2*M+3]*(1/(t_f**2.0))
     d_d_X_tf = guess[2*M+4]*(1/(t_f**2.0))
 
@@ -47,7 +49,7 @@ def get_output(guess):
 
     P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
 
-    t = np.linspace(epsilon, t_f, 10000, dtype=np.float128)#300 before - really running into resolution issues
+    t = np.linspace(epsilon, t_f, ts, dtype=np.float128)#300 before - really running into resolution issues
 
     virus = default_virus(t)
     host_cell = default_host_cell(t)
@@ -57,12 +59,13 @@ def get_output(guess):
     virus_output = U_to_X(U, t, virus)
     host_cell_output = U_to_X(U, t, host_cell)
 
-    return U, virus_output, host_cell_output, t
+
+    return U, virus_output, host_cell_output, t, ts
 
 
 def cost_function(guess):
 
-    U, virus_output, host_cell_output, t = get_output(guess)
+    U, virus_output, host_cell_output, t, ts = get_output(guess)
 
     # v1 = np.sum(virus_output[virus_output > 0])
     # h1 = np.sum(host_cell_output[host_cell_output > 0])
@@ -75,9 +78,14 @@ def cost_function(guess):
     #0.25 threshold almost works but of course it can jump quickly
     # honestly this works way better than you might expect
     #previously had np.where after sum
-    v1 = np.sum(([virus_output*1e7 > 0.5*np.max(virus_output*1e7)])) + epsilon
-    h1 = np.sum((np.logical_or([host_cell_output*1e7 > 0.5*np.max(host_cell_output*1e7)],
-                        [host_cell_output*1e7 < 0.5*np.min(host_cell_output*1e7)]))) + epsilon
+    # v1 = np.sum(([virus_output*1e7 > 0.5*np.max(virus_output*1e7)])) + epsilon
+    # h1 = np.sum((np.logical_or([host_cell_output*1e7 > 0.5*np.max(host_cell_output*1e7)],
+    #                     [host_cell_output*1e7 < 0.5*np.min(host_cell_output*1e7)]))) + epsilon
+
+    # v1 = np.sum(([virus_output*1e7 > 0.1])) + epsilon  + np.sum(np.abs(virus_output))*ts
+    # h1 = np.sum((np.logical_or([host_cell_output*1e7 > 0.1],
+    #                     [host_cell_output*1e7 < -0.1]))) + epsilon + np.sum(np.abs(host_cell_output))*ts
+
 
 
     #0.25 threshold almost works but of course it can jump quickly # M=40
@@ -91,15 +99,25 @@ def cost_function(guess):
     # h1 = np.sum(np.abs(host_cell_output*1e7 - 0.0))
     # generated 212.75299946576507.png
 
-    u1 = np.sum(U*U)
+    # v1 = np.sum(([np.abs(virus_output*1e7) > 0.25]))
+    # h1 = np.sum(([np.abs(host_cell_output*1e7) > 0.25]))
+
+    # u1 = np.sum(U*U)
+
+    v1 = np.sum(np.abs(virus_output*1e7 - 1.0) / (ts))*10
+    h1 = np.sum(np.abs(host_cell_output*1e7)/(ts))
+
+    v2 = np.sum(np.abs(np.diff(virus_output))/(np.max(virus_output)-np.min(virus_output)))
+    h2 = np.sum(np.abs(np.diff(host_cell_output))/(np.max(host_cell_output)-np.min(host_cell_output)))
+
 
     # print(guess[0:M], guess[M:(2*M)])
-    import os
     os.system('clear')
     print("t_f = ", guess[2*M])
-    print("val = ", abs(h1/v1), v1, h1)
+    print("val = ", abs(h1/v1), v1, h1, v2, h2)
 
-    return -v1 + h1 #-v1
+
+    return v1 + h1 + v2 + h2 #-v1
     # return abs(h1/v1) # settles invariably at 35.8 if t bound is low
     # return abs(abs(host_cell_output[-1])/abs(virus_output[-1]))
 
@@ -108,7 +126,7 @@ guess_initial = np.array((np.random.random(M*2 + 5, )*2 - 1.0), dtype=np.float12
 # guess_initial[0] =
 guess_initial[2*M] = 10**(-np.random.random()*15)
 
-bounds = [(-1000, 1000.0)]*(2*M) + [(1e-10, 1e-4)] + [(-10, 10)] + [(-100, 100)] + [(-100, 100)] + [(-100, 100)] #+ [(-10, 10)]
+bounds = [(-1000, 1000.0)]*(2*M) + [(1e-12, 1e-4)] + [(-10, 10)] + [(-100, 100)] + [(-100, 100)] + [(-100, 100)] #+ [(-10, 10)]
 
 
 
@@ -117,7 +135,7 @@ try:
     dill.load_session(filename)
     print("LOADED PREVIOUS SESSION")
 except:
-    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, bounds=bounds).x #, "maxiter":1000
+    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":20000}, bounds=bounds).x #, "maxiter":1000
 
     dill.dump_session(filename)
 
@@ -128,8 +146,7 @@ except:
 # minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":100}, bounds=bounds) #, tol=1e-12
 # Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
 
-U, virus_output, host_cell_output, t = get_output(Tmin)
-U = U/np.max(U)
+U, virus_output, host_cell_output, t, ts = get_output(Tmin)
 virus = default_virus(t)
 host_cell = default_host_cell(t)
 plt.subplot(3, 1, 1)
