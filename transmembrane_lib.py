@@ -10,6 +10,9 @@ from numpy import heaviside
 from scipy.constants import epsilon_0, mu_0
 from scipy.signal import convolve
 from pytexit import py2tex
+from scipy.integrate import solve_ivp
+from scipy.interpolate import interp1d
+from icecream import ic
 
 def ustep(v):
 
@@ -321,3 +324,68 @@ class gekko_sim_method:
         m.options.IMODE = 4 # dynamic simulation
 
         m.solve(disp=True) # solve
+
+
+
+"""
+Electroporation constants and ODEs from DeBruin et al. (as cited by Talele et al).
+
+units are different for both. DeBruin use nondimensionalized V vs talele's v.
+
+Described in detail by Modeling1999a in APPENDIX A: ORIGIN OF EQ. 8 GOVERNING
+PORE DENSITY.
+
+"In application to a single cell, the following simplifications were made.
+First, the formulation given above represents a quasistatic limit, i.e., it is
+assumed that the pore distribution function n adjusts instantaneously to
+temporal variations in pore energy. As argued in the original study (Neu
+and Krassowska, 1999), this approximation is valid when the changes in
+Vm occur on a time scale of at least 5 us. Here, cellular polarization has a
+time constant of 1.1 us, so the quasistatic approximation introduces an
+error."
+
+
+The time constant for re-sealing is really high - a few seconds in DeBruin
+
+rest potential is ignored.
+"""
+pore_N0 = 1.5*1e9
+pore_alpha = 100*1e7
+pore_q = 2.46
+pore_V_ep = 0.258
+##########################33
+
+
+def d_pore_density(t_n, N, interp_transmembrane_potential, N0, alpha, q, V_ep):
+    F = 96485.332
+    T = 295.0
+    R = 8.314
+    V_m = abs(interp_transmembrane_potential(t_n))
+    # it doesn't seem like this abs should need to be here.
+    # should check if this is correct.
+
+    v_m = V_m * (F / (R*T))
+    v_ep = V_ep * (F / (R*T))
+    k = (v_m/v_ep)**2.0
+    return alpha * exp(k) * (1.0 - (N/N0)*exp(-q*k))
+
+def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
+    """
+    the N output is in pores per meter squared.
+
+    This density value is only valid precisely at the poles along the polarization of the cell and
+    virus; the density will reduce to 0 at the equator.
+    """
+    # (t[0], t[-1])
+    interp_transmembrane_potential = interp1d(t, transmembrane_potential,
+                                    kind='cubic', bounds_error=False, fill_value=(0,0))
+    """
+    This is especially stupid. Since everything's analytic, there's no reason to go
+    continuous -> discrete -> interpolated continuous.
+
+    fill_value needed because solve_ivp tries to run off the end of the interp validity
+    """
+    print([t[0], t[-1]])
+    return solve_ivp(d_pore_density,t_span=(t[0], t[-1]),y0=[0],
+                    args = (interp_transmembrane_potential, N0, alpha, q, V_ep),
+                        t_eval=t, atol=1e-9, rtol=1e-9)["y"][0]

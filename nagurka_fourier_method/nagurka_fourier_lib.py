@@ -96,7 +96,7 @@ def d_d_L_(t, a, b, M, t_f):
     m = np.arange(1, M+1)
     for i in m:
         v = i*(2*pi / t_f)
-        L += (v**2) * -1.0 * a[i-1]*np.cos(v*t) + (v**2) * -1.0 * b[i-1]*np.sin(2*pi*(m*t)/t_f)
+        L += (v**2) * -1.0 * a[i-1]*np.cos(v*t) + (v**2) * -1.0 * b[i-1]*np.sin(v*t)
     return L
 
 

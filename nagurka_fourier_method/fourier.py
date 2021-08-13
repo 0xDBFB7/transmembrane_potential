@@ -19,20 +19,21 @@ def new_virus(t):
 
 
 """
-One main improvement is the use of non-gradient-based solvers, which allows the
-use of non-smooth cost functions without well-defined gradients. Many solvers use pseudo-abs functions
-
+https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
-M = 30
+
+M = 10 # number of fourier terms
+
+input_amplitude = 1e5
 
 
 def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-7#abs(guess[2*M])
+    t_f = 1e-5#abs(guess[2*M])
 
-    ts = int(((2*pi*M))*5)
+    ts = int(((2*pi*M))*7) # number of time steps
 
     X_t0 = 0.0
     X_tf = 0.0#guess[2*M+1]
@@ -54,19 +55,23 @@ def get_output(guess):
     virus = default_virus(t)
     host_cell = default_host_cell(t)
 
+    U = X_(t,P_BCs,a,b,M,t_f)
+    U /= np.max(np.abs(U))
+    virus_output = U_to_X(U, t, virus) * input_amplitude
+    host_cell_output = U_to_X(U, t, host_cell) * input_amplitude
 
-    U = L_(t,a,b,M,t_f)
-    virus_output = U_to_X(U, t, virus)
-    host_cell_output = U_to_X(U, t, host_cell)
 
+    # assumes the parameters are identical for both membranes
+    Nsq_virus = integrate_pore_density(t, virus_output, pore_N0, pore_alpha, pore_q, pore_V_ep)
+    Nsq_host_cell = integrate_pore_density(t, host_cell_output, pore_N0, pore_alpha, pore_q, pore_V_ep)
 
-    return U, virus_output, host_cell_output, t, ts
+    return U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts
 
 
 def cost_function(guess):
 
-    U, virus_output, host_cell_output, t, ts = get_output(guess)
-
+    U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(guess)
+    print(Nsq_virus)
     # v1 = np.sum(virus_output[virus_output > 0])
     # h1 = np.sum(host_cell_output[host_cell_output > 0])
     # v1 = np.sum(virus_output*virus_output)
@@ -104,20 +109,22 @@ def cost_function(guess):
 
     # u1 = np.sum(U*U)
 
-    v1 = np.sum(np.abs(virus_output*1e7 - 1.0) / (ts))*10
-    h1 = np.sum(np.abs(host_cell_output*1e7)/(ts))
+    # v1 = np.sum(np.abs(virus_output*1e7 - 1.0) / (ts))
+    # h1 = np.sum(np.abs(host_cell_output*1e7)/(ts))
+    #
+    # v2 = np.sum(np.abs(np.diff(virus_output))/(np.max(virus_output)-np.min(virus_output)))*0.01
+    # h2 = np.sum(np.abs(np.diff(host_cell_output))/(np.max(host_cell_output)-np.min(host_cell_output)))*0.01
 
-    v2 = np.sum(np.abs(np.diff(virus_output))/(np.max(virus_output)-np.min(virus_output)))
-    h2 = np.sum(np.abs(np.diff(host_cell_output))/(np.max(host_cell_output)-np.min(host_cell_output)))
-
+    v1 = Nsq_virus[-1]
+    h1 = Nsq_host_cell[-1]
 
     # print(guess[0:M], guess[M:(2*M)])
     os.system('clear')
     print("t_f = ", guess[2*M])
-    print("val = ", abs(h1/v1), v1, h1, v2, h2)
+    print("val = ", abs(h1/v1), v1, h1)#, v2, h2)
 
 
-    return v1 + h1 + v2 + h2 #-v1
+    return -v1 + h1 #+ v2 + h2 #-v1
     # return abs(h1/v1) # settles invariably at 35.8 if t bound is low
     # return abs(abs(host_cell_output[-1])/abs(virus_output[-1]))
 
@@ -133,9 +140,11 @@ bounds = [(-1000, 1000.0)]*(2*M) + [(1e-12, 1e-4)] + [(-10, 10)] + [(-100, 100)]
 filename = 'globalsave.pkl'
 try:
     dill.load_session(filename)
-    print("LOADED PREVIOUS SESSION")
+    print()
+    print("#"*10 + "LOADED PREVIOUS SESSION" + "#"*10)
+    print()
 except:
-    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":20000}, bounds=bounds).x #, "maxiter":1000
+    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, bounds=bounds).x #, "maxiter":1000
 
     dill.dump_session(filename)
 
@@ -146,19 +155,24 @@ except:
 # minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":100}, bounds=bounds) #, tol=1e-12
 # Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
 
-U, virus_output, host_cell_output, t, ts = get_output(Tmin)
+U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(Tmin)
 virus = default_virus(t)
 host_cell = default_host_cell(t)
 plt.subplot(3, 1, 1)
 plt.plot(t, U)
 plt.subplot(3, 1, 2)
-plt.plot(t, virus_output*1e7)
-plt.plot(t, host_cell_output*1e7)
+plt.plot(t, virus_output)
+plt.plot(t, host_cell_output)
 v1 = np.abs(np.sum(virus_output))
 h1 = np.abs(np.sum(host_cell_output))
 plt.subplot(3, 1, 3)
-plt.plot(t, np.cumsum((([virus_output*1e8 > 0.25]))))
-plt.plot(t, np.cumsum((([host_cell_output*1e8 > 0.25]))))
-
+plt.plot(t, Nsq_virus)
+plt.plot(t, Nsq_host_cell)
 plt.savefig(f"plots/{ abs(h1/v1)}.png")
 plt.show()
+
+
+
+
+# plt.plot(t, np.cumsum((([virus_output*1e8 > 0.25])))) # old way to integrate pore count
+# plt.plot(t, np.cumsum((([host_cell_output*1e8 > 0.25]))))
