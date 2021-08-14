@@ -34,7 +34,11 @@ def get_output(guess):
     t_f = 1e-6 #abs(guess[2*M])
 
     # input_amplitude = abs(guess[2*M]) * 1e7
-    input_amplitude = 1e7
+    input_amplitude = 1e8
+
+
+    # next, try adding a 1e7 scaling to a and b
+    # and lengthening the time scale even more
 
     ts = int(((2*pi*M))*7) # number of time steps
 
@@ -132,7 +136,7 @@ def cost_function(guess):
     # return abs(abs(host_cell_output[-1])/abs(virus_output[-1]))
 
 
-guess_initial = np.array((np.random.random(M*2 + 5, )*2 - 1.0), dtype=np.float128)
+guess_initial = np.array((np.random.random(M*2 + 5, )*2 - 1.0), dtype=np.float128)*1e7
 # guess_initial[0] =
 
 # guess_initial[2*M] = 10**(-np.random.random()*15) #time

@@ -268,7 +268,7 @@ SymPy doesn't like floating-point exponents! doesn't work at all!
 """
 
 a1,b1,a2,b2,p_0,p_1,p_2,p_3,p_4,p_5 = symbols("a1 b1 a2 b2 p_0 p_1 p_2 p_3 p_4 p_5", real=True)
-R = p_5*t**5 #p_2*t**2 #cos(a1*t) #+ sin(b1*t) #cos(a2*t) + sin(b2*t) + p0 + p1*t
+R = p_5*t**5 + cos(a1*t) #p_2*t**2 #cos(a1*t) #+ sin(b1*t) #cos(a2*t) + sin(b2*t) + p0 + p1*t
 # U = sin(t) + cos(t)
 W = Function('W') #previously U
 A,B,C,D,E = symbols("A,B,C,D,E",real=True)
@@ -284,12 +284,12 @@ solution = dsolve(Eq(LHS, RHS), W(t), ics={W(0): 0, W(t).diff(t,1).subs(t,0): 0}
 # adding W(t_f): W_tf, W(t).diff(t,1).subs(t,t_f): d_W_tf}
 # raises ValueError: Couldn't solve for initial conditions
 sympy.pprint(solution)
-sympy.pprint(diff(solution.args[1], t,t))
-sympy.pprint(sympy.simplify(solution))
+# sympy.pprint(diff(solution.args[1], t,t))
+# sympy.pprint(sympy.simplify(solution))
 print(len(solution.args[1].args)) #first arg is just u
 # a1b1 single term, 18 + 2 for the IC particular
 # a1b1+a2b2; 36 + 2
-
+sympy.pprint(sympy.integrate(solution, t))
 
 """
 So everything is nicely analytic, but the whole equation is algebraicly tricky.
@@ -303,21 +303,52 @@ http://josephcslater.github.io/solve-ode.html
 """
 
 print("ilt----------------")
-s = sympy.symbols('s')
-
-LHS = W(s)*s**2 + A * W(s)*s + B*W(s)
-lt = Eq(LHS, sympy.laplace_transform(RHS, t, s, noconds = True))
-sympy.pprint(lt)
-
-Ult = sympy.solve(lt,W(s))
-sympy.pprint(Ult)
-sympy.pprint(sympy.inverse_laplace_transform(Ult[0],s,t))
+# s = sympy.symbols('s')
+#
+# LHS = W(s)*s**2 + A * W(s)*s + B*W(s)
+# lt = Eq(LHS, sympy.laplace_transform(RHS, t, s, noconds = True))
+# sympy.pprint(lt)
+#
+# Ult = sympy.solve(lt,W(s))
+# sympy.pprint(Ult)
+# sympy.pprint(sympy.inverse_laplace_transform(Ult[0],s,t))
 
 """
 Nope! That's way less manageable. okay!
 """
 
+"""
+Integrating the pore N function is very expensive.
+can that be done analytically?
 
+"""
+v_m,alpha,N0,q,v_ep, N_ic  = symbols("v_m,alpha,N0,q,v_ep, N_ic", real=True)
+N = Function('N') #previously U
+v_m = Function('v_m') #previously U
+
+k = (v_m(t)/v_ep)**2.0
+
+LHS = diff(N(t),t)
+RHS = alpha * exp(k) * (1.0 - (N(t)/N0)*exp(-q*k))
+
+sympy.pprint(Eq(LHS, RHS))
+
+solution = dsolve(Eq(LHS, RHS), N(t), ics={N(0): N_ic})
+
+# adding W(t_f): W_tf, W(t).diff(t,1).subs(t,t_f): d_W_tf}
+# raises ValueError: Couldn't solve for initial conditions
+sympy.pprint(solution)
+print(solution)
+# sympy.pprint(sympy.simplify(solution))
+
+"""
+Oh yeah, it can.
+
+
+Hey, if everything's analytic and the cost function is just N, won't gradient methods work great?
+
+
+"""
 
 '''
 integration:
