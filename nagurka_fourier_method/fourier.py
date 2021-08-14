@@ -65,7 +65,7 @@ def get_output(guess):
 
     U = X_(t,P_BCs,a,b,M,t_f)
     print(np.max(U))
-    # U /= np.max(np.abs(U))
+    U /= np.max(np.abs(U))
     virus_output = U_to_X(U, t, virus) * input_amplitude
     host_cell_output = U_to_X(U, t, host_cell) * input_amplitude
 
@@ -118,7 +118,7 @@ def cost_function(guess):
     # v1 = np.sum(([np.abs(virus_output*1e7) > 0.25]))
     # h1 = np.sum(([np.abs(host_cell_output*1e7) > 0.25]))
 
-    # u1 = np.sum(U*U)
+    # u1 = np.sum(U*U) #needs
 
     # v1 = np.sum(np.abs(virus_output*1e7 - 1.0) / (ts))
     # h1 = np.sum(np.abs(host_cell_output*1e7)/(ts))
@@ -157,7 +157,7 @@ try:
     print("#"*10 + "LOADED PREVIOUS SESSION" + "#"*10)
     print()
 except:
-    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, bounds=bounds).x #, "maxiter":1000
+    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":1000}, bounds=bounds).x #, "maxiter":1000
 
     dill.dump_session(filename)
 
