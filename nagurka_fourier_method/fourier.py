@@ -26,6 +26,11 @@ M = 10 # number of fourier terms
 
 #input_amplitude = 1e8#
 
+"""
+Has to be scaled by 1/20 initially to push the N into the nonlinear - otherwise the
+host N count is beyond float precision.
+
+"""
 
 def get_output(guess):
     m = np.arange(1, M+1)
