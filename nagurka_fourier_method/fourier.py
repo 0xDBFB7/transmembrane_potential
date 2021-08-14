@@ -26,8 +26,10 @@ M = 10 # number of fourier terms
 
 #input_amplitude = 1e8#
 
-vir_w = 1.0
+vir_w = 1
 """
+A watched nelder-mead never converges
+
 depending on the time scale involved,
 Has to be scaled by 1/20 initially to push the N into the nonlinear - otherwise the
 host N count is beyond float precision.
@@ -45,7 +47,7 @@ def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-6 #abs(guess[2*M])
+    t_f = 1e-3 #abs(guess[2*M])
 
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
@@ -55,7 +57,7 @@ def get_output(guess):
     # and lengthening the time scale even more
     # maybe fiddle with the N integration algorithm? (is odeint really necessary?)
 
-    ts = int(((2*pi*M**2))*7) # number of time steps
+    ts = int(((2*pi*M))*7) # number of time steps
 
     X_t0 = 0.0
     X_tf = 0.0#guess[2*M+1]
@@ -74,7 +76,7 @@ def get_output(guess):
 
     t = np.linspace(epsilon, t_f, ts, dtype=np.float128)#300 before - really running into resolution issues
 
-    virus = default_virus(t)
+    virus = new_virus(t)
     host_cell = default_host_cell(t)
 
     U = X_(t,P_BCs,a,b,M,t_f)
@@ -139,8 +141,11 @@ def cost_function(guess):
     # v2 = np.sum(np.abs(np.diff(virus_output))/(np.max(virus_output)-np.min(virus_output)))*0.01
     # h2 = np.sum(np.abs(np.diff(host_cell_output))/(np.max(host_cell_output)-np.min(host_cell_output)))*0.01
 
-    v1 = np.max(Nsq_virus)#[-1]
-    h1 = np.max(Nsq_host_cell)#[-1]
+    # using max might be a bit unstable. maybe sum is better?
+    # not really what we want
+    v1 = np.sum(Nsq_virus)#[-1]
+    h1 = np.sum(Nsq_host_cell)#[-1]
+
 
     # print(guess[0:M], guess[M:(2*M)])
     os.system('clear')
@@ -163,7 +168,7 @@ try:
 except:
     pass
 
-vir_w = 1.0
+# vir_w = 1.0
 # guess_initial[2*M] = 10**(-np.random.random()*15) #time
 # guess_initial[2*M] = 1.0
 
@@ -195,7 +200,7 @@ with open('data.pickle', 'wb') as f:
 
 U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(Tmin)
 
-virus = default_virus(t)
+virus = new_virus(t)
 host_cell = default_host_cell(t)
 plt.subplot(3, 1, 1)
 plt.plot(t, U)
