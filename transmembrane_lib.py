@@ -356,11 +356,12 @@ pore_V_ep = 0.258
 ##########################33
 
 
-def d_pore_density(t_n, N, interp_transmembrane_potential, N0, alpha, q, V_ep):
+def d_pore_density(V_m, N, N0, alpha, q, V_ep):
     F = 96485.332
     T = 295.0
     R = 8.314
-    V_m = abs(interp_transmembrane_potential(t_n))
+    V_m = abs(V_m)
+    # V_m = abs(interp_transmembrane_potential(t_n))
     # it doesn't seem like this abs should need to be here.
     # should check if this is correct.
 
@@ -381,14 +382,20 @@ def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
     virus; the density will reduce to 0 at the equator.
     """
     # (t[0], t[-1])
-    interp_transmembrane_potential = interp1d(t, transmembrane_potential,
-                                    kind='cubic', bounds_error=False, fill_value=(0,0))
+    # interp_transmembrane_potential = interp1d(t, transmembrane_potential,
+    #                                 kind='cubic', bounds_error=False, fill_value=(0,0))
     """
     This is especially stupid. Since everything's analytic, there's no reason to go
     continuous -> discrete -> interpolated continuous.
 
     fill_value needed because solve_ivp tries to run off the end of the interp validity
     """
-    return solve_ivp(d_pore_density,t_span=(t[0], t[-1]),y0=[0],
-                    args = (interp_transmembrane_potential, N0, alpha, q, V_ep),
-                        t_eval=t, atol=1e-9, rtol=1e-9)["y"][0]
+    N = t*0.0
+    dt = t[-1] - t[0]
+    for i in range(1,t.shape[0]):
+        N[i] = N[i-1] + d_pore_density(transmembrane_potential[i], N[i], N0, alpha, q, V_ep)*dt
+
+    return N
+    # return solve_ivp(d_pore_density,t_span=(t[0], t[-1]),y0=[0],
+    #                 args = (interp_transmembrane_potential, N0, alpha, q, V_ep),
+    #                     t_eval=t, atol=1e-9, rtol=1e-9)["y"][0]

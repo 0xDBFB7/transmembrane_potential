@@ -27,16 +27,18 @@ M = 10 # number of fourier terms
 #input_amplitude = 1e8#
 
 """
+depending on the time scale involved,
 Has to be scaled by 1/20 initially to push the N into the nonlinear - otherwise the
 host N count is beyond float precision.
 
+making slow progress, continue
 """
 
 def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128)*1e5 #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)*1e5
-    t_f = 1e-7 #abs(guess[2*M])
+    t_f = 1e-10 #abs(guess[2*M])
 
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
@@ -75,7 +77,7 @@ def get_output(guess):
     host_cell_output = U_to_X(U, t, host_cell) * input_amplitude
 
     w = np.max(np.abs(host_cell_output))/1.5 + np.max(np.abs(virus_output))/1.5
-    virus_output /= w/20
+    virus_output /= w/5
     host_cell_output /= w
     # assumes the parameters are identical for both membranes
     Nsq_virus = integrate_pore_density(t, virus_output, pore_N0, pore_alpha, pore_q, pore_V_ep)
@@ -87,7 +89,6 @@ def get_output(guess):
 def cost_function(guess):
 
     U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(guess)
-    print(Nsq_virus)
     # v1 = np.sum(virus_output[virus_output > 0])
     # h1 = np.sum(host_cell_output[host_cell_output > 0])
     # v1 = np.sum(virus_output*virus_output)
@@ -162,7 +163,7 @@ try:
     print("#"*10 + "LOADED PREVIOUS SESSION" + "#"*10)
     print()
 except:
-    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":1000}, bounds=bounds).x #, "maxiter":1000
+    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, bounds=bounds).x #, "maxiter":1000
 
     dill.dump_session(filename)
 
