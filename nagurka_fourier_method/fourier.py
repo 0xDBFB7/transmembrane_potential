@@ -22,23 +22,24 @@ def new_virus(t):
 https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
 
-M = 40 # number of fourier terms
+M = 10 # number of fourier terms
 
 #input_amplitude = 1e8#
 
 
 def get_output(guess):
     m = np.arange(1, M+1)
-    a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
-    b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-6 #abs(guess[2*M])
+    a = np.array(guess[0:M], dtype=np.float128)*1e5 #* m**2.0
+    b = np.array(guess[M:(2*M)], dtype=np.float128)*1e5
+    t_f = 1e-7 #abs(guess[2*M])
 
     # input_amplitude = abs(guess[2*M]) * 1e7
-    input_amplitude = 1e8
+    input_amplitude = 1
 
 
     # next, try adding a 1e7 scaling to a and b
     # and lengthening the time scale even more
+    # maybe fiddle with the N integration algorithm? (is odeint really necessary?)
 
     ts = int(((2*pi*M))*7) # number of time steps
 
@@ -63,11 +64,14 @@ def get_output(guess):
     host_cell = default_host_cell(t)
 
     U = X_(t,P_BCs,a,b,M,t_f)
-    U /= np.max(np.abs(U))
+    print(np.max(U))
+    # U /= np.max(np.abs(U))
     virus_output = U_to_X(U, t, virus) * input_amplitude
     host_cell_output = U_to_X(U, t, host_cell) * input_amplitude
 
-
+    w = np.max(np.abs(host_cell_output))/1.5 + np.max(np.abs(virus_output))/1.5
+    virus_output /= w/20
+    host_cell_output /= w
     # assumes the parameters are identical for both membranes
     Nsq_virus = integrate_pore_density(t, virus_output, pore_N0, pore_alpha, pore_q, pore_V_ep)
     Nsq_host_cell = integrate_pore_density(t, host_cell_output, pore_N0, pore_alpha, pore_q, pore_V_ep)
@@ -136,7 +140,7 @@ def cost_function(guess):
     # return abs(abs(host_cell_output[-1])/abs(virus_output[-1]))
 
 
-guess_initial = np.array((np.random.random(M*2 + 5, )*2 - 1.0), dtype=np.float128)*1e7
+guess_initial = np.array((np.random.random(M*2 + 5, )*2 - 1.0), dtype=np.float128)
 # guess_initial[0] =
 
 # guess_initial[2*M] = 10**(-np.random.random()*15) #time
