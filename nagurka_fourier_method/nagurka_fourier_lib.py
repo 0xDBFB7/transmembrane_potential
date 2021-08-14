@@ -74,7 +74,7 @@ def L_(t, a, b, M, t_f):
     L = t*0.0
     m = np.arange(1, M+1)
     for i in m:
-        v = i*(2*pi / t_f)
+        v = i**2*(2*pi / t_f)
         L += a[i-1]*np.cos(v*t) + b[i-1]*np.sin(v*t)
     return L
 

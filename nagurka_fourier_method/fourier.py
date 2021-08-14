@@ -22,11 +22,11 @@ def new_virus(t):
 https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
 
-M = 20 # number of fourier terms
+M = 10 # number of fourier terms
 
 #input_amplitude = 1e8#
 
-vir_w = 10.0
+vir_w = 1.0
 """
 depending on the time scale involved,
 Has to be scaled by 1/20 initially to push the N into the nonlinear - otherwise the
@@ -45,7 +45,7 @@ def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-8 #abs(guess[2*M])
+    t_f = 1e-6 #abs(guess[2*M])
 
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
@@ -55,7 +55,7 @@ def get_output(guess):
     # and lengthening the time scale even more
     # maybe fiddle with the N integration algorithm? (is odeint really necessary?)
 
-    ts = int(((2*pi*M))*7) # number of time steps
+    ts = int(((2*pi*M**2))*7) # number of time steps
 
     X_t0 = 0.0
     X_tf = 0.0#guess[2*M+1]
@@ -163,8 +163,7 @@ try:
 except:
     pass
 
-vir_w = 5.0
-
+vir_w = 1.0
 # guess_initial[2*M] = 10**(-np.random.random()*15) #time
 # guess_initial[2*M] = 1.0
 
@@ -183,14 +182,16 @@ vir_w = 5.0
 #
 #     dill.dump_session(filename)
 
-Tmin = minimize(cost_function, guess_initial, method="BFGS", options={"disp":True, "maxiter":500}).x #, "maxiter":1000
+Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}).x #, "maxiter":1000
+
+
+# tubthumper = basinhopping
+# minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":10}) #, bounds=bounds, tol=1e-12
+# Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
+
 
 with open('data.pickle', 'wb') as f:
     pickle.dump(Tmin, f)
-
-# tubthumper = basinhopping
-# minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":100}, bounds=bounds) #, tol=1e-12
-# Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
 
 U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(Tmin)
 
