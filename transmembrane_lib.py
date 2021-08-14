@@ -364,8 +364,12 @@ def d_pore_density(t_n, N, interp_transmembrane_potential, N0, alpha, q, V_ep):
     # it doesn't seem like this abs should need to be here.
     # should check if this is correct.
 
+    if(abs(V_m) > 2.0):
+        V_m = 2.0
+
     v_m = V_m * (F / (R*T))
     v_ep = V_ep * (F / (R*T))
+
     k = (v_m/v_ep)**2.0
     return alpha * exp(k) * (1.0 - (N/N0)*exp(-q*k))
 
@@ -385,7 +389,6 @@ def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
 
     fill_value needed because solve_ivp tries to run off the end of the interp validity
     """
-    print([t[0], t[-1]])
     return solve_ivp(d_pore_density,t_span=(t[0], t[-1]),y0=[0],
                     args = (interp_transmembrane_potential, N0, alpha, q, V_ep),
                         t_eval=t, atol=1e-9, rtol=1e-9)["y"][0]

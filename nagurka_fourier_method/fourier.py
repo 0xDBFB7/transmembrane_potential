@@ -22,16 +22,19 @@ def new_virus(t):
 https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
 
-M = 10 # number of fourier terms
+M = 40 # number of fourier terms
 
-input_amplitude = 1e5
+#input_amplitude = 1e8#
 
 
 def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-5#abs(guess[2*M])
+    t_f = 1e-6 #abs(guess[2*M])
+
+    # input_amplitude = abs(guess[2*M]) * 1e7
+    input_amplitude = 1e7
 
     ts = int(((2*pi*M))*7) # number of time steps
 
@@ -131,7 +134,9 @@ def cost_function(guess):
 
 guess_initial = np.array((np.random.random(M*2 + 5, )*2 - 1.0), dtype=np.float128)
 # guess_initial[0] =
-guess_initial[2*M] = 10**(-np.random.random()*15)
+
+# guess_initial[2*M] = 10**(-np.random.random()*15) #time
+guess_initial[2*M] = 1.0
 
 bounds = [(-1000, 1000.0)]*(2*M) + [(1e-12, 1e-4)] + [(-10, 10)] + [(-100, 100)] + [(-100, 100)] + [(-100, 100)] #+ [(-10, 10)]
 
@@ -156,6 +161,7 @@ except:
 # Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
 
 U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(Tmin)
+
 virus = default_virus(t)
 host_cell = default_host_cell(t)
 plt.subplot(3, 1, 1)
