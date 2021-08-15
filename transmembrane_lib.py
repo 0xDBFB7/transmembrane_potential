@@ -347,7 +347,12 @@ The time constant for re-sealing is really high - a few seconds in DeBruin
 
 rest potential is ignored.
 """
-pore_N0 = 1.5*1e9
+# pore_N0 = 1.5*1e9
+# pore_alpha = 100*1e7
+# pore_q = 2.46
+# pore_V_ep = 0.258
+
+pore_N0 = 1.5*1e9 # Equilibrium pore density
 pore_alpha = 100*1e7
 pore_q = 2.46
 pore_V_ep = 0.258
@@ -355,9 +360,9 @@ pore_V_ep = 0.258
 
 
 def d_pore_density(V_m, N, N0, alpha, q, V_ep):
-    F = 96485.332
-    T = 295.0
-    R = 8.314
+    # F = 96485.332
+    # T = 295.0
+    # R = 8.314
     V_m = abs(V_m)
     # V_m = abs(interp_transmembrane_potential(t_n))
     # it doesn't seem like this abs should need to be here.
@@ -366,11 +371,11 @@ def d_pore_density(V_m, N, N0, alpha, q, V_ep):
     # if(abs(V_m) > 1.5):
     #     V_m = 1.5
 
-    v_m = V_m * (F / (R*T))
-    v_ep = V_ep * (F / (R*T))
+    # v_m = V_m * (F / (R*T))
+    # v_ep = V_ep * (F / (R*T))
 
-    k = (v_m/v_ep)**2.0
-    return alpha * exp(k) * (1.0 - (N/N0)*exp(-q*k))
+    k = (V_m/V_ep)**2.0
+    return alpha * np.exp(k) * (1.0 - (N/N0)*np.exp(-q*k))
 
 def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
     """
@@ -391,7 +396,7 @@ def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
     N = t*0.0
     dt = t[-1] - t[0]
     for i in range(1,t.shape[0]):
-        N[i] = N[i-1] + d_pore_density(transmembrane_potential[i], N[i], N0, alpha, q, V_ep)*dt
+        N[i] = N[i-1] + d_pore_density(transmembrane_potential[i], N[i-1], N0, alpha, q, V_ep)*dt
 
     return N
     # return solve_ivp(d_pore_density,t_span=(t[0], t[-1]),y0=[0],

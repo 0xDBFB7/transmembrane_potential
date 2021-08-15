@@ -13,8 +13,8 @@ from nagurka_membrane_extensions import *
 """
 Both bottom out at about 2.7, no obvious difference.
 """
-def new_virus(t):
-    return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-7), np.float128(5), np.float128(50e-9), np.float128(14e-9),t)
+# def new_virus(t):
+#     return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-7), np.float128(5), np.float128(50e-9), np.float128(5e-9),t)
 
 """
 A good intro to control parameterization is in
@@ -82,18 +82,18 @@ def get_output(guess):
 
     t = np.linspace(epsilon, t_f, ts, dtype=np.float128)#300 before - really running into resolution issues
 
-    virus = new_virus(t)
+    virus = default_virus(t)
     host_cell = default_host_cell(t)
 
     U = X_(t,P_BCs,a,b,M,t_f)
-    print(np.max(U))
-    U /= np.max(np.abs(U))
+    # print(np.max(U))
+    # U /= np.max(np.abs(U))
     virus_output = U_to_X(U, t, virus) * input_amplitude
     host_cell_output = U_to_X(U, t, host_cell) * input_amplitude
 
-    w = np.max(np.abs(host_cell_output))/3 + np.max(np.abs(virus_output))/3
-    virus_output /= w/vir_w
-    host_cell_output /= w
+    # w = np.max(np.abs(host_cell_output))/3 + np.max(np.abs(virus_output))/3
+    # virus_output /= w/vir_w
+    # host_cell_output /= w
     # assumes the parameters are identical for both membranes
     Nsq_virus = integrate_pore_density(t, virus_output, pore_N0, pore_alpha, pore_q, pore_V_ep)
     Nsq_host_cell = integrate_pore_density(t, host_cell_output, pore_N0, pore_alpha, pore_q, pore_V_ep)
@@ -149,8 +149,8 @@ def cost_function(guess):
 
     # using max might be a bit unstable. maybe sum is better?
     # not really what we want
-    v1 = np.sum(Nsq_virus)#[-1]
-    h1 = np.sum(Nsq_host_cell)#[-1]
+    v1 = np.abs(np.sum(Nsq_virus))#[-1]
+    h1 = np.abs(np.sum(Nsq_host_cell))#[-1]
 
 
     # print(guess[0:M], guess[M:(2*M)])
@@ -193,7 +193,7 @@ except:
 #
 #     dill.dump_session(filename)
 
-Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}).x #, "maxiter":1000
+Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10}).x #, "maxiter":1000
 
 
 # tubthumper = basinhopping
@@ -206,7 +206,7 @@ with open('data.pickle', 'wb') as f:
 
 U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(Tmin)
 
-virus = new_virus(t)
+virus = default_virus(t)
 host_cell = default_host_cell(t)
 plt.subplot(3, 1, 1)
 plt.plot(t, U)
