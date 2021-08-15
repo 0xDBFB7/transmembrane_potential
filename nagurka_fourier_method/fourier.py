@@ -30,7 +30,7 @@ it seems like Lagrange polynomials are usually used for this sort of thing
 https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
 
-M = 50 # number of fourier terms
+M = 20 # number of fourier terms
 
 #input_amplitude = 1e8#
 
@@ -63,7 +63,7 @@ def get_output(guess):
     a = np.array(guess[0:M], dtype=np.float128)*1e2 #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)*1e2
     # t_f = abs(guess[2*M])
-    t_f = 0.5e-8
+    t_f = 1e-10
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
 
