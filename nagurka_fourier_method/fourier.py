@@ -30,7 +30,7 @@ it seems like Lagrange polynomials are usually used for this sort of thing
 https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
 
-M = 30 # number of fourier terms
+M = 50 # number of fourier terms
 
 #input_amplitude = 1e8#
 
@@ -51,11 +51,14 @@ However, a much more effective technique was to scale the
 There seems to be a weird linear increase in N that I don't think should be there.
 """
 
+# 0.5e-8 -flattened at t_f =  1.450737790536488
+# val = 4.15252e+01 1.0e+01 4.2e+02
+
 def get_output(guess):
     m = np.arange(1, M+1)
-    a = np.array(guess[0:M], dtype=np.float128)*1e3 #* m**2.0
-    b = np.array(guess[M:(2*M)], dtype=np.float128)*1e3
-    t_f = abs(guess[2*M])
+    a = np.array(guess[0:M], dtype=np.float128)*1e2 #* m**2.0
+    b = np.array(guess[M:(2*M)], dtype=np.float128)*1e2
+    # t_f = abs(guess[2*M])
     t_f = 0.5e-8
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
@@ -68,9 +71,9 @@ def get_output(guess):
     ts = int(((2*pi*M))*10) # number of time steps
 
     X_t0 = 0.0
-    X_tf = guess[2*M+1]
+    X_tf = 0.0 #guess[2*M+1]
     d_X_t0 = 0.0 #guess[2*M+5]*(1/t_f)
-    d_X_tf = guess[2*M+2]*(1/t_f)
+    d_X_tf = 0.0 #guess[2*M+2]*(1/t_f)
     d_d_X_t0 = guess[2*M+3]*(1/(t_f**2.0))
     d_d_X_tf = guess[2*M+4]*(1/(t_f**2.0))
 
@@ -171,15 +174,15 @@ def cost_function(guess):
 guess_initial = np.ones(M*2 + 5, dtype=np.float128)
 
 
-# try:
-#     with open('data.pickle', 'rb') as f:
-#         guess_initial = pickle.load(f)
-# except:
-#     pass
+try:
+    with open('data.pickle', 'rb') as f:
+        guess_initial = pickle.load(f)
+except:
+    pass
 
 # vir_w = 1.0
 # guess_initial[2*M] = 10**(-np.random.random()*15) #time
-# guess_initial[2*M] = 1e-6
+# guess_initial[2*M] = 1e-8
 
 # bounds = [(-1000, 1000.0)]*(2*M) + [(1e-12, 1e-4)] + [(-10, 10)] + [(-100, 100)] + [(-100, 100)] + [(-100, 100)] #+ [(-10, 10)]
 
@@ -196,7 +199,7 @@ guess_initial = np.ones(M*2 + 5, dtype=np.float128)
 #
 #     dill.dump_session(filename)
 
-Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":100000}, tol=1e-9).x #, "maxiter":1000
+Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, tol=1e-9).x #, "maxiter":1000
 
 
 # tubthumper = basinhopping
@@ -204,8 +207,8 @@ Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"di
 # Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
 
 
-# with open('data.pickle', 'wb') as f:
-#     pickle.dump(Tmin, f)
+with open('data.pickle', 'wb') as f:
+    pickle.dump(Tmin, f)
 
 U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(Tmin)
 
