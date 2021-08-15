@@ -16,13 +16,19 @@ Both bottom out at about 2.7, no obvious difference.
 def new_virus(t):
     return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-7), np.float128(5), np.float128(50e-9), np.float128(14e-9),t)
 
+"""
+A good intro to control parameterization is in
+A Rigorous Global Optimization Algorithm for Problems with Ordinary Differential Equations
 
+it seems like Lagrange polynomials are usually used for this sort of thing
+
+"""
 
 """
 https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
 
-M = 10 # number of fourier terms
+M = 30 # number of fourier terms
 
 #input_amplitude = 1e8#
 
@@ -47,7 +53,7 @@ def get_output(guess):
     m = np.arange(1, M+1)
     a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)
-    t_f = 1e-3 #abs(guess[2*M])
+    t_f = abs(guess[2*M])
 
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
@@ -60,9 +66,9 @@ def get_output(guess):
     ts = int(((2*pi*M))*7) # number of time steps
 
     X_t0 = 0.0
-    X_tf = 0.0#guess[2*M+1]
-    d_X_t0 = 0.0 # - beforeguess[2*M+5]*(1/t_f)
-    d_X_tf = 0.0#guess[2*M+2]*(1/t_f)
+    X_tf = guess[2*M+1]
+    d_X_t0 = 0.0 #guess[2*M+5]*(1/t_f)
+    d_X_tf = guess[2*M+2]*(1/t_f)
     d_d_X_t0 = guess[2*M+3]*(1/(t_f**2.0))
     d_d_X_tf = guess[2*M+4]*(1/(t_f**2.0))
 
@@ -85,7 +91,7 @@ def get_output(guess):
     virus_output = U_to_X(U, t, virus) * input_amplitude
     host_cell_output = U_to_X(U, t, host_cell) * input_amplitude
 
-    w = np.max(np.abs(host_cell_output))/1.5 + np.max(np.abs(virus_output))/1.5
+    w = np.max(np.abs(host_cell_output))/3 + np.max(np.abs(virus_output))/3
     virus_output /= w/vir_w
     host_cell_output /= w
     # assumes the parameters are identical for both membranes
@@ -149,7 +155,7 @@ def cost_function(guess):
 
     # print(guess[0:M], guess[M:(2*M)])
     os.system('clear')
-    print("t_f = ", guess[2*M])
+    print("t_f = ", abs(guess[2*M]))
     print("val = ", abs(h1/v1), v1, h1)#, v2, h2)
 
 
@@ -160,7 +166,7 @@ def cost_function(guess):
 
 
 # guess_initial = np.array((np.random.random(M*2 + 5, )*2 - 1.0), dtype=np.float128)
-guess_initial = np.ones(M*2 + 5)
+guess_initial = np.ones(M*2 + 5, dtype=np.float128)
 
 try:
     with open('data.pickle', 'rb') as f:

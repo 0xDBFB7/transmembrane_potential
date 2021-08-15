@@ -28,22 +28,8 @@ dt = end/N  # Discrete time step.
 
 t = np.arange(N + 1) * dt
 
-host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
-virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
-
-alpha_v = ((U0 / (T0**2))*(virus.R*virus.a_3/virus.b_3))
-beta_v = ((U0 / T0)*(virus.R*virus.a_2/virus.b_3))
-gamma_v = ((virus.R*virus.a_1/virus.b_3))
-phi_v = ((X0 / T0)*(virus.b_2/virus.b_3))
-xi_v = (X0*(virus.b_1/virus.b_3))
-
-alpha_h = ((U0 / (T0**2))*(host_cell.R*host_cell.a_3/host_cell.b_3))
-beta_h = ((U0 / T0)*(host_cell.R*host_cell.a_2/host_cell.b_3))
-gamma_h = ((host_cell.R*host_cell.a_1/host_cell.b_3))
-phi_h = ((X0 / T0)*(host_cell.b_2/host_cell.b_3))
-xi_h = (X0*(host_cell.b_1/host_cell.b_3))
-
-
+virus = default_virus(t)
+host_cell = default_host_cell(t)
 
 def on_iteration(iteration_count, xs, us, J_opt, accepted, converged):
     J_hist.append(J_opt)
@@ -78,10 +64,12 @@ u_inputs = [
 
 # Discrete dynamics model definition.
 f = T.stack([
+    N + d_pore_density(x0_v, N, pore_N0, pore_alpha, pore_q, pore_V_ep)
     x0_v + (x1_v * dt),
-    x1_v + (((U0 / (T0**2))*alpha_v*u2 + (U0 / T0)*beta_v*u1 + gamma_v*U0*u0 - phi_v*(X0 / T0)*x1_v - xi_v*X0*x0_v)/(X0 / (T0**2))) * dt,
+    x1_v + (virus.alpha*u2 + virus.beta*u1 + virus.gamma*u0 - virus.phi*x1_v - virus.xi*x0_v)) * dt,
     # x2_v + ,
 
+    N + d_pore_density(x0_v, N, pore_N0, pore_alpha, pore_q, pore_V_ep)
     x0_h + (x1_h * dt),
     x1_h + (((U0 / (T0**2))*alpha_h*u2 + (U0 / T0)*beta_h*u1 + gamma_h*U0*u0 - phi_h*(X0 / T0)*x1_h - xi_h*X0*x0_h)/(X0 / (T0**2))) * dt,
     # x2_h + ,

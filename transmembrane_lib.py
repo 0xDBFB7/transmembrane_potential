@@ -1,10 +1,8 @@
 from dataclasses import dataclass
 from math import pi, sqrt, e, log, isclose, exp
 # from scipy.optimize import curve_fit
-try:
-    import autograd.numpy as np  # Thinly-wrapped numpy
-except:
-    import numpy as np
+
+import numpy as np
 from numpy import heaviside
 # import h5py
 from scipy.constants import epsilon_0, mu_0

@@ -28,6 +28,20 @@ dt = end/N  # Discrete time step.
 
 t = np.arange(N + 1) * dt
 
+host_cell = Cell(0.3, 80, 0.3, 80, 1e-7, 5, 20e-6, 5e-9, t)
+virus = Cell(0.3, 80, 0.005, 30, 1e-8, 60, 50e-9, 14e-9, t)
+
+alpha_v = ((U0 / (T0**2))*(virus.R*virus.a_3/virus.b_3))
+beta_v = ((U0 / T0)*(virus.R*virus.a_2/virus.b_3))
+gamma_v = ((virus.R*virus.a_1/virus.b_3))
+phi_v = ((X0 / T0)*(virus.b_2/virus.b_3))
+xi_v = (X0*(virus.b_1/virus.b_3))
+
+alpha_h = ((U0 / (T0**2))*(host_cell.R*host_cell.a_3/host_cell.b_3))
+beta_h = ((U0 / T0)*(host_cell.R*host_cell.a_2/host_cell.b_3))
+gamma_h = ((host_cell.R*host_cell.a_1/host_cell.b_3))
+phi_h = ((X0 / T0)*(host_cell.b_2/host_cell.b_3))
+xi_h = (X0*(host_cell.b_1/host_cell.b_3))
 
 
 
@@ -64,9 +78,8 @@ u_inputs = [
 
 # Discrete dynamics model definition.
 f = T.stack([
-    N + 
     x0_v + (x1_v * dt),
-    x1_v + (((U0 / (T0**2))*virus.alpha*u2 + (U0 / T0)*virus.beta*u1 + virus.gamma*U0*u0 - phi_v*(X0 / T0)*x1_v - xi_v*X0*x0_v)/(X0 / (T0**2))) * dt,
+    x1_v + (((U0 / (T0**2))*alpha_v*u2 + (U0 / T0)*beta_v*u1 + gamma_v*U0*u0 - phi_v*(X0 / T0)*x1_v - xi_v*X0*x0_v)/(X0 / (T0**2))) * dt,
     # x2_v + ,
 
     x0_h + (x1_h * dt),
