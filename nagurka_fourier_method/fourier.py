@@ -49,10 +49,14 @@ However, a much more effective technique was to scale the
 
 """
 There seems to be a weird linear increase in N that I don't think should be there.
+
+Do a sort of fourier multigrid? increase terms slowly?
 """
 
 # 0.5e-8 -flattened at t_f =  1.450737790536488
 # val = 4.15252e+01 1.0e+01 4.2e+02
+
+prev = 0
 
 def get_output(guess):
     m = np.arange(1, M+1)
@@ -163,6 +167,8 @@ def cost_function(guess):
     print("t_f = ", abs(guess[2*M]))
     print("val = {:.5e} {:.1e} {:.1e}".format(abs(h1/(v1+epsilon)), v1, h1))#, v2, h2)
 
+    global prev
+    prev = guess
 
     return -v1 + h1 #+ v2 + h2 #-v1
     # return abs(h1/v1) # settles invariably at 35.8 if t bound is low
@@ -198,9 +204,10 @@ except:
 #     Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":500}).x #, "maxiter":1000
 #
 #     dill.dump_session(filename)
-
-Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, tol=1e-9).x #, "maxiter":1000
-
+try:
+    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, tol=1e-9).x #, "maxiter":1000
+except KeyboardInterrupt:
+    Tmin = prev
 
 # tubthumper = basinhopping
 # minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":10000}) #, bounds=bounds, tol=1e-12
