@@ -10,6 +10,8 @@ import pickle
 import os
 from nagurka_membrane_extensions import *
 
+np.seterr(all='raise')
+
 """
 Both bottom out at about 2.7, no obvious difference.
 """
@@ -51,10 +53,10 @@ There seems to be a weird linear increase in N that I don't think should be ther
 
 def get_output(guess):
     m = np.arange(1, M+1)
-    a = np.array(guess[0:M], dtype=np.float128) #* m**2.0
-    b = np.array(guess[M:(2*M)], dtype=np.float128)
+    a = np.array(guess[0:M], dtype=np.float128)*1e3 #* m**2.0
+    b = np.array(guess[M:(2*M)], dtype=np.float128)*1e3
     t_f = abs(guess[2*M])
-
+    t_f = 0.5e-8
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
 
@@ -63,7 +65,7 @@ def get_output(guess):
     # and lengthening the time scale even more
     # maybe fiddle with the N integration algorithm? (is odeint really necessary?)
 
-    ts = int(((2*pi*M))*7) # number of time steps
+    ts = int(((2*pi*M))*10) # number of time steps
 
     X_t0 = 0.0
     X_tf = guess[2*M+1]
@@ -91,7 +93,7 @@ def get_output(guess):
     virus_output = U_to_X(U, t, virus) * input_amplitude
     host_cell_output = U_to_X(U, t, host_cell) * input_amplitude
 
-    # w = np.max(np.abs(host_cell_output))/3 + np.max(np.abs(virus_output))/3
+    # w = np.max(np.abs(host_cell_output))/2 + np.max(np.abs(virus_output))/2
     # virus_output /= w/vir_w
     # host_cell_output /= w
     # assumes the parameters are identical for both membranes
@@ -149,14 +151,14 @@ def cost_function(guess):
 
     # using max might be a bit unstable. maybe sum is better?
     # not really what we want
-    v1 = np.abs(np.sum(Nsq_virus))#[-1]
-    h1 = np.abs(np.sum(Nsq_host_cell))#[-1]
+    v1 = np.abs(np.abs(np.max(Nsq_virus)) - pore_N0)#[-1]
+    h1 = np.abs(np.abs(np.max(Nsq_host_cell)) - pore_N0)#[-1]
 
 
     # print(guess[0:M], guess[M:(2*M)])
-    os.system('clear')
+    # os.system('clear')
     print("t_f = ", abs(guess[2*M]))
-    print("val = ", abs(h1/v1), v1, h1)#, v2, h2)
+    print("val = {:.5e} {:.1e} {:.1e}".format(abs(h1/(v1+epsilon)), v1, h1))#, v2, h2)
 
 
     return -v1 + h1 #+ v2 + h2 #-v1
@@ -168,15 +170,16 @@ def cost_function(guess):
 # guess_initial = np.array((np.random.random(M*2 + 5, )*2 - 1.0), dtype=np.float128)
 guess_initial = np.ones(M*2 + 5, dtype=np.float128)
 
-try:
-    with open('data.pickle', 'rb') as f:
-        guess_initial = pickle.load(f)
-except:
-    pass
+
+# try:
+#     with open('data.pickle', 'rb') as f:
+#         guess_initial = pickle.load(f)
+# except:
+#     pass
 
 # vir_w = 1.0
 # guess_initial[2*M] = 10**(-np.random.random()*15) #time
-# guess_initial[2*M] = 1.0
+# guess_initial[2*M] = 1e-6
 
 # bounds = [(-1000, 1000.0)]*(2*M) + [(1e-12, 1e-4)] + [(-10, 10)] + [(-100, 100)] + [(-100, 100)] + [(-100, 100)] #+ [(-10, 10)]
 
@@ -193,16 +196,16 @@ except:
 #
 #     dill.dump_session(filename)
 
-Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10}).x #, "maxiter":1000
+Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":100000}, tol=1e-9).x #, "maxiter":1000
 
 
 # tubthumper = basinhopping
-# minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":10}) #, bounds=bounds, tol=1e-12
+# minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":10000}) #, bounds=bounds, tol=1e-12
 # Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
 
 
-with open('data.pickle', 'wb') as f:
-    pickle.dump(Tmin, f)
+# with open('data.pickle', 'wb') as f:
+#     pickle.dump(Tmin, f)
 
 U, virus_output, host_cell_output, Nsq_virus, Nsq_host_cell, t, ts = get_output(Tmin)
 
@@ -213,12 +216,12 @@ plt.plot(t, U)
 plt.subplot(3, 1, 2)
 plt.plot(t, virus_output)
 plt.plot(t, host_cell_output)
-v1 = np.abs(np.sum(virus_output))
-h1 = np.abs(np.sum(host_cell_output))
+v1 = np.abs(np.abs(np.max(Nsq_virus)) - pore_N0)#[-1]
+h1 = np.abs(np.abs(np.max(Nsq_host_cell)) - pore_N0)#[-1]
 plt.subplot(3, 1, 3)
-plt.plot(t, Nsq_virus)
-plt.plot(t, Nsq_host_cell)
-plt.savefig(f"plots/{ abs(h1/v1)}.png")
+plt.plot(t, Nsq_virus-pore_N0)
+plt.plot(t, Nsq_host_cell-pore_N0)
+plt.savefig(f"plots/{ abs(h1/(v1+epsilon))}.png")
 plt.show()
 
 

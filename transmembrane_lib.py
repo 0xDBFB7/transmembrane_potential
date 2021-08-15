@@ -360,6 +360,7 @@ pore_V_ep = 0.258
 
 
 def d_pore_density(V_m, N, N0, alpha, q, V_ep):
+
     # F = 96485.332
     # T = 295.0
     # R = 8.314
@@ -393,7 +394,12 @@ def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
 
     fill_value needed because solve_ivp tries to run off the end of the interp validity
     """
+
+    # the pore density equilibriates to N0 within 0.002s or so.
+    # the N is therefore pre-initialized
+
     N = t*0.0
+    N[0] = N0
     dt = t[-1] - t[0]
     for i in range(1,t.shape[0]):
         N[i] = N[i-1] + d_pore_density(transmembrane_potential[i], N[i-1], N0, alpha, q, V_ep)*dt
