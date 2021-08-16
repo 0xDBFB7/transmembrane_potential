@@ -30,7 +30,7 @@ it seems like Lagrange polynomials are usually used for this sort of thing
 https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
 
-M = 20 # number of fourier terms
+M = 50 # number of fourier terms
 
 #input_amplitude = 1e8#
 
@@ -63,7 +63,7 @@ def get_output(guess):
     a = np.array(guess[0:M], dtype=np.float128)*1e2 #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)*1e2
     # t_f = abs(guess[2*M])
-    t_f = 1e-10
+    t_f = 1e-9
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
 
@@ -170,7 +170,7 @@ def cost_function(guess):
     global prev
     prev = guess
 
-    return -v1 + h1 #+ v2 + h2 #-v1
+    return -v1*5 + h1 #+ v2 + h2 #-v1
     # return abs(h1/v1) # settles invariably at 35.8 if t bound is low
     # return abs(abs(host_cell_output[-1])/abs(virus_output[-1]))
 
@@ -205,13 +205,17 @@ except:
 #
 #     dill.dump_session(filename)
 try:
-    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":10000}, tol=1e-9).x #, "maxiter":1000
+    Tmin = minimize(cost_function, guess_initial, method="Nelder-Mead", options={"disp":True, "maxiter":100000}, tol=5.0).x #, "maxiter":1000
+
+    # at least with the current settings, the problem doesn't seem to be convergence -
+    # basinhopping does nothing for us.
+    # tubthumper = basinhopping
+    # minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True}, tol=10.0) #, bounds=bounds, tol=1e-12
+    # Tmin = tubthumper(cost_function, guess_initial, stepsize=150, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
+
 except KeyboardInterrupt:
     Tmin = prev
 
-# tubthumper = basinhopping
-# minimizer_kwargs = dict(method="Nelder-Mead", options={"disp":True, "maxiter":10000}) #, bounds=bounds, tol=1e-12
-# Tmin = tubthumper(cost_function, guess_initial, minimizer_kwargs=minimizer_kwargs, disp=True)["x"]
 
 
 with open('data.pickle', 'wb') as f:
