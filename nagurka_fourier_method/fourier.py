@@ -30,7 +30,7 @@ it seems like Lagrange polynomials are usually used for this sort of thing
 https://en.wikipedia.org/wiki/Adaptive_coordinate_descent might be interesting
 """
 
-M = 50 # number of fourier terms
+M = 20 # number of fourier terms
 
 #input_amplitude = 1e8#
 
@@ -53,6 +53,10 @@ There seems to be a weird linear increase in N that I don't think should be ther
 Do a sort of fourier multigrid? increase terms slowly?
 """
 
+"""
+At 1e-9, 30 to 50, it just converges on a single sine wave.
+"""
+
 # 0.5e-8 -flattened at t_f =  1.450737790536488
 # val = 4.15252e+01 1.0e+01 4.2e+02
 
@@ -63,7 +67,7 @@ def get_output(guess):
     a = np.array(guess[0:M], dtype=np.float128)*1e2 #* m**2.0
     b = np.array(guess[M:(2*M)], dtype=np.float128)*1e2
     # t_f = abs(guess[2*M])
-    t_f = 1e-9
+    t_f = 1e-6
     # input_amplitude = abs(guess[2*M]) * 1e7
     input_amplitude = 1
 
