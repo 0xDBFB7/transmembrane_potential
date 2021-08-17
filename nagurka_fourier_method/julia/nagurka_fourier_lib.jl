@@ -2,63 +2,75 @@
 using Test, ForwardDiff, NumericalIntegration;
 using Plots;
 using LinearAlgebra;
+using BenchmarkTools;
+using Quadmath;
 
 epsilon = 1e-15
 
 
-# Nagurka M, Yen V, Benaroya H.
+# https://m3g.github.io/JuliaNotes.jl/stable/memory/
+# https://diffeq.sciml.ai/latest/analysis/sensitivity/
+
+# Nagurka m, Yen V, Benaroya H.
 # A Fourier-based method for the suboptimal control of nonlinear dynamical systems.
 # Dynamics and Control of Large Structures 1988:77–88.
 
 #const fdcache = ForwardDiffCache()
 
-function L_(t, a, b, M, t_f)
-    m = [1.0:M;]
+# https://stackoverflow.com/q/52045626/2179570
+
+
+# use differentialequations' sensitivity stuff to get the gradient.
+#
+# had an issue precompiling diffequationssensitivity. running Pkg.update()
+# fixed it.
+
+function L_(t, a, b, m, t_f)
     v = m.*(2*pi / t_f)
     return sum(a.*cos.(v*t)) + sum(b.*sin.(v*t))
 end;
 
-d_L_(t, a, b, M, t_f) = ForwardDiff.derivative(n -> L_(n, a, b, M, t_f), t)
-d_d_L_(t, a, b, M, t_f) = ForwardDiff.derivative(n -> d_L_(n, a, b, M, t_f), t)
+# x::Union{Vector,Number}
+
+autodiff_d_L_(t, a, b, m, t_f) = ForwardDiff.derivative(n -> L_(n, a, b, m, t_f), t)
+autodiff_d_d_L_(t, a, b, m, t_f) = ForwardDiff.derivative(n -> d_L_(n, a, b, m, t_f), t)
 #
-function analytic_d_L_(t, a, b, M, t_f)
-    m = [1.0:M;]
+function d_L_(t, a, b, m, t_f)
     v = m.*(2*pi / t_f)
     return sum(v .* -1.0 .* a.*sin.(v*t)) + sum(v .* b.*cos.(v*t))
 end;
 
-function analytic_d_d_L_(t, a, b, M, t_f)
-    m = [1.0:M;]
+function d_d_L_(t, a, b, m, t_f)
     v = m.*(2*pi / t_f)
     return sum((v.^2) .* -1.0 .* a.*cos.(v*t)) + sum((v.^2) .* -1.0 .* b.*sin.(2*pi*(m*t)/t_f))
 end;
 
-function X_(t,p,a,b,M,t_f)
-    return P_(t, p, a, b, M, t_f) + L_(t, a, b, M, t_f)
+function X_(t,p,a,b,m,t_f)
+    return P_(t, p, a, b, m, t_f) + L_(t, a, b, m, t_f)
 end
 
-function d_X_(t,p,a,b,M,t_f)
-    return d_P_(t, p, a, b, M, t_f) + d_L_(t, a, b, M, t_f)
+function d_X_(t,p,a,b,m,t_f)
+    return d_P_(t, p, a, b, m, t_f) + d_L_(t, a, b, m, t_f)
 end
 
-function d_d_X_(t,p,a,b,M,t_f)
-    return d_d_P_(t, p, a, b, M, t_f) + d_d_L_(t, a, b, M, t_f)
+function d_d_X_(t,p,a,b,m,t_f)
+    return d_d_P_(t, p, a, b, m, t_f) + d_d_L_(t, a, b, m, t_f)
 end
 
 # should the fourier series be always be *zero* at the edges, or simply *the same*?
 
-function X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+function X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
     """
-    Moves polynomial boundary conditions so that the fourier series is
+    moves polynomial boundary conditions so that the fourier series is
     always zero at the edges for convergence
     """
-    return (X_t0 - L_(epsilon, a, b, M, t_f),
-            d_X_t0 - d_L_(epsilon, a, b, M, t_f),
-            d_d_X_t0 - d_d_L_(epsilon, a, b, M, t_f),
+    return (X_t0 - L_(epsilon, a, b, m, t_f),
+            d_X_t0 - d_L_(epsilon, a, b, m, t_f),
+            d_d_X_t0 - d_d_L_(epsilon, a, b, m, t_f),
 
-            X_tf - L_(t_f, a, b, M, t_f),
-            d_X_tf - d_L_(t_f, a, b, M, t_f),
-            d_d_X_tf - d_d_L_(t_f, a, b, M, t_f))
+            X_tf - L_(t_f, a, b, m, t_f),
+            d_X_tf - d_L_(t_f, a, b, m, t_f),
+            d_d_X_tf - d_d_L_(t_f, a, b, m, t_f))
 end
 
 function P_BCs_to_p_coefficients(P_BCs, t_f)
@@ -78,32 +90,32 @@ function P_BCs_to_p_coefficients(P_BCs, t_f)
     return (p_0, p_1, p_2, p_3, p_4, p_5)
 end
 
-function P_(t, P_BCs, a, b, M, t_f)
+function P_(t, p, a, b, m, t_f)
     """
     Polynomial from polynomial_system_of_equations.py
     """
-    p_0, p_1, p_2, p_3, p_4, p_5 = P_BCs_to_p_coefficients(P_BCs, t_f)
+    p_0, p_1, p_2, p_3, p_4, p_5 = p
 
     return p_0 + p_1*t + p_2*t^2 + p_3*t^3 + p_4*t^4 + p_5*t^5
 end
 
-d_P_(t, P_BCs, a, b, M, t_f) = ForwardDiff.derivative(n -> P_(n, P_BCs, a, b, M, t_f), t)
-d_d_P_(t, P_BCs, a, b, M, t_f) = ForwardDiff.derivative(n -> d_P_(n, P_BCs, a, b, M, t_f), t)
+autodiff_d_P_(t, P_BCs, a, b, m, t_f) = ForwardDiff.derivative(n -> P_(n, P_BCs, a, b, m, t_f), t)
+autodiff_d_d_P_(t, P_BCs, a, b, m, t_f) = ForwardDiff.derivative(n -> d_P_(n, P_BCs, a, b, m, t_f), t)
 
-function analytic_d_P_(t, P_BCs, a, b, M, t_f)
+function d_P_(t, p, a, b, m, t_f)
     """
     Polynomial from polynomial_system_of_equations.py
     """
-    p_0, p_1, p_2, p_3, p_4, p_5 = P_BCs_to_p_coefficients(P_BCs, t_f)
+    p_0, p_1, p_2, p_3, p_4, p_5 = p
 
     return p_1 + 2*p_2*t + 3*p_3*t^2 + 4*p_4*t^3 + 5*p_5*t^4
 end
 
-function analytic_d_d_P_(t, P_BCs, a, b, M, t_f)
+function d_d_P_(t, p, a, b, m, t_f)
     """
     Polynomial from polynomial_system_of_equations.py
     """
-    p_0, p_1, p_2, p_3, p_4, p_5 = P_BCs_to_p_coefficients(P_BCs, t_f)
+    p_0, p_1, p_2, p_3, p_4, p_5 = p
 
     return 2*p_2 + 6*p_3*t + 12*p_4*t^2 + 20*p_5*t^3
 end
@@ -117,7 +129,10 @@ Status: works when begin and end bcs are the same.
     t_f = 3.0
 
     M = 1
+    m = [1.0:M;]
+
     t = range(epsilon, stop=t_f, length=60)
+
 
     P_t0 = 1.0
     P_tf = 1.0
@@ -129,9 +144,11 @@ Status: works when begin and end bcs are the same.
     b = []
     P_BCs = (P_t0, d_P_t0, d_d_P_t0, P_tf, d_P_tf, d_d_P_tf)
 
-    _P_(n) = P_(n, P_BCs, a, b, M, t_f)
-    _d_P_(n) = d_P_(n, P_BCs, a, b, M, t_f)
-    _d_d_P_(n) = d_d_P_(n, P_BCs, a, b, M, t_f)
+    p = P_BCs_to_p_coefficients(P_BCs, t_f)
+
+    _P_(n) = P_(n, p, a, b, m, t_f)
+    _d_P_(n) = d_P_(n, p, a, b, m, t_f)
+    _d_d_P_(n) = d_d_P_(n, p, a, b, m, t_f)
 
     @test isapprox(_P_(epsilon),P_t0, atol=1e-8, rtol=1e-8)
     @test isapprox(_P_(t_f),P_tf, atol=1e-8, rtol=1e-8)
@@ -171,6 +188,7 @@ end
     b = [1.442172e-3]
 
     M = 1
+    m = [1.0:M;]
     t = range(epsilon, stop=t_f, length=60)
 
     X_t0 = 0.0
@@ -181,18 +199,24 @@ end
     d_d_X_tf = -3.4798053
 
 
-    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
+    p = P_BCs_to_p_coefficients(P_BCs, t_f)
 
-    _X_(n) = X_(n,P_BCs,a,b,M,t_f)
-    _d_X_(n) = d_X_(n,P_BCs,a,b,M,t_f)
-    _d_d_X_(n) = d_d_X_(n,P_BCs,a,b,M,t_f)
+
+    _X_(n) = X_(n,p,a,b,m,t_f)
+    _d_X_(n) = d_X_(n,p,a,b,m,t_f)
+    _d_d_X_(n) = d_d_X_(n,p,a,b,m,t_f)
     X = _X_.(t)
     d_X = _d_X_.(t)
     d_d_X = _d_d_X_.(t)
 
     U = X + d_d_X
 
-    # _P_(n) = P_(n, P_BCs, a, b, M, t_f)
+
+
+    @btime X_($epsilon,$p,$a,$b,$m,$t_f)
+
+    # _P_(n) = P_(n, P_BCs, a, b, m, t_f)
     # plot(t,X, show=true)
     # plot!(t,_P_.(t), show=true)
     #
@@ -233,6 +257,7 @@ end
     b = [1.4015869e-3]
 
     M = 1
+    m = [1.0:M;]
     t = range(epsilon, stop=t_f, length=60)
 
     X_t0 = 0.0
@@ -243,19 +268,20 @@ end
     d_d_X_tf = 1.9403533
 
 
-    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
+    p = P_BCs_to_p_coefficients(P_BCs, t_f)
 
-    _X_(n) = X_(n,P_BCs,a,b,M,t_f)
-    _d_X_(n) = d_X_(n,P_BCs,a,b,M,t_f)
-    _d_d_X_(n) = d_d_X_(n,P_BCs,a,b,M,t_f)
+    _X_(n) = X_(n,p,a,b,m,t_f)
+    _d_X_(n) = d_X_(n,p,a,b,m,t_f)
+    _d_d_X_(n) = d_d_X_(n,p,a,b,m,t_f)
     X = _X_.(t)
     d_X = _d_X_.(t)
     d_d_X = _d_d_X_.(t)
 
     U = X + d_d_X
 
-    _P_(n) = P_(n, P_BCs, a, b, M, t_f)
-    _L_(n) = L_(n, a, b, M, t_f)
+    _P_(n) = P_(n, p, a, b, m, t_f)
+    _L_(n) = L_(n, a, b, m, t_f)
 
     # plot(t,X, show=true, label=@name X)
     # plot!(t,_P_.(t), show=true, label=@name  _P_.(t))
@@ -285,6 +311,7 @@ end
     b = [-2.0, -1]
 
     M = 2
+    m = [1.0:M;]
     t = range(epsilon, stop=t_f, length=60)
 
     X_t0 = 1.0
@@ -294,11 +321,12 @@ end
     d_d_X_t0 = 6.0
     d_d_X_tf = 3.0
 
-    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, M)
+    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
+    p = P_BCs_to_p_coefficients(P_BCs, t_f)
 
-    _X_(n) = X_(n,P_BCs,a,b,M,t_f)
-    _d_X_(n) = d_X_(n,P_BCs,a,b,M,t_f)
-    _d_d_X_(n) = d_d_X_(n,P_BCs,a,b,M,t_f)
+    _X_(n) = X_(n,p,a,b,m,t_f)
+    _d_X_(n) = d_X_(n,p,a,b,m,t_f)
+    _d_d_X_(n) = d_d_X_(n,p,a,b,m,t_f)
     X = _X_.(t)
     d_X = _d_X_.(t)
     d_d_X = _d_d_X_.(t)
@@ -313,22 +341,22 @@ end
         @test isapprox(d_d_X[end], d_d_X_tf, atol=1e-8, rtol=1e-8)
     end
 
-    _d_P_(n) = d_P_(n, P_BCs, a, b, M, t_f)
-    _d_d_P_(n) = d_d_P_(n, P_BCs, a, b, M, t_f)
+    _d_P_(n) = d_P_(n, p, a, b, m, t_f)
+    _d_d_P_(n) = d_d_P_(n, p, a, b, m, t_f)
 
-    _d_L_(n) = d_L_(n, a, b, M, t_f)
-    _d_d_L_(n) = d_d_L_(n, a, b, M, t_f)
+    _d_L_(n) = d_L_(n, a, b, m, t_f)
+    _d_d_L_(n) = d_d_L_(n, a, b, m, t_f)
 
 
     @testset "analytic" begin
-        a_d_P_(n) = analytic_d_P_(n, P_BCs, a, b, M, t_f)
-        a_d_d_P_(n) = analytic_d_d_P_(n, P_BCs, a, b, M, t_f)
+        a_d_P_(n) = autodiff_d_P_(n, p, a, b, m, t_f)
+        a_d_d_P_(n) = autodiff_d_d_P_(n, p, a, b, m, t_f)
 
         @test isapprox(a_d_P_.(t), _d_P_.(t), atol=1e-8, rtol=1e-8)
         @test isapprox(a_d_d_P_.(t), _d_d_P_.(t), atol=1e-8, rtol=1e-8)
 
-        a_d_L_(n) = analytic_d_L_(n, a, b, M, t_f)
-        a_d_d_L_(n) = analytic_d_d_L_(n, a, b, M, t_f)
+        a_d_L_(n) = autodiff_d_L_(n, a, b, m, t_f)
+        a_d_d_L_(n) = autodiff_d_d_L_(n, a, b, m, t_f)
 
         @test isapprox(a_d_L_.(t), _d_L_.(t), atol=1e-8, rtol=1e-8)
         @test isapprox(a_d_d_L_.(t), _d_d_L_.(t), atol=1e-8, rtol=1e-8)

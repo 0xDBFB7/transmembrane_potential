@@ -3,7 +3,8 @@ import pytest
 
 from math import sin, cos
 import pytest_check as check
-
+from datetime import datetime
+import time
 # N&Y 1988: "This problem can be solved by standard
 # linear optimal control methods employing the Hamilton-Jacobi approach via the Riccati equation."
 
@@ -47,6 +48,13 @@ def test_Kirk_A_example():
     X = X_(t,P_BCs,a,b,M,t_f)
     d_X = d_X_(t,P_BCs,a,b,M,t_f)
     d_d_X = d_d_X_(t,P_BCs,a,b,M,t_f)
+
+    start = time.time_ns()
+    for i in range(0,100):
+        X_(t,P_BCs,a,b,M,t_f)
+    end = time.time_ns()
+    time_taken = end - start
+    print('Time: ', time_taken/100.0)
 
     U = X + d_d_X
 

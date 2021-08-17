@@ -268,7 +268,7 @@ SymPy doesn't like floating-point exponents! doesn't work at all!
 """
 
 a1,b1,a2,b2,p_0,p_1,p_2,p_3,p_4,p_5 = symbols("a1 b1 a2 b2 p_0 p_1 p_2 p_3 p_4 p_5", real=True)
-R = p_5*t**5 + cos(a1*t) #p_2*t**2 #cos(a1*t) #+ sin(b1*t) #cos(a2*t) + sin(b2*t) + p0 + p1*t
+R = cos(a1*t) #p_2*t**2 #cos(a1*t) #+ sin(b1*t) #cos(a2*t) + sin(b2*t) + p0 + p1*t
 # U = sin(t) + cos(t)
 W = Function('W') #previously U
 A,B,C,D,E = symbols("A,B,C,D,E",real=True)
@@ -289,10 +289,17 @@ sympy.pprint(solution)
 print(len(solution.args[1].args)) #first arg is just u
 # a1b1 single term, 18 + 2 for the IC particular
 # a1b1+a2b2; 36 + 2
-sympy.pprint(sympy.integrate(solution, t))
+
+# sympy.pprint(sympy.integrate(solution, t))
+
+# W = sympy.solve(solution, W(t))[0]
+
+
 
 """
 So everything is nicely analytic, but the whole equation is algebraicly tricky.
+
+takes maybe 20 minutes or something 
 """
 
 
@@ -318,15 +325,16 @@ Nope! That's way less manageable. okay!
 """
 
 """
-Integrating the pore N function is very expensive.
+Integrating the pore N function is somewhat expensive.
 can that be done analytically?
-
 """
-v_m,alpha,N0,q,v_ep, N_ic  = symbols("v_m,alpha,N0,q,v_ep, N_ic", real=True)
-N = Function('N') #previously U
-v_m = Function('v_m') #previously U
+v_m,alpha,N0,q,v_ep, N_ic = symbols("v_m,alpha,N0,q,v_ep, N_ic", real=True)
+N = Function('N')
+# v_m = Function('v_m')
 
-k = (v_m(t)/v_ep)**2.0
+v_m = sympy.simplify(solution.rhs)
+
+k = (v_m/v_ep)**2.0
 
 LHS = diff(N(t),t)
 RHS = alpha * exp(k) * (1.0 - (N(t)/N0)*exp(-q*k))
@@ -341,6 +349,7 @@ sympy.pprint(solution)
 print(solution)
 # sympy.pprint(sympy.simplify(solution))
 
+
 """
 Oh yeah, it can.
 
@@ -349,6 +358,11 @@ Hey, if everything's analytic and the cost function is just N, won't gradient me
 
 
 """
+
+
+
+
+
 
 '''
 integration:
