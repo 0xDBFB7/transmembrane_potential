@@ -368,6 +368,8 @@ def d_pore_density(V_m, N, N0, alpha, q, V_ep):
     # V_m = abs(interp_transmembrane_potential(t_n))
     # it doesn't seem like this abs should need to be here.
     # should check if this is correct.
+    #hang on, there shouldn't need to be an abs here, things only depend on
+    # v_m ^2 ! abs was a mistake!
 
     # if(abs(V_m) > 1.5):
     #     V_m = 1.5
@@ -376,6 +378,7 @@ def d_pore_density(V_m, N, N0, alpha, q, V_ep):
     # v_ep = V_ep * (F / (R*T))
 
     k = (V_m/V_ep)**2.0
+
     return alpha * np.exp(k) * (1.0 - (N/N0)*np.exp(-q*k))
 
 def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):

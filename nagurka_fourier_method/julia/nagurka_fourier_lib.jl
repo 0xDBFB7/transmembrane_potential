@@ -1,9 +1,10 @@
 
+##
 using Test, ForwardDiff, NumericalIntegration;
 using Plots;
 using LinearAlgebra;
 using BenchmarkTools;
-using Quadmath;
+#using Quadmath;
 
 epsilon = 1e-15
 
@@ -22,8 +23,11 @@ epsilon = 1e-15
 
 # use differentialequations' sensitivity stuff to get the gradient.
 #
-# had an issue precompiling diffequationssensitivity. running Pkg.update()
+# Pkg had an issue precompiling diffequationssensitivity. running Pkg.update()
 # fixed it.
+
+
+
 
 function L_(t, a, b, m, t_f)
     v = m.*(2*pi / t_f)
@@ -34,7 +38,7 @@ end;
 
 autodiff_d_L_(t, a, b, m, t_f) = ForwardDiff.derivative(n -> L_(n, a, b, m, t_f), t)
 autodiff_d_d_L_(t, a, b, m, t_f) = ForwardDiff.derivative(n -> d_L_(n, a, b, m, t_f), t)
-#
+#P
 function d_L_(t, a, b, m, t_f)
     v = m.*(2*pi / t_f)
     return sum(v .* -1.0 .* a.*sin.(v*t)) + sum(v .* b.*cos.(v*t))
@@ -204,6 +208,7 @@ end
 
 
     _X_(n) = X_(n,p,a,b,m,t_f)
+
     _d_X_(n) = d_X_(n,p,a,b,m,t_f)
     _d_d_X_(n) = d_d_X_(n,p,a,b,m,t_f)
     X = _X_.(t)
@@ -246,6 +251,7 @@ macro name(x)
         $(string(x))
     end
 end
+
 
 @testset "Kirk_C_example" begin
     """
@@ -384,3 +390,4 @@ go back and forth with PyCall.
 
 TODO: replace analytic_ as the default; make forwarddiff optional
 """
+##

@@ -9,7 +9,6 @@ function P_coefficients(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, 
     return (X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf)
 end
 
-# https://gcalderone.github.io/Gnuplot.jl/v1.1.0/
 
 function P_(t, p, a, b, M, t_f)
     """
