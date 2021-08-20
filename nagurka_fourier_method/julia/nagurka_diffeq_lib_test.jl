@@ -18,6 +18,7 @@ is better if you can chose where to sample the thing, like an odesolver lets you
 =#
 
 @testset "Comparison" begin
+    disable_timer!(to)
     M = 3
     m = [1.0:M;]
 
@@ -29,12 +30,31 @@ is better if you can chose where to sample the thing, like an odesolver lets you
 
     a = [0.0, 0.0, 1.0]
     b = [0.0, 0.0, 0.1]
-    
+    # a = rand(M)
+    # b = rand(M)
+
 
     c = zeros(6)
 
+
+
+    a = @view params.O[1:M]
+    b = @view params.O[M+1:(2*M)]
+    c = @view params.O[(2*M)+1:(2*M)+6]
+
+    X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf = c
+
+    X_t0 = 0.0 # override
+    X_tf = 0.0
+    d_X_t0 = 0.0
+
+    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
+    p = P_BCs_to_p_coefficients(P_BCs, t_f)
+
     O = zeros((2*M)+6)
-    params = transmembrane_params(O, t_f, M, m)
+    cell_v = cell_struct(virus.alpha, virus.beta,virus.gamma,virus.phi,virus.xi)
+    cell_h = cell_struct(host_cell.alpha, host_cell.beta,host_cell.gamma,host_cell.phi,host_cell.xi)
+    params = transmembrane_params(cell_v, cell_h, O, t_f, M, m, tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep)
     params.O[1:M] = a
     params.O[M+1:(2*M)] = b
     params.O[(2*M)+1:(2*M)+6] = c
@@ -45,7 +65,9 @@ is better if you can chose where to sample the thing, like an odesolver lets you
 
     solution = solve(prob)
 
-    @time solution = solve(prob)
+    solve_time = @elapsed solve(prob)
+    @show solve_time
+    @show (solve_time / length(solution.t)) * 1e6
 
     integrate(solution.t, getindex.(solution.u, Int(iu0)+1))
     @btime integrate($solution.t, getindex.($solution.u, Int(iu0)+1))
@@ -69,6 +91,11 @@ is better if you can chose where to sample the thing, like an odesolver lets you
         d = zeros(length(instances(svars)))
         s = zeros(length(instances(svars)))
         t=epsilon
-        @btime transmembrane_diffeq($d,$s,$params,$t) 
+        
+        @btime transmembrane_params($cell_v, $cell_h, $O, $t_f, $M, $m)
     end
+
+    
+    
+
 end
