@@ -5,9 +5,11 @@ BenchmarkTools.DEFAULT_PARAMETERS.samples = 30
 #=
 
 To do mem alloc analysis, 
-Profile.clear_malloc_data()
 
 julia --track-allocation=user
+<run function> - precompiles
+Profile.clear_malloc_data()
+<run function>
 
 
 https://github.com/JuliaApproximation/FastGaussQuadrature.jl apparently
@@ -27,7 +29,6 @@ is better if you can chose where to sample the thing, like an odesolver lets you
 
     a = [0.0, 0.0, 1.0]
     b = [0.0, 0.0, 0.1]
-
     
 
     c = zeros(6)

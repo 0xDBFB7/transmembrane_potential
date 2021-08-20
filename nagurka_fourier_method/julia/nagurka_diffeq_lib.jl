@@ -10,8 +10,13 @@ py"""
 import numpy as np
 """
 
+using TimerOutputs
+to = TimerOutput()
+
+
 virus = tl.default_virus(py"""np.array([])""")
 host_cell = tl.default_host_cell(py"""np.array([])""")
+
 
 pore_N0, pore_alpha, pore_q, pore_V_ep = tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep
 
@@ -71,6 +76,8 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     d is state vector derivtatives.
     O is a vector of parameters.
     """
+    
+    @timeit to "views" begin
     m = params.m
     M = params.M
     t_f = params.t_f
@@ -78,32 +85,44 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     a = @view params.O[1:M]
     b = @view params.O[M+1:(2*M)]
     c = @view params.O[(2*M)+1:(2*M)+6]
-    
+    end
+
     X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf = c
 
     X_t0 = 0.0 # override
     X_tf = 0.0
     d_X_t0 = 0.0
 
-    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
-    p = P_BCs_to_p_coefficients(P_BCs, t_f)
+    @timeit to "pbcs" begin
+        P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
+        p = P_BCs_to_p_coefficients(P_BCs, t_f)
+    end
 
-    s[iu0] = U = X_(t,p,a,b,m,t_f)
-    s[iu1] = d_U = d_X_(t,p,a,b,m,t_f)
-    s[iu2] = d_d_U = d_d_X_(t,p,a,b,m,t_f)
+    @timeit to "us" begin
+        s[iu0] = U = X_(t,p,a,b,m,t_f)
+        s[iu1] = d_U = d_X_(t,p,a,b,m,t_f)
+        s[iu2] = d_d_U = d_d_X_(t,p,a,b,m,t_f)
+    end
 
     T0 = 1.0
     U0 = 1.0
     X0 = 1.0
 
-    second_derivative_eq(cell, s1, s0) = ((U0 / (T0*T0))*cell.alpha*d_d_U + (U0 / T0)*cell.beta*d_U 
-                                    + cell.gamma*U0*U - cell.phi*(X0 / T0)*s[s1] - cell.xi*X0*s[s0])/(X0 / (T0*T0))
+    alpha = 0.123e-6
+    beta = .0423426e-4
+    gamma = 1231e-15
+    phi = 487e-7
+    xi = 45e-1
 
+    second_derivative_eq(cell, s1, s0) = ((U0 / (T0*T0))*alpha*d_d_U + (U0 / T0)*beta*d_U 
+                                    + gamma*U0*U - phi*(X0 / T0)*s[s1] - xi*X0*s[s0])/(X0 / (T0*T0))
+
+    @timeit to "diffeq" begin
     d[ ix0_v ] = s[ix1_v]
     d[ ix1_v ] = second_derivative_eq(virus, ix1_v, ix0_v)
     d[ ix0_h ] = s[ix1_h]
     d[ ix1_h ] = second_derivative_eq(host_cell, ix1_h, ix0_h)
-    
+    end
 
 
     # d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], pore_N0, pore_alpha, pore_q, pore_V_ep)/T0
