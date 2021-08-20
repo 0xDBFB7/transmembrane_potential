@@ -1,6 +1,16 @@
 include("nagurka_fourier_lib.jl")
 
 
+using ForwardDiff
+
+
+autodiff_d_L_(t, a, b, m, t_f) = ForwardDiff.derivative(n -> L_(n, a, b, m, t_f), t)
+autodiff_d_d_L_(t, a, b, m, t_f) = ForwardDiff.derivative(n -> d_L_(n, a, b, m, t_f), t)
+
+autodiff_d_P_(t, P_BCs, a, b, m, t_f) = ForwardDiff.derivative(n -> P_(n, P_BCs, a, b, m, t_f), t)
+autodiff_d_d_P_(t, P_BCs, a, b, m, t_f) = ForwardDiff.derivative(n -> d_P_(n, P_BCs, a, b, m, t_f), t)
+
+
 @testset "Polynomial BCs" begin
 
 """

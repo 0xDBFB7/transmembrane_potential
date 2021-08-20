@@ -12,10 +12,7 @@ using ModelingToolkit, OrdinaryDiffEq
 using Plots;
 gr(show = true)
 
-#create_sysimage([:Plots,:ModelingToolkit,:OrdinaryDiffEq];
-#                    precompile_execution_file="math.jl", replace_default=true)
-# or
-# PackageCompiler.restore_default_sysimage()
+
 # Unfortunately Symbolics.jl doesn't seem to support symbolic ODE solving at this point.
 
 @parameters t σ ρ β

@@ -1,6 +1,6 @@
 
 ##
-using Test, ForwardDiff, NumericalIntegration;
+using Test, NumericalIntegration;
 using Plots;
 using LinearAlgebra;
 using BenchmarkTools;
@@ -36,8 +36,6 @@ end;
 
 # x::Union{Vector,Number}
 
-autodiff_d_L_(t, a, b, m, t_f) = ForwardDiff.derivative(n -> L_(n, a, b, m, t_f), t)
-autodiff_d_d_L_(t, a, b, m, t_f) = ForwardDiff.derivative(n -> d_L_(n, a, b, m, t_f), t)
 #P
 function d_L_(t, a, b, m, t_f)
     v = m.*(2*pi / t_f)
@@ -103,8 +101,6 @@ function P_(t, p, a, b, m, t_f)
     return p_0 + p_1*t + p_2*t^2 + p_3*t^3 + p_4*t^4 + p_5*t^5
 end
 
-autodiff_d_P_(t, P_BCs, a, b, m, t_f) = ForwardDiff.derivative(n -> P_(n, P_BCs, a, b, m, t_f), t)
-autodiff_d_d_P_(t, P_BCs, a, b, m, t_f) = ForwardDiff.derivative(n -> d_P_(n, P_BCs, a, b, m, t_f), t)
 
 function d_P_(t, p, a, b, m, t_f)
     """
