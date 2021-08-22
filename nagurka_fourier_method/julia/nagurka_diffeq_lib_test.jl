@@ -2,7 +2,7 @@ include("nagurka_diffeq_lib.jl")
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 30
 
-using DoubleFloats
+# using DoubleFloats
 
 
 using Revise 
@@ -48,24 +48,23 @@ close tab: ctl w
 
 
 @testset "Comparison" begin
-    disable_timer!(to)
-    M = 10
+    M = 3
     m = [1.0:M;]
 
     t_f = 1e-6
 
-    initial_state_variables = Double64.(zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
+    initial_state_variables = (zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
     initial_state_variables[iN_v] = tl.pore_N0
     initial_state_variables[iN_h] = tl.pore_N0
 
-    # a = [0.0, 0.0, 1.0e7]
-    # b = [0.0, 0.0, 0.1e7]
+    a = [0.0, 0.0, 1.0e8]
+    b = [0.0, 0.0, 0.1e7]
     # a = rand(M)
     # b = rand(M)
-    a = Double64.(zeros(M))
-    b = Double64.(zeros(M))
-    a[9] = 0.5e6
-    b[4] = -0.1e6
+    # a = (zeros(M))
+    # b = (zeros(M))
+    # a[9] = 0.5e5
+    # b[4] = -0.1e5
 
     c = zeros(6)
 
@@ -103,18 +102,16 @@ close tab: ctl w
 
     # next problem to solve is why the higher-frequency sine terms have such a low amplitude compared to the polynomial.
 
-    tspan = (Double64(epsilon), Double64(1e-6))
+    tspan = ((epsilon), (1e-6))
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
 
     @show "Start." # there seems to be a lot of time in the double allocation for some reason
-    solve_() = solve(prob, dtmax = t_f / 1000) #, dtmin=1e-15, atol=1e-8, rtol=1e-8, #RadauIIA5(), dtmax = t_f / 100) # dtmin=1e-13,
-
-    solution = solve_() # atol=1e-11,
+    begin_t = time()
+    solution = solve(prob, RadauIIA5(), dtmax = t_f / 100) #, dtmin=1e-15, atol=1e-8, rtol=1e-8, #RadauIIA5(), dtmax = t_f / 100) # dtmin=1e-13,
     
     # so the instability seems to have been caused by the extreme control value I set. 
 
-
-    solve_time = @elapsed solve_()
+    solve_time = time()-begin_t
     @show solve_time
     @show (solve_time / length(solution.t)) * 1e6
 

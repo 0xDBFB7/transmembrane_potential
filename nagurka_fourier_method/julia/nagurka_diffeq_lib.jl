@@ -7,7 +7,7 @@ include("cell_lib.jl")
 
 using TimerOutputs
 to = TimerOutput()
-disable_timer!(to)
+# disable_timer!(to)
 # call reset_timer!() to reset
 
 
@@ -149,22 +149,21 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
 
     exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
 
-    # s[iI_ep_v] = autodiff_pore_current_second_derivative(t, params.a, params.b, params.p, m, t_f, s[iN_v], params.cell_v)
-    s[iI_ep_v] = d_d_V_ep(s[ix0_v], s[ix1_v], s[iN_v], params.cell_v)
-    s[iI_ep_h] = d_d_V_ep(s[ix0_h], s[ix1_h], s[iN_h], params.cell_h)
+    # s[iI_ep_v] = d_d_V_ep(s[ix0_v], s[ix1_v], s[iN_v], params.cell_v)
+    # s[iI_ep_h] = d_d_V_ep(s[ix0_h], s[ix1_h], s[iN_h], params.cell_h)
 
     
 
     @timeit to "diffeq" begin
     d[ ix0_v ] = s[ix1_v]
-    d[ ix1_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) + s[iI_ep_v]
+    d[ ix1_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) #+ s[iI_ep_v]
 
     d[ ix0_h ] = s[ix1_h]
-    d[ ix1_h ] = second_derivative_eq(params.cell_h, ix1_h, ix0_h) + s[iI_ep_v]
+    d[ ix1_h ] = second_derivative_eq(params.cell_h, ix1_h, ix0_h) #+ s[iI_ep_h]
     end
     
-    d[iN_v] = (d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0) * exp_limiter(iN_v)
-    d[iN_h] = (d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0) * exp_limiter(iN_h)
+    # d[iN_v] = (d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0) * exp_limiter(iN_v)
+    # d[iN_h] = (d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0) * exp_limiter(iN_h)
     # @show s
     # @show d
 
