@@ -52,21 +52,28 @@ close tab: ctl w
     M = 3
     m = [1.0:M;]
 
-    t_f = 1e-6
+    a = [0.0, 0.0, 1.0e6]
+    b = [0.0, 0.0, 0.1e6]
+    # a = rand(M)
+    # b = rand(M)
 
-    initial_state_variables = Double64.(zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
+    # M=30
+    # a = (zeros(M))
+    # b = (zeros(M))
+    # for i in [1.0:2.0:M;]
+    #     b[Int(i)] = (1/(i))*80000*(50/20)
+    # end
+
+
+    t_f = 10e-6
+
+    basetype(n) = Double64(n)
+
+    initial_state_variables = basetype.(zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
     initial_state_variables[iN_v] = tl.pore_N0
     initial_state_variables[iN_h] = tl.pore_N0
 
-    a = [0.0, 0.0, 1.0e5]
-    b = [0.0, 0.0, 0.1e5]
-    # a = rand(M)
-    # b = rand(M)
-    # a = (zeros(M))
-    # b = (zeros(M))
-    # a[9] = 0.5e5
-    # b[4] = -0.1e5
-    
+
     c = zeros(6)
     
     # so the instability seems to have been caused by the extreme control value I set. 
@@ -78,8 +85,11 @@ close tab: ctl w
     X_t0 = 0.0 # override
     X_tf = 0.0
     d_X_t0 = 0.0
-    # d_d_X_t0 = d_d_L_(epsilon, a, b, m, t_f)
-    # d_d_X_tf = d_d_L_(t_f, a, b, m, t_f)
+
+    d_X_t0 = d_L_(epsilon, a, b, m, t_f)
+    d_X_tf = d_L_(t_f, a, b, m, t_f)
+    d_d_X_t0 = d_d_L_(epsilon, a, b, m, t_f)
+    d_d_X_tf = d_d_L_(t_f, a, b, m, t_f)
 
     P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
     p = P_BCs_to_p_coefficients(P_BCs, t_f)
@@ -104,13 +114,13 @@ close tab: ctl w
 
     # next problem to solve is why the higher-frequency sine terms have such a low amplitude compared to the polynomial.
 
-    tspan = (Double64(epsilon), Double64(1e-9))
+    # tspan = (basetype(epsilon), basetype(t_f/1000.0)) # precompiles everything
+    # prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
 
-    prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
-    _solve() = solve(prob, Tsit5(), atol=1e-8, dtmax = t_f / 1000, progress = true, progress_steps = 500)
-    solution = _solve()
+    _solve() = solve(prob, RadauIIA5(), atol=1e-8, dtmax = t_f / 1000, progress = true, progress_steps = 500)
 
-    tspan = (Double64(epsilon), Double64(1e-6))
+    
+    tspan = (Double64(epsilon), Double64(t_f))
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
 
     # @btime solve($prob)#, RadauIIA5(), dtmax = t_f / 100) #, dtmin=1e-15, atol=1e-8, rtol=1e-8, #RadauIIA5(), dtmax = t_f / 100) # dtmin=1e-13,
@@ -118,6 +128,8 @@ close tab: ctl w
     
 
     tspan = ((epsilon), (1e-6))
+    solution = _solve()
+
     begin_t = time()
     # for i in [1:10.0;] 
     solution = _solve()

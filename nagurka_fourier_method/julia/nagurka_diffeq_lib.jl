@@ -32,6 +32,9 @@ global_logger(TerminalLogger())
     ix0_h
     ix1_h
 
+    ix2_v
+    ix2_h
+
     iu0
     iu1
     iu2
@@ -146,7 +149,7 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     U0 = 1.0
     X0 = 1.0
     
-    irreversible_threshold = 1e30
+    irreversible_threshold = 1e18
     irreversible_threshold_sharpness = 2.0 # sharper values seem to cause instabilities
 
 
@@ -155,21 +158,28 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
 
     exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
 
-    s[iI_ep_v] = d_d_V_ep(s[ix0_v], s[ix1_v], s[iN_v], params.cell_v)
-    s[iI_ep_h] = d_d_V_ep(s[ix0_h], s[ix1_h], s[iN_h], params.cell_h)
+    s[iI_ep_v] = d_V_ep(s[ix0_v], s[iN_v], params.cell_v)
+    s[iI_ep_h] = d_V_ep(s[ix0_h], s[iN_h], params.cell_h)
 
-    
+
+    # s[iI_ep_v] = 
+    # s[iI_ep_h] = d_d_V_ep(s[ix0_h], s[ix1_h], s[iN_h], params.cell_h)
+
+    s[ ix2_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) 
+    s[ ix2_h ] = second_derivative_eq(params.cell_h, ix1_h, ix0_h) 
 
     @timeit to "diffeq" begin
-    d[ ix0_v ] = s[ix1_v]
-    d[ ix1_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) + s[iI_ep_v]
+    d[ ix0_v ] = s[ix1_v] + s[iI_ep_v]
+    d[ ix1_v ] = s[ ix2_v ] + d_d_V_ep(s[ix0_v], s[ix1_v], s[iN_v], params.cell_v)
+        
 
-    d[ ix0_h ] = s[ix1_h]
-    d[ ix1_h ] = second_derivative_eq(params.cell_h, ix1_h, ix0_h) + s[iI_ep_h]
+    d[ ix0_h ] = s[ix1_h] + s[iI_ep_h]
+    d[ ix1_h ] = s[ix2_h] + d_d_V_ep(s[ix0_h], s[ix1_h], s[iN_h], params.cell_h)
     end
     
-    d[iN_v] = (d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0) * exp_limiter(iN_v)
-    d[iN_h] = (d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0) * exp_limiter(iN_h)
+    # this causes a lot of headache because of the large exponent - would be great to nondimensionalize this somehow, make it log perhaps
+    d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0 # * exp_limiter(iN_v)
+    d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0 # * exp_limiter(iN_h)
     # @show s
     # @show d
 
