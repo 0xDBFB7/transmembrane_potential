@@ -94,7 +94,6 @@ end
 
 
     _X_(n) = X_(n,p,a,b,m,t_f)
-
     _d_X_(n) = d_X_(n,p,a,b,m,t_f)
     _d_d_X_(n) = d_d_X_(n,p,a,b,m,t_f)
     X = _X_.(t)

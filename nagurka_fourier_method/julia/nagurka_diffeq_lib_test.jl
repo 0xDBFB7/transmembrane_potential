@@ -2,7 +2,13 @@ include("nagurka_diffeq_lib.jl")
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 30
 
-using Revise
+using DoubleFloats
+
+
+using Revise 
+# this should probably be included before everything else
+
+
 #using CUDA # just wrap initial_state_variables with cu()
 
 #=
@@ -48,7 +54,7 @@ close tab: ctl w
 
     t_f = 1e-6
 
-    initial_state_variables = zeros(length(instances(svars)))
+    initial_state_variables = Double64.(zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
     initial_state_variables[iN_v] = tl.pore_N0
     initial_state_variables[iN_h] = tl.pore_N0
 
@@ -56,10 +62,10 @@ close tab: ctl w
     # b = [0.0, 0.0, 0.1e7]
     # a = rand(M)
     # b = rand(M)
-    a = zeros(M)
-    b = zeros(M)
-    a[9] = 0.5e7
-    b[4] = -0.1e7
+    a = Double64.(zeros(M))
+    b = Double64.(zeros(M))
+    a[9] = 0.5e6
+    b[4] = -0.1e6
 
     c = zeros(6)
 
@@ -79,9 +85,9 @@ close tab: ctl w
 
     O = zeros((2*M)+6)
 
-    virus_membrane_thickness = virus.membrane_thickness# 5e-9 # overriding temporarily!
-
+    
     #local scope for speed
+    virus_membrane_thickness = virus.membrane_thickness# 5e-9 # overriding temporarily! FIXME TODO
     cell_v = cell_struct(virus.alpha, virus.beta,virus.gamma,virus.phi,virus.xi,
                 virus.membrane_permittivity, virus_membrane_thickness, virus.cell_diameter)
     cell_h = cell_struct(host_cell.alpha, host_cell.beta,host_cell.gamma,host_cell.phi,host_cell.xi,
@@ -97,13 +103,17 @@ close tab: ctl w
 
     # next problem to solve is why the higher-frequency sine terms have such a low amplitude compared to the polynomial.
 
-    tspan = (epsilon, 1e-6)
+    tspan = (Double64(epsilon), Double64(1e-6))
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
 
-    solve_() = solve(prob, RadauIIA5(), dtmin=1e-13, dtmax = t_f / 100)
+    @show "Start." # there seems to be a lot of time in the double allocation for some reason
+    solve_() = solve(prob, dtmax = t_f / 1000) #, dtmin=1e-15, atol=1e-8, rtol=1e-8, #RadauIIA5(), dtmax = t_f / 100) # dtmin=1e-13,
 
     solution = solve_() # atol=1e-11,
     
+    # so the instability seems to have been caused by the extreme control value I set. 
+
+
     solve_time = @elapsed solve_()
     @show solve_time
     @show (solve_time / length(solution.t)) * 1e6
@@ -123,8 +133,11 @@ close tab: ctl w
 
     # @gp :- 3 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
     @gp :- 5 solution.t N_v_course string(formatstring,"'N_v'")
-    # @gp :- 5 solution.t N_h_course string(formatstring,"'N_h'")
-    @gp :- 6 solution.t getindex.(solution.u, Int(iI_ep_v)+1) string(formatstring,"'I_ep_v'")
+    @gp :- 6 solution.t N_h_course string(formatstring,"'N_h'")
+
+    #this is just confusing now because it's the second derivative
+    # @gp :- 6 solution.t getindex.(solution.u, Int(iI_ep_v)+1) string(formatstring,"'I_ep_v'")
+    
     #save(term="svg size 1000 1000",output="runs/x0_v_negative.svg")
 
     # @gp solution.t getindex.(solution.u, Int(iu1)+1) "with lines tit 'u1'"
@@ -139,8 +152,5 @@ close tab: ctl w
         
         @btime transmembrane_diffeq($d,$s,$params,t2) setup=(t2 = rand())
     end
-
-    
-    
 
 end
