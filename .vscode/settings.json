@@ -1,3 +1,4 @@
 {
-    "julia.environmentPath": "/home/arthurdent/Projects/covidinator/biology/kotnik_transmembrane/nagurka_fourier_method/julia"
+    "julia.environmentPath": "/home/arthurdent/Projects/covidinator/biology/kotnik_transmembrane/nagurka_fourier_method/julia",
+    "svg.preview.background": "custom"
 }

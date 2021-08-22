@@ -81,6 +81,7 @@ close tab: ctl w
 
     virus_membrane_thickness = virus.membrane_thickness# 5e-9 # overriding temporarily!
 
+    #local scope for speed
     cell_v = cell_struct(virus.alpha, virus.beta,virus.gamma,virus.phi,virus.xi,
                 virus.membrane_permittivity, virus_membrane_thickness, virus.cell_diameter)
     cell_h = cell_struct(host_cell.alpha, host_cell.beta,host_cell.gamma,host_cell.phi,host_cell.xi,
