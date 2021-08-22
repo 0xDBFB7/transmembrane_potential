@@ -366,10 +366,11 @@ dV/dt = i/c but we need the second derivative of V, so derive in terms of unspec
 
 """
 
-w0,F,R,T,r_m,Cell_D,h,sigma,n,N = symbols("w0,F,R,T,r_m,Cell_D,h,sigma,n,N")
-V_m = Function('V_m')
+w0,F,R,T,r_m,diameter,h,sigma,n,N = symbols("w0,F,R,T,r_m,diameter,h,sigma,n,N")
+v_m = Function('v_m')
 
-v_m = (V_m(t)) * (F/(R*T))
+# v_m = (V_m(t)) * (F/(R*T))
+v_m = v_m(t)
 
 i_ep_term_1 = (pi * (r_m**2) * sigma * v_m * R * T) / (F * h)
 
@@ -381,7 +382,7 @@ i_ep = i_ep_term_1 * i_ep_term_2
 # I = C_m dv/dt
 # dv_dt = I/C_m
 # permittivity already has the eps0 in it 
-A = 4*pi*(Cell_D/2)**2
+A = 4*pi*(diameter/2)**2
 C_m = k * A / h
 I_ep = -(i_ep * N / C_m)
 
@@ -409,6 +410,8 @@ print(I_ep.diff(t))
 # )/(R*T) - 1)*diff(V_m(t), t)/(Cell_D^2*R*T*k*((w0*e^(w0 - F*n*V_m(t)/(R*T)) - 
 # F*n*V_m(t)/(R*T))*e^(F*V_m(t)/(R*T))/(w0 - F*n*V_m(t)/(R*T)) - (w0*e^(w0 + F*n
 # *V_m(t)/(R*T)) + F*n*V_m(t)/(R*T))/(w0 + F*n*V_m(t)/(R*T))))
+
+# simplified by taking out the V_m -> v_m reduction
 
 
 '''

@@ -20,7 +20,6 @@ virus = tl.default_virus(py"""np.array([])""")
 host_cell = tl.default_host_cell(py"""np.array([])""")
 
 
-using ForwardDiff
 
 
 
@@ -129,11 +128,7 @@ function d_V_ep(V_m, N, cell)
 
     # C_m and A should maybe go in transmembrane_lib
 
-    # if(V_m >= 0.0)
     return d_V_ep
-    # else
-    #     return (i_ep * N / C_m)
-    # end
 
 end
 
@@ -148,27 +143,31 @@ function d_d_V_ep(V_m, d_V_m, N, cell)
     R = 8.314
 
     r_m = 0.76e-9 # pore radius constant
-    pore_solution_conductivity = 13.0 
+    sigma = pore_solution_conductivity = 13.0 
     # normally 0.1 mS/cm to S/m, but this peaks out transmembrane at like 8 rather than 3
     # where does 1.3 S/m come from? that's pretty high...
     w0 = 2.65 # ?
     n = 0.15
     diameter = cell.cell_diameter
+    e = MathConstants.e
+    k = cell.membrane_permittivity
 
-    d_d_I_ep = (-N*r_m^2*sigma*((F*n*w0*e^(w0 - F*n*V_m/(R*T))*d_V_m/(R*T) + F*n* d_V_m/(R*T))*e^(F*V_m/(R*T))/(w0 
-        - F*n*V_m/(R*T)) - (w0*e^(w0 - F*n*V_m/(R*T)) - F*n*V_m/(R*T))*F*n*e^(F*V_m/(R*T))*d_V_m /(R*T*(w0 
-        - F*n*V_m/(R*T))^2) - (w0*e^(w0 - F*n*V_m/(R*T)) - F*n*V_m/ (R*T))*F*e^(F*V_m/(R*T))*d_V_m/(R*T*(w0 
-        - F*n*V_m/(R*T))) + (F *n*w0*e^(w0 + F*n*V_m/(R*T))*d_V_m/(R*T) + F*n*d_V_m/(R *T))/(w0 + F*n*V_m/(R*T)) 
-        - (w0*e^(w0 + F*n*V_m/(R*T)) + F*n*V_m/(R*T ))*F*n*d_V_m/(R*T*(w0 + F*n*V_m/(R*T))^2))*V_m*e^(F*V_m/(R* T) - 1)/(diameter^2*k*((w0*e^(w0 
-        - F*n*V_m/(R*T)) - F*n*V_m/(R*T))*e^(F*V_ m(t)/(R*T))/(w0 - F*n*V_m/(R*T)) - (w0*e^(w0 + F*n*V_m/(R*T)) + F*n*V_m( t)/(R*T))/(w0 + F*n*V_m/(R*T)))^2) 
-        - N*r_m^2*sigma*e^(F*V_m/(R*T) - 1)*d iff(V_m, t)/(diameter^2*k*((w0*e^(w0 - F*n*V_m/(R*T)) - F*n*V_m/(R*T))* e^(F*V_m/(R*T))/(w0 
-        - F*n*V_m/(R*T)) - (w0*e^(w0 + F*n*V_m/(R*T)) + F *n*V_m/(R*T))/(w0 + F*n*V_m/(R*T)))) - F*N*r_m^2*sigma*V_m*e^(F*V_m(t )/(R*T) 
-        - 1)*d_V_m/(diameter^2*R*T*k*((w0*e^(w0 - F*n*V_m/(R*T)) - F*n*V_m/(R*T))*e^(F*V_m/(R*T))/(w0 - F*n*V_m/(R*T)) 
-        - (w0*e^(w0 + F*n *V_m/(R*T)) + F*n*V_m/(R*T))/(w0 + F*n*V_m/(R*T)))))
+    v_m = (V_m + epsilon) * (F/(R*T))
+    d_v_m = (d_V_m + epsilon) * (F/(R*T))
 
-    return _d_d_V_ep
+    d_d_V_ep = (N*R*T*r_m^2*sigma*e^(v_m - 1)*v_m*d_v_m/(F*diameter^2*k*((w0*e^(-n*v_m + w0) - n*v_m)*e^v_m/(n*v_m - w0) 
+                + (w0*e^(n*v_m + w0) + n*v_m)/(n*v_m + w0))) - ((w0*e^(-n*v_m + w0) - n*v_m)*e^v_m*d_v_m/(n*v_m - w0) 
+                - (w0*e^(-n*v_m + w0) - n*v_m)*n*e^v_m*d_v_m/(n*v_m - w0)^2 - (n*w0*e^(-n*v_m + w0)*d_v_m 
+                + n*d_v_m)*e^v_m/(n*v_m - w0) - (w0*e^(n*v_m + w0) + n*v_m)*n*d_v_m/(n*v_m + w0)^2 + (n*w0*e^(n*v_m 
+                + w0)*d_v_m + n*d_v_m)/(n*v_m + w0))*N*R*T*r_m^2*sigma*e^(v_m - 1)*v_m/(F*diameter^2*k*((w0*e^(-n*v_m + w0) 
+                - n*v_m)*e^v_m/(n*v_m - w0) + (w0*e^(n*v_m + w0) + n*v_m)/(n*v_m + w0))^2) + N*R*T*r_m^2*sigma*e^(v_m 
+                - 1)*d_v_m/(F*diameter^2*k*((w0*e^(-n*v_m + w0) - n*v_m)*e^v_m/(n*v_m - w0) 
+                + (w0*e^(n*v_m + w0) + n*v_m)/(n*v_m + w0))))
 
-# autodiff_pore_current_second_derivative(t, a, b, p, m, t_f, N, cell) = ForwardDiff.derivative(n -> dVdt_tm_potential_pore_current(X_(n, a, b, p, m, t_f), N, cell), t)
+    return d_d_V_ep
+
+end
+
 
 #=
 
@@ -250,14 +249,14 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
 
     # s[iI_ep_v] = autodiff_pore_current_second_derivative(t, params.a, params.b, params.p, m, t_f, s[iN_v], params.cell_v)
-    s[iI_ep_v] = (dVdt_tm_potential_pore_current(s[ix0_v], s[iN_v], params.cell_v) / T0) #? t0 right?
-    s[iI_ep_h] = (dVdt_tm_potential_pore_current(s[ix0_h], s[iN_h], params.cell_h) / T0) #? t0 right?
+    # s[iI_ep_v] = (dVdt_tm_potential_pore_current(s[ix0_v], s[iN_v], params.cell_v) / T0) #? t0 right?
+    # s[iI_ep_h] = (dVdt_tm_potential_pore_current(s[ix0_h], s[iN_h], params.cell_h) / T0) #? t0 right?
 
     
 
     @timeit to "diffeq" begin
-    d[ ix0_v ] = s[ix1_v] + s[iI_ep_v]
-    d[ ix1_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) 
+    d[ ix0_v ] = s[ix1_v]
+    d[ ix1_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) + d_d_V_ep(s[ix0_v], s[ix1_v], s[iN_v], params.cell_v)
 
     d[ ix0_h ] = s[ix1_h] + s[iI_ep_h]
     d[ ix1_h ] = second_derivative_eq(params.cell_h, ix1_h, ix0_h)
