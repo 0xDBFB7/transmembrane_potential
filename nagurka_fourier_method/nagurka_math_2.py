@@ -328,26 +328,26 @@ Nope! That's way less manageable. okay!
 Integrating the pore N function is somewhat expensive.
 can that be done analytically?
 """
-v_m,alpha,N0,q,v_ep, N_ic = symbols("v_m,alpha,N0,q,v_ep, N_ic", real=True)
-N = Function('N')
-# v_m = Function('v_m')
+# v_m,alpha,N0,q,v_ep, N_ic = symbols("v_m,alpha,N0,q,v_ep, N_ic", real=True)
+# N = Function('N')
+# # v_m = Function('v_m')
 
-v_m = sympy.simplify(solution.rhs)
+# v_m = sympy.simplify(solution.rhs)
 
-k = (v_m/v_ep)**2.0
+# k = (v_m/v_ep)**2.0
 
-LHS = diff(N(t),t)
-RHS = alpha * exp(k) * (1.0 - (N(t)/N0)*exp(-q*k))
+# LHS = diff(N(t),t)
+# RHS = alpha * exp(k) * (1.0 - (N(t)/N0)*exp(-q*k))
 
-sympy.pprint(Eq(LHS, RHS))
+# sympy.pprint(Eq(LHS, RHS))
 
-solution = dsolve(Eq(LHS, RHS), N(t), ics={N(0): N_ic})
+# solution = dsolve(Eq(LHS, RHS), N(t), ics={N(0): N_ic})
 
-# adding W(t_f): W_tf, W(t).diff(t,1).subs(t,t_f): d_W_tf}
-# raises ValueError: Couldn't solve for initial conditions
-sympy.pprint(solution)
-print(solution)
-# sympy.pprint(sympy.simplify(solution))
+# # adding W(t_f): W_tf, W(t).diff(t,1).subs(t,t_f): d_W_tf}
+# # raises ValueError: Couldn't solve for initial conditions
+# sympy.pprint(solution)
+# print(solution)
+# # sympy.pprint(sympy.simplify(solution))
 
 
 """
@@ -359,9 +359,56 @@ Hey, if everything's analytic and the cost function is just N, won't gradient me
 
 """
 
+"""
+we have the pore current equation (which doesn't depend on t explicitly).
+dV/dt = i/c but we need the second derivative of V, so derive in terms of unspecified V(t)
 
 
+"""
 
+w0,F,R,T,r_m,Cell_D,h,sigma,n,N = symbols("w0,F,R,T,r_m,Cell_D,h,sigma,n,N")
+V_m = Function('V_m')
+
+v_m = (V_m(t)) * (F/(R*T))
+
+i_ep_term_1 = (pi * (r_m**2) * sigma * v_m * R * T) / (F * h)
+
+i_ep_term_2_divisor_1 = exp(v_m)*((w0*exp(w0-n*v_m) - (n*v_m)) / (w0 - (n*v_m)))
+i_ep_term_2_divisor_2 = -((w0*exp(w0+n*v_m) + (n*v_m)) / (w0 + (n*v_m)))
+i_ep_term_2 = exp(v_m - 1) / (i_ep_term_2_divisor_1 + i_ep_term_2_divisor_2)
+
+i_ep = i_ep_term_1 * i_ep_term_2
+# I = C_m dv/dt
+# dv_dt = I/C_m
+# permittivity already has the eps0 in it 
+A = 4*pi*(Cell_D/2)**2
+C_m = k * A / h
+I_ep = -(i_ep * N / C_m)
+
+sympy.pprint(I_ep)
+sympy.pprint(I_ep.diff(t))
+print(I_ep.diff(t))
+# sympy.pprint(sympy.simplify(I_ep.diff(t)))
+# this line takes too long. put it in SageMath, simplified with the maxima backend.
+# that
+
+# -N*r_m^2*sigma*((F*n*w0*e^(w0 - F*n*V_m(t)/(R*T))*diff(V_m(t), t)/(R*T) + F*n*
+# diff(V_m(t), t)/(R*T))*e^(F*V_m(t)/(R*T))/(w0 - F*n*V_m(t)/(R*T)) - (w0*e^(w0 
+# - F*n*V_m(t)/(R*T)) - F*n*V_m(t)/(R*T))*F*n*e^(F*V_m(t)/(R*T))*diff(V_m(t), t)
+# /(R*T*(w0 - F*n*V_m(t)/(R*T))^2) - (w0*e^(w0 - F*n*V_m(t)/(R*T)) - F*n*V_m(t)/
+# (R*T))*F*e^(F*V_m(t)/(R*T))*diff(V_m(t), t)/(R*T*(w0 - F*n*V_m(t)/(R*T))) + (F
+# *n*w0*e^(w0 + F*n*V_m(t)/(R*T))*diff(V_m(t), t)/(R*T) + F*n*diff(V_m(t), t)/(R
+# *T))/(w0 + F*n*V_m(t)/(R*T)) - (w0*e^(w0 + F*n*V_m(t)/(R*T)) + F*n*V_m(t)/(R*T
+# ))*F*n*diff(V_m(t), t)/(R*T*(w0 + F*n*V_m(t)/(R*T))^2))*V_m(t)*e^(F*V_m(t)/(R*
+# T) - 1)/(Cell_D^2*k*((w0*e^(w0 - F*n*V_m(t)/(R*T)) - F*n*V_m(t)/(R*T))*e^(F*V_
+# m(t)/(R*T))/(w0 - F*n*V_m(t)/(R*T)) - (w0*e^(w0 + F*n*V_m(t)/(R*T)) + F*n*V_m(
+# t)/(R*T))/(w0 + F*n*V_m(t)/(R*T)))^2) - N*r_m^2*sigma*e^(F*V_m(t)/(R*T) - 1)*d
+# iff(V_m(t), t)/(Cell_D^2*k*((w0*e^(w0 - F*n*V_m(t)/(R*T)) - F*n*V_m(t)/(R*T))*
+# e^(F*V_m(t)/(R*T))/(w0 - F*n*V_m(t)/(R*T)) - (w0*e^(w0 + F*n*V_m(t)/(R*T)) + F
+# *n*V_m(t)/(R*T))/(w0 + F*n*V_m(t)/(R*T)))) - F*N*r_m^2*sigma*V_m(t)*e^(F*V_m(t
+# )/(R*T) - 1)*diff(V_m(t), t)/(Cell_D^2*R*T*k*((w0*e^(w0 - F*n*V_m(t)/(R*T)) - 
+# F*n*V_m(t)/(R*T))*e^(F*V_m(t)/(R*T))/(w0 - F*n*V_m(t)/(R*T)) - (w0*e^(w0 + F*n
+# *V_m(t)/(R*T)) + F*n*V_m(t)/(R*T))/(w0 + F*n*V_m(t)/(R*T))))
 
 
 '''

@@ -96,7 +96,7 @@ function d_pore_density(V_m, N, N0, alpha, q, V_ep)
 end;
 
 
-function dVdt_tm_potential_pore_current(V_m, N, cell)
+function d_V_ep(V_m, N, cell)
     """
     The term of the first derivative of the transmembrane potential
     caused by the current flow through the 
@@ -125,19 +125,50 @@ function dVdt_tm_potential_pore_current(V_m, N, cell)
     # permittivity already has the eps0 in it 
     A = 4*pi*(cell.cell_diameter/2)^2
     C_m = cell.membrane_permittivity * A / cell.membrane_thickness 
+    d_V_ep = -(i_ep * N / C_m)
 
     # C_m and A should maybe go in transmembrane_lib
 
-    if(V_m >= 0.0)
-        return -(i_ep * N / C_m)
-    else
-        return (i_ep * N / C_m)
-    end
+    # if(V_m >= 0.0)
+    return d_V_ep
+    # else
+    #     return (i_ep * N / C_m)
+    # end
 
 end
 
+function d_d_V_ep(V_m, d_V_m, N, cell)
+    """
+    Derived via nagurka_math_2.py, then sagemath Maxima backend
+    Here the V_m -> v_m normalization is baked in!
+    """
+    
+    F = 96485.332 # units?
+    T = 295.0
+    R = 8.314
 
-autodiff_pore_current_second_derivative(t, a, b, p, m, t_f, N, cell) = ForwardDiff.derivative(n -> dVdt_tm_potential_pore_current(X_(n, a, b, p, m, t_f), N, cell), t)
+    r_m = 0.76e-9 # pore radius constant
+    pore_solution_conductivity = 13.0 
+    # normally 0.1 mS/cm to S/m, but this peaks out transmembrane at like 8 rather than 3
+    # where does 1.3 S/m come from? that's pretty high...
+    w0 = 2.65 # ?
+    n = 0.15
+    diameter = cell.cell_diameter
+
+    d_d_I_ep = (-N*r_m^2*sigma*((F*n*w0*e^(w0 - F*n*V_m/(R*T))*d_V_m/(R*T) + F*n* d_V_m/(R*T))*e^(F*V_m/(R*T))/(w0 
+        - F*n*V_m/(R*T)) - (w0*e^(w0 - F*n*V_m/(R*T)) - F*n*V_m/(R*T))*F*n*e^(F*V_m/(R*T))*d_V_m /(R*T*(w0 
+        - F*n*V_m/(R*T))^2) - (w0*e^(w0 - F*n*V_m/(R*T)) - F*n*V_m/ (R*T))*F*e^(F*V_m/(R*T))*d_V_m/(R*T*(w0 
+        - F*n*V_m/(R*T))) + (F *n*w0*e^(w0 + F*n*V_m/(R*T))*d_V_m/(R*T) + F*n*d_V_m/(R *T))/(w0 + F*n*V_m/(R*T)) 
+        - (w0*e^(w0 + F*n*V_m/(R*T)) + F*n*V_m/(R*T ))*F*n*d_V_m/(R*T*(w0 + F*n*V_m/(R*T))^2))*V_m*e^(F*V_m/(R* T) - 1)/(diameter^2*k*((w0*e^(w0 
+        - F*n*V_m/(R*T)) - F*n*V_m/(R*T))*e^(F*V_ m(t)/(R*T))/(w0 - F*n*V_m/(R*T)) - (w0*e^(w0 + F*n*V_m/(R*T)) + F*n*V_m( t)/(R*T))/(w0 + F*n*V_m/(R*T)))^2) 
+        - N*r_m^2*sigma*e^(F*V_m/(R*T) - 1)*d iff(V_m, t)/(diameter^2*k*((w0*e^(w0 - F*n*V_m/(R*T)) - F*n*V_m/(R*T))* e^(F*V_m/(R*T))/(w0 
+        - F*n*V_m/(R*T)) - (w0*e^(w0 + F*n*V_m/(R*T)) + F *n*V_m/(R*T))/(w0 + F*n*V_m/(R*T)))) - F*N*r_m^2*sigma*V_m*e^(F*V_m(t )/(R*T) 
+        - 1)*d_V_m/(diameter^2*R*T*k*((w0*e^(w0 - F*n*V_m/(R*T)) - F*n*V_m/(R*T))*e^(F*V_m/(R*T))/(w0 - F*n*V_m/(R*T)) 
+        - (w0*e^(w0 + F*n *V_m/(R*T)) + F*n*V_m/(R*T))/(w0 + F*n*V_m/(R*T)))))
+
+    return _d_d_V_ep
+
+# autodiff_pore_current_second_derivative(t, a, b, p, m, t_f, N, cell) = ForwardDiff.derivative(n -> dVdt_tm_potential_pore_current(X_(n, a, b, p, m, t_f), N, cell), t)
 
 #=
 
@@ -218,15 +249,15 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
 
     exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
 
-    s[iI_ep_v] = autodiff_pore_current_second_derivative(t, params.a, params.b, params.p, m, t_f, s[iN_v], params.cell_v)
-    #(dVdt_tm_potential_pore_current(s[ix1_v], s[iN_v], params.cell_v) / T0) #? t0 right?
+    # s[iI_ep_v] = autodiff_pore_current_second_derivative(t, params.a, params.b, params.p, m, t_f, s[iN_v], params.cell_v)
+    s[iI_ep_v] = (dVdt_tm_potential_pore_current(s[ix0_v], s[iN_v], params.cell_v) / T0) #? t0 right?
     s[iI_ep_h] = (dVdt_tm_potential_pore_current(s[ix0_h], s[iN_h], params.cell_h) / T0) #? t0 right?
 
     
 
     @timeit to "diffeq" begin
-    d[ ix0_v ] = s[ix1_v] 
-    d[ ix1_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) + s[iI_ep_v]
+    d[ ix0_v ] = s[ix1_v] + s[iI_ep_v]
+    d[ ix1_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) 
 
     d[ ix0_h ] = s[ix1_h] + s[iI_ep_h]
     d[ ix1_h ] = second_derivative_eq(params.cell_h, ix1_h, ix0_h)
