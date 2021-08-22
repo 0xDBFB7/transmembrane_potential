@@ -1,11 +1,10 @@
 include("nagurka_diffeq_lib.jl")
 
-BenchmarkTools.DEFAULT_PARAMETERS.samples = 30
-
-# using DoubleFloats
+# BenchmarkTools.DEFAULT_PARAMETERS.samples = 30
 
 
-using Revise 
+
+# using Revise 
 # this should probably be included before everything else
 
 
@@ -46,6 +45,8 @@ close tab: ctl w
     
 # end
 
+# staticarrays.jl
+
 
 @testset "Comparison" begin
     M = 3
@@ -53,21 +54,22 @@ close tab: ctl w
 
     t_f = 1e-6
 
-    initial_state_variables = (zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
+    initial_state_variables = Double64.(zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
     initial_state_variables[iN_v] = tl.pore_N0
     initial_state_variables[iN_h] = tl.pore_N0
 
-    a = [0.0, 0.0, 1.0e8]
-    b = [0.0, 0.0, 0.1e7]
+    a = [0.0, 0.0, 1.0e5]
+    b = [0.0, 0.0, 0.1e5]
     # a = rand(M)
     # b = rand(M)
     # a = (zeros(M))
     # b = (zeros(M))
     # a[9] = 0.5e5
     # b[4] = -0.1e5
-
+    
     c = zeros(6)
-
+    
+    # so the instability seems to have been caused by the extreme control value I set. 
 
 
     
@@ -102,22 +104,30 @@ close tab: ctl w
 
     # next problem to solve is why the higher-frequency sine terms have such a low amplitude compared to the polynomial.
 
-    tspan = ((epsilon), (1e-6))
+    tspan = (Double64(epsilon), Double64(1e-9))
+
+    prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
+    _solve() = solve(prob, Tsit5(), atol=1e-8, dtmax = t_f / 1000, progress = true, progress_steps = 500)
+    solution = _solve()
+
+    tspan = (Double64(epsilon), Double64(1e-6))
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
 
-    @show "Start." # there seems to be a lot of time in the double allocation for some reason
-    begin_t = time()
-    solution = solve(prob)#, RadauIIA5(), dtmax = t_f / 100) #, dtmin=1e-15, atol=1e-8, rtol=1e-8, #RadauIIA5(), dtmax = t_f / 100) # dtmin=1e-13,
+    # @btime solve($prob)#, RadauIIA5(), dtmax = t_f / 100) #, dtmin=1e-15, atol=1e-8, rtol=1e-8, #RadauIIA5(), dtmax = t_f / 100) # dtmin=1e-13,
+    #@benchmark doesn't print off the repl?
     
-    # so the instability seems to have been caused by the extreme control value I set. 
 
-    solve_time = time()-begin_t
+    tspan = ((epsilon), (1e-6))
+    begin_t = time()
+    # for i in [1:10.0;] 
+    solution = _solve()
+    # end
+    # this good performance stays even when elements of a are randomized per call. 
+    # it's really just the first call of solve () that takes so long.
+    solve_time = (time()-begin_t)/10.0
     @show solve_time
     @show (solve_time / length(solution.t)) * 1e6
-
-    integrate(solution.t, getindex.(solution.u, Int(iu0)+1))
-    @btime integrate($solution.t, getindex.($solution.u, Int(iu0)+1))
-
+    
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0
     N_h_course = getindex.(solution.u, Int(iN_h)+1) .- tl.pore_N0
     # Gnuplot.quitall() - plays poorly with multiplot
@@ -125,29 +135,33 @@ close tab: ctl w
     @gp "set multiplot layout 3,2; set grid xtics ytics; set grid;"
     @gp :- 1 solution.t getindex.(solution.u, Int(iu0)+1) string(formatstring,"'u0'")
     @gp :- 2 solution.t getindex.(solution.u, Int(iu1)+1) string(formatstring,"'u1'")
-    @gp :- 3 solution.t getindex.(solution.u, Int(ix1_v)+1) string(formatstring,"'x1_v'")
-    @gp :- 4 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
-
-    # @gp :- 3 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
+    # @gp :- 3 solution.t getindex.(solution.u, Int(ix1_v)+1) string(formatstring,"'x1_v'")
+    @gp :- 3 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
+    @gp :- 4 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
     @gp :- 5 solution.t N_v_course string(formatstring,"'N_v'")
     @gp :- 6 solution.t N_h_course string(formatstring,"'N_h'")
-
+    
     #this is just confusing now because it's the second derivative
     # @gp :- 6 solution.t getindex.(solution.u, Int(iI_ep_v)+1) string(formatstring,"'I_ep_v'")
     
     #save(term="svg size 1000 1000",output="runs/x0_v_negative.svg")
-
+    
     # @gp solution.t getindex.(solution.u, Int(iu1)+1) "with lines tit 'u1'"
     # @gp solution.t getindex.(solution.u, Int(iu2)+1) "with lines tit 'u2'"
     
     # @gp solution.t getindex.(solution.u, Int(iu0)+1) "with lines tit 'N_h'"
-
+    
     @testset "time" begin
         d = zeros(length(instances(svars)))
         s = zeros(length(instances(svars)))
         t=epsilon
         
-        @btime transmembrane_diffeq($d,$s,$params,t2) setup=(t2 = rand())
+        single_timestep_time = @belapsed transmembrane_diffeq($d,$s,$params,t2) setup=(t2 = rand()) seconds=0.5
+        @show single_timestep_time
+        @show length(solution.t) * single_timestep_time
     end
-
+    
+    # integrate(solution.t, getindex.(solution.u, Int(iu0)+1))
+    # @btime integrate($solution.t, getindex.($solution.u, Int(iu0)+1))
+    
 end
