@@ -116,10 +116,13 @@ close tab: ctl w
     formatstring = "with lines ls -1 dt 1 tit "
     @gp "set multiplot layout 3,2; set grid xtics ytics; set grid;"
     @gp :- 1 solution.t getindex.(solution.u, Int(iu0)+1) string(formatstring,"'u0'")
-    @gp :- 2 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
-    @gp :- 3 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
-    @gp :- 4 solution.t N_v_course string(formatstring,"'N_v'")
-    @gp :- 5 solution.t N_h_course string(formatstring,"'N_h'")
+    @gp :- 2 solution.t getindex.(solution.u, Int(iu1)+1) string(formatstring,"'u1'")
+    @gp :- 3 solution.t getindex.(solution.u, Int(ix1_v)+1) string(formatstring,"'x1_v'")
+    @gp :- 4 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
+
+    # @gp :- 3 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
+    @gp :- 5 solution.t N_v_course string(formatstring,"'N_v'")
+    # @gp :- 5 solution.t N_h_course string(formatstring,"'N_h'")
     @gp :- 6 solution.t getindex.(solution.u, Int(iI_ep_v)+1) string(formatstring,"'I_ep_v'")
     #save(term="svg size 1000 1000",output="runs/x0_v_negative.svg")
 

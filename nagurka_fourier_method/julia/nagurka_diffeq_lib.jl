@@ -20,6 +20,7 @@ virus = tl.default_virus(py"""np.array([])""")
 host_cell = tl.default_host_cell(py"""np.array([])""")
 
 
+using ForwardDiff
 
 
 
@@ -135,6 +136,9 @@ function dVdt_tm_potential_pore_current(V_m, N, cell)
 
 end
 
+
+autodiff_pore_current_second_derivative(t, a, b, p, m, t_f, N, cell) = ForwardDiff.derivative(n -> dVdt_tm_potential_pore_current(X_(n, a, b, p, m, t_f), N, cell), t)
+
 #=
 
 When is the irreversible regime reached?
@@ -214,12 +218,15 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
 
     exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
 
-    s[iI_ep_v] = (dVdt_tm_potential_pore_current(s[ix0_v], s[iN_v], params.cell_v) / T0) #? t0 right?
+    s[iI_ep_v] = autodiff_pore_current_second_derivative(t, params.a, params.b, params.p, m, t_f, s[iN_v], params.cell_v)
+    #(dVdt_tm_potential_pore_current(s[ix1_v], s[iN_v], params.cell_v) / T0) #? t0 right?
     s[iI_ep_h] = (dVdt_tm_potential_pore_current(s[ix0_h], s[iN_h], params.cell_h) / T0) #? t0 right?
 
+    
+
     @timeit to "diffeq" begin
-    d[ ix0_v ] = s[ix1_v] + s[iI_ep_v]
-    d[ ix1_v ] =  second_derivative_eq(params.cell_v, ix1_v, ix0_v) 
+    d[ ix0_v ] = s[ix1_v] 
+    d[ ix1_v ] = second_derivative_eq(params.cell_v, ix1_v, ix0_v) + s[iI_ep_v]
 
     d[ ix0_h ] = s[ix1_h] + s[iI_ep_h]
     d[ ix1_h ] = second_derivative_eq(params.cell_h, ix1_h, ix0_h)
