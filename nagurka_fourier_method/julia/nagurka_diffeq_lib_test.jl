@@ -107,7 +107,7 @@ close tab: ctl w
 
     @show "Start." # there seems to be a lot of time in the double allocation for some reason
     begin_t = time()
-    solution = solve(prob, RadauIIA5(), dtmax = t_f / 100) #, dtmin=1e-15, atol=1e-8, rtol=1e-8, #RadauIIA5(), dtmax = t_f / 100) # dtmin=1e-13,
+    solution = solve(prob)#, RadauIIA5(), dtmax = t_f / 100) #, dtmin=1e-15, atol=1e-8, rtol=1e-8, #RadauIIA5(), dtmax = t_f / 100) # dtmin=1e-13,
     
     # so the instability seems to have been caused by the extreme control value I set. 
 
