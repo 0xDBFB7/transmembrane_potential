@@ -6,7 +6,7 @@ using ForwardDiff
 using BlackBoxOptim
 # uncertainty stuff discussed in the unreasonable effectiveness video might be useful
 
-M = 10
+M = 50
 
 
 
@@ -15,7 +15,7 @@ function evaluate_control(O)
 
     m = [1.0:M;]
     # t_f =abs(O[end]*1e-4)
-    t_f = 1e-7
+    t_f = 3e-7
 
     a = O[1:M]
     b = O[M+1:(2*M)]
@@ -23,8 +23,8 @@ function evaluate_control(O)
     a /= a
     b /= b
 
-    a *= 1e6 / M
-    b *= 1e6 / M
+    a *= 1e4 / M
+    b *= 1e4 / M
 
     #Double64.
     initial_state_variables = Double64.(zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
@@ -45,7 +45,7 @@ function evaluate_control(O)
     d_d_X_t0 /= (t_f*t_f)
     d_d_X_tf /= (t_f*t_f)
 
-    d_X_t0 += d_L_(epsilon, a, b, m, t_f)
+    # d_X_t0 += d_L_(epsilon, a, b, m, t_f)
     d_X_tf += d_L_(t_f, a, b, m, t_f)
     d_d_X_t0 += d_d_L_(epsilon, a, b, m, t_f)
     d_d_X_tf += d_d_L_(t_f, a, b, m, t_f)
@@ -69,7 +69,7 @@ function evaluate_control(O)
     # prob = remake(prob;u0=convert.(eltype(O),prob.u0), tspan=tspan) # needed for Dual numbers
     # prob = remake(prob; tspan=tspan)
 
-    solution = solve(prob, Tsit5(), atol=1e-8, dtmin=1e-20, dtmax = t_f / 100, progress = false, progress_steps = 500)
+    solution = solve(prob, Tsit5(), atol=1e-7, dtmin=1e-20, dtmax = t_f / 300, progress = false, progress_steps = 500)
 
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0
     N_h_course = getindex.(solution.u, Int(iN_h)+1) .- tl.pore_N0
