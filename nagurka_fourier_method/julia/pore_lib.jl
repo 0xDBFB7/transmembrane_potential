@@ -24,7 +24,7 @@ function d_V_ep(V_m, N, cell)
     R = 8.314
 
     r_m = 0.76e-9 # pore radius constant
-    pore_solution_conductivity = 1.3 
+    pore_solution_conductivity = 13 
     # normally 0.1 mS/cm to S/m, but this peaks out transmembrane at like 8 rather than 3
     # where does 1.3 S/m come from? that's pretty high...
     w0 = 2.65 # ?
@@ -62,7 +62,7 @@ function d_d_V_ep(V_m, d_V_m, N, cell)
     R = 8.314
 
     r_m = 0.76e-9 # pore radius constant
-    sigma = pore_solution_conductivity = 1.3 
+    sigma = pore_solution_conductivity = 13 
     # normally 0.1 mS/cm to S/m, but this peaks out transmembrane at like 8 rather than 3
     # where does 1.3 S/m come from? that's pretty high...
     w0 = 2.65 # ?
