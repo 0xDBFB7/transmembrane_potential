@@ -48,24 +48,33 @@ close tab: ctl w
 # staticarrays.jl
 
 
-@testset "Comparison" begin
-    M = 3
-    m = [1.0:M;]
 
-    a = [0.0, 0.0, 1.0e6]
-    b = [0.0, 0.0, 0.1e6]
+
+@testset "Comparison" begin
+    # M = 10
+    # a = (zeros(M))
+    # b = (zeros(M))
+    # a[9] = 0.5e7
+    # b[4] = -0.1e7
+    
+    M = 3
+    a = [0.0, 0.0, 1.0e4]
+    b = [0.0, 0.0, 0.1e4]
+
+    # M = 10
     # a = rand(M)
     # b = rand(M)
-
+    
     # M=30
     # a = (zeros(M))
     # b = (zeros(M))
     # for i in [1.0:2.0:M;]
     #     b[Int(i)] = (1/(i))*80000*(50/20)
     # end
-
-
-    t_f = 10e-6
+    
+    
+    m = [1.0:M;]
+    t_f = 1e-6
 
     basetype(n) = Double64(n)
 
@@ -75,9 +84,6 @@ close tab: ctl w
 
 
     c = zeros(6)
-    
-    # so the instability seems to have been caused by the extreme control value I set. 
-
 
     
     X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf = c
@@ -112,8 +118,6 @@ close tab: ctl w
     # params.b = O[M+1:(2*M)]
     # params.c = O[(2*M)+1:(2*M)+6]
 
-    # next problem to solve is why the higher-frequency sine terms have such a low amplitude compared to the polynomial.
-
     # tspan = (basetype(epsilon), basetype(t_f/1000.0)) # precompiles everything
     # prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
 
@@ -131,11 +135,9 @@ close tab: ctl w
     solution = _solve()
 
     begin_t = time()
-    # for i in [1:10.0;] 
+
     solution = _solve()
-    # end
-    # this good performance stays even when elements of a are randomized per call. 
-    # it's really just the first call of solve () that takes so long.
+
     solve_time = (time()-begin_t)/10.0
     @show solve_time
     @show (solve_time / length(solution.t)) * 1e6
@@ -156,7 +158,7 @@ close tab: ctl w
     #this is just confusing now because it's the second derivative
     # @gp :- 6 solution.t getindex.(solution.u, Int(iI_ep_v)+1) string(formatstring,"'I_ep_v'")
     
-    #save(term="svg size 1000 1000",output="runs/x0_v_negative.svg")
+    #save(term="svg size 1000 1000",output="runs/both_derivatives_V_ep.svg")
     
     # @gp solution.t getindex.(solution.u, Int(iu1)+1) "with lines tit 'u1'"
     # @gp solution.t getindex.(solution.u, Int(iu2)+1) "with lines tit 'u2'"

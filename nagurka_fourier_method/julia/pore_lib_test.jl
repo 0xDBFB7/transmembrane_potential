@@ -4,8 +4,8 @@ include("pore_lib.jl")
 
 @testset "a" begin
 
-    t_f = 2.0
-    a = [-1.95643e-3]
+    t_f = 1e-6
+    a = [2]
     b = [1.442172e-3]
 
     M = 1
@@ -37,8 +37,8 @@ include("pore_lib.jl")
     _d_V_ep(v) = d_V_ep(v, 1e15, cell_v)
     _d_d_V_ep(v,v2) = d_d_V_ep(v, v2, 1e15, cell_v)
 
-    @gp diff(_d_V_ep.(X))/(t[end]/500)
-    @gp :- _d_d_V_ep.(X, d_X)
+    @gp t[begin+1:end] diff(_d_V_ep.(X))/(t[end]/500)
+    @gp :- t _d_d_V_ep.(X, d_X)
 
 end
 
