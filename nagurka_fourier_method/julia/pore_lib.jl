@@ -3,7 +3,23 @@ include("nagurka_fourier_lib.jl")
 include("cell_lib.jl")
 
 
+"""
 
+Stop the presses! I've been adding the current term to the capacitor. However, the correct solution is given in Talele:
+
+Once the pores are electrically
+induced, the specific membrane conductance increases
+because of the increased number of conductive pores, and
+can be mathematically modeled as
+Iep = Niep = gp Vm (17)
+where gp is the specific conductance due to electroporation.
+As an effect, the electropermeabilized membrane conductivity sigmap2 is modified to
+sigmapp2 = 
+
+where sp is the specific conductivity due to electroporation
+and is dynamically altered at each time step as the pore
+
+"""
 
 function d_pore_density(V_m, N, N0, alpha, q, V_ep)
     # if(abs(V_m) > 2.0)
