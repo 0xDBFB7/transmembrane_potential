@@ -56,7 +56,8 @@ sympy.pprint(diff(X , t, t))
 '''
 
 
-The fourier series and the polynomial define one time-course of one of the x outputs.
+In the inverse-dynamic use by Yen&Nagurka,
+the fourier series and the polynomial define one time-course of one of the x outputs.
 
 We want to obtain the u control input (and the other x output, of course), and then
 the cost function J.
@@ -241,6 +242,7 @@ do the undetermined coefficients have to be inside the sum (i.e. with an index?)
 https://tutorial.math.lamar.edu/classes/calci/summationnotation.aspx
 I think they can probably be outside.
 
+
 (re-ordered RHS for convenience)
 Q*diff(X,t,t) + (𝛃/𝛂)*R*diff(X,t) + (𝛄/𝛂)*S*X = (1/𝛂)*diff(X,t,t) + (𝛙/𝛂)*diff(X,t) + (𝛏/𝛂)*X
 (...is that right?)
@@ -251,7 +253,6 @@ Q = (1/𝛂)
 R = (𝛙/𝛂)/(𝛃/𝛂)
 
 S = (𝛏/𝛂)/(𝛄/𝛂)
-
 
 wait, but what is X?
 no, this is all wrong.
@@ -411,7 +412,9 @@ print(I_ep.diff(t))
 # F*n*V_m(t)/(R*T))*e^(F*V_m(t)/(R*T))/(w0 - F*n*V_m(t)/(R*T)) - (w0*e^(w0 + F*n
 # *V_m(t)/(R*T)) + F*n*V_m(t)/(R*T))/(w0 + F*n*V_m(t)/(R*T))))
 
-# simplified by taking out the V_m -> v_m reduction
+# simplified by taking out the V_m -> v_m reduction:
+
+
 
 
 '''

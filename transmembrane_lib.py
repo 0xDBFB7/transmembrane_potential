@@ -7,7 +7,7 @@ from numpy import heaviside
 # import h5py
 from scipy.constants import epsilon_0, mu_0
 from scipy.signal import convolve
-from pytexit import py2tex
+#from pytexit import py2tex
 from scipy.integrate import solve_ivp
 from scipy.interpolate import interp1d
 from icecream import ic

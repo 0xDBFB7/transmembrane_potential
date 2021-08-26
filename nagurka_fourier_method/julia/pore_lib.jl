@@ -14,12 +14,19 @@ can be mathematically modeled as
 Iep = Niep = gp Vm (17)
 where gp is the specific conductance due to electroporation.
 As an effect, the electropermeabilized membrane conductivity sigmap2 is modified to
-sigmapp2 = 
+sigmapp2 =  
 
 where sp is the specific conductivity due to electroporation
 and is dynamically altered at each time step as the pore
 
+so instead of just having another term, now the diffeq is bleedin' parametric :(
+
 """
+
+# scale one equation by the other so to speak? 
+# use the chain rule to make the time function dependent on one of the equations? 
+# skip the fourier series and go for a polynomial?
+
 
 function d_pore_density(V_m, N, N0, alpha, q, V_ep)
     # if(abs(V_m) > 2.0)
