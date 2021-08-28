@@ -1,6 +1,8 @@
 
 """
 
+MOVED TO TRANSMEMBRANE_MATH.IPYNB
+
 THIS IS NOW FIXED - switched A and B coefficients appropriately
 
 PSOPT_Manual_R5.pdf
