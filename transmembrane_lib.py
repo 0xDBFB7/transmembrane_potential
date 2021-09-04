@@ -91,7 +91,38 @@ class Cell:
         self.phi = ((self.b_2/self.b_3))
         self.xi = ((self.b_1/self.b_3))
 
-
+        # Generated via transmembrane_math.ipynb
+        #
+        self.alpha_ep = 0
+        #
+        #
+        self.beta_ep = 3*R*d**2*e_o*(3*R - d)/(3.0*R**3*e_i*e_m + 6*R**3*e_m*e_o - 6*R**2*d*e_i*e_m +
+            6*R**2*d*e_i*e_o + 6*R**2*d*e_m**2 - 6*R**2*d*e_m*e_o + 6*R*d**2*e_i*e_m -
+            6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o - 2*d**3*e_i*e_m +
+            2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
+        #
+        #
+        self.gamma_ep = 3*R*d**2*l_o*(3*R - d)/(3.0*R**3*e_i*e_m + 6*R**3*e_m*e_o - 6*R**2*d*e_i*e_m +
+            6*R**2*d*e_i*e_o + 6*R**2*d*e_m**2 - 6*R**2*d*e_m*e_o + 6*R*d**2*e_i*e_m -
+            6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o - 2*d**3*e_i*e_m +
+            2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
+        #
+        #
+        self.xi_ep = (3.0*R**3*l_i + 6*R**3*l_o - 6*R**2*d*l_i + 12*R**2*d*l_m - 6*R**2*d*l_o +
+            6*R*d**2*l_i - 12*R*d**2*l_m + 6*R*d**2*l_o - 2*d**3*l_i + 4*d**3*l_m -
+            2*d**3*l_o)/(3.0*R**3*e_i*e_m + 6*R**3*e_m*e_o - 6*R**2*d*e_i*e_m +
+            6*R**2*d*e_i*e_o + 6*R**2*d*e_m**2 - 6*R**2*d*e_m*e_o + 6*R*d**2*e_i*e_m -
+            6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o - 2*d**3*e_i*e_m +
+            2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
+        #
+        #
+        self.phi_ep = (3.0*R**3*e_i + 6*R**3*e_o - 6*R**2*d*e_i + 12*R**2*d*e_m - 6*R**2*d*e_o +
+            6*R*d**2*e_i - 12*R*d**2*e_m + 6*R*d**2*e_o - 2*d**3*e_i + 4*d**3*e_m -
+            2*d**3*e_o)/(3.0*R**3*e_i*e_m + 6*R**3*e_m*e_o - 6*R**2*d*e_i*e_m +
+            6*R**2*d*e_i*e_o + 6*R**2*d*e_m**2 - 6*R**2*d*e_m*e_o + 6*R*d**2*e_i*e_m -
+            6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o - 2*d**3*e_i*e_m +
+            2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
+        #
 
 
 def default_host_cell(t):
@@ -368,7 +399,7 @@ def d_pore_density(V_m, N, N0, alpha, q, V_ep):
     # V_m = abs(interp_transmembrane_potential(t_n))
     # it doesn't seem like this abs should need to be here.
     # should check if this is correct.
-    #hang on, there shouldn't need to be an abs here, things only depend on
+    # hang on, there shouldn't need to be an abs here, things only depend on
     # v_m ^2 ! abs was a mistake!
 
     # if(abs(V_m) > 1.5):
