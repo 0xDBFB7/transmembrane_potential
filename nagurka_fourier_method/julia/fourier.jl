@@ -16,7 +16,7 @@ M = 30
 # can leave out the decay term of the pore differential equation, since  b
 
 function evaluate_control(O) 
-    basetype(n) = Double64(n)
+    # basetype(n) = Double64(n)
 
     m = [1.0:M;]
     # t_f =abs(O[end]*1e-4)
@@ -39,7 +39,7 @@ function evaluate_control(O)
     # divide O by a+b to maintain relative ab scaling?
 
     #Double64.
-    initial_state_variables = Double64.(zeros(length(instances(svars)))) #convert(Array{BigFloat},zeros(length(instances(svars))))
+    initial_state_variables = (zeros(length(instances(svars)))) #  convert(Array{BigFloat},zeros(length(instances(svars))))
     initial_state_variables[iN_v] = tl.pore_N0
     initial_state_variables[iN_h] = tl.pore_N0
 
@@ -70,12 +70,12 @@ function evaluate_control(O)
     
     virus_membrane_thickness = virus.membrane_thickness# 5e-9 # overriding temporarily! FIXME TODO
 
-    cell_v = cell_struct(virus.alpha, virus.beta,virus.gamma,virus.phi,virus.xi,
-                virus.membrane_permittivity, virus_membrane_thickness, virus.cell_diameter)
-    cell_h = cell_struct(host_cell.alpha, host_cell.beta,host_cell.gamma,host_cell.phi,host_cell.xi,
-                                    host_cell.membrane_permittivity, host_cell.membrane_thickness, host_cell.cell_diameter)
-                        
-    params = transmembrane_params(cell_v, cell_h, a, b, p, t_f, M, m, tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep)
+    cell_v = py_cell_to_julia_struct(virus)
+    cell_h = py_cell_to_julia_struct(host_cell)
+
+
+
+    params = transmembrane_params(cell_v, cell_h, a, b, p, t_f, M, m, tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep, T0)
     
     # tspan = (Double64(epsilon), Double64(t_f))
     # tspan = convert.(eltype(O),tspan)
