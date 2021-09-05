@@ -47,12 +47,11 @@ function electroporation_pore_current(V_m, N, cell)
     R = 8.314
 
     r_m = 0.76e-9 # pore radius constant
-    pore_solution_conductivity = 13 
-    # normally 0.1 mS/cm to S/m, but this peaks out transmembrane at like 8 rather than 3
-    # where does 1.3 S/m come from? that's pretty high...
+    pore_solution_conductivity = 1.3 
+    
     w0 = 2.65 # ?
     n = 0.15
-    v_m = (V_m + epsilon) * (F/(R*T))
+    v_m = (V_m) * (F/(R*T))
 
     i_ep_term_1 = (pi * (r_m^2) * pore_solution_conductivity * v_m * R * T) / (F * cell.membrane_thickness)
 
@@ -63,4 +62,15 @@ function electroporation_pore_current(V_m, N, cell)
     i_ep = i_ep_term_1 * i_ep_term_2
 
     return i_ep * N
+end
+
+function electroporation_coefficients(cell, l_m_ep)
+    #correct all coefficients with electroporation current 
+    alpha = cell.alpha + l_m_ep * cell.alpha_ep
+    beta = cell.beta + l_m_ep * cell.beta_ep
+    gamma = cell.gamma + l_m_ep * cell.gamma_ep
+    phi = cell.phi + l_m_ep * cell.phi_ep
+    xi = cell.xi + l_m_ep * cell.xi_ep
+
+    return alpha, beta, gamma, phi, xi
 end

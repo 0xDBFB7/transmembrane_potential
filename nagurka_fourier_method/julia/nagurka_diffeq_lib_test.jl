@@ -2,11 +2,8 @@ include("nagurka_diffeq_lib.jl")
 
 # BenchmarkTools.DEFAULT_PARAMETERS.samples = 30
 
-
-
 # using Revise 
 # this should probably be included before everything else
-
 
 #using CUDA # just wrap initial_state_variables with cu()
 
@@ -19,7 +16,6 @@ julia --track-allocation=user
 Profile.clear_malloc_data()
 <run function>
 
-
 https://github.com/JuliaApproximation/FastGaussQuadrature.jl apparently
 is better if you can chose where to sample the thing, like an odesolver lets you.
 
@@ -31,24 +27,17 @@ term: ctl k
 close tab: ctl w
 =#
 
-# @testset "current" begin
-#     V_m = 5.0
-#     N = 1e20
-#     cell_h = cell_struct(host_cell.alpha, host_cell.beta,host_cell.gamma,host_cell.phi,host_cell.xi,
-#                                     host_cell.membrane_permittivity, host_cell.membrane_thickness, host_cell.cell_diameter)
-#     @show dVdt_tm_potential_pore_current(V_m, N, cell_h)
-
-#     vs = [0.0:3.0]
-#     dVdt(k, N, cell_h) = dVdt_tm_potential_pore_current(k, N, cell_h)
-
-#     @gp V_m / 
-    
-# end
-
 # staticarrays.jl
 
-
-
+# function square_wave(M)
+#    # M=30
+#     # a = (zeros(M))
+#     # b = (zeros(M))
+#     # for i in [1.0:2.0:M;]
+#     #     b[Int(i)] = (1/(i))*80000*(50/20)
+#     # end
+#     return a b 
+# end 
 
 @testset "Comparison" begin
     # M = 10
@@ -64,14 +53,6 @@ close tab: ctl w
     # M = 10
     # a = rand(M)
     # b = rand(M)
-    
-    # M=30
-    # a = (zeros(M))
-    # b = (zeros(M))
-    # for i in [1.0:2.0:M;]
-    #     b[Int(i)] = (1/(i))*80000*(50/20)
-    # end
-    
     
     m = [1.0:M;]
     t_f = 1e-6
@@ -121,7 +102,7 @@ close tab: ctl w
     # tspan = (basetype(epsilon), basetype(t_f/1000.0)) # precompiles everything
     # prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
 
-    _solve() = solve(prob, RadauIIA5(), atol=1e-8, dtmax = t_f / 1000, progress = true, progress_steps = 500)
+    _solve() = solve(prob, RadauIIA5(), atol=1e-8, dtmax = t_f / 1000, progress = true, progress_steps1 = 500)
 
     
     tspan = (Double64(epsilon), Double64(t_f))

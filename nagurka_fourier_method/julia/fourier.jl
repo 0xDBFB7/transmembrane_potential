@@ -7,8 +7,11 @@ using BlackBoxOptim
 # uncertainty stuff discussed in the unreasonable effectiveness video might be useful
 using Printf
 
-M = 30
+M = 2
 
+# pkg activate dev_nagurka
+
+# using dev version of OrdinaryDiffEq
 
 
 # Nondimensionalize!
@@ -19,30 +22,24 @@ function evaluate_control(O)
     # basetype(n) = Double64(n)
 
     m = [1.0:M;]
-    # t_f =abs(O[end]*1e-4)
-    t_f = 10e-8
+
+    end_time = 5e-4
+
+    T0 = 1e-6 
+
+    # this is the "apparent" nondimensionalized end time to the algorithm
+    t_f = end_time / T0
     
+
     a = O[1:M]
     b = O[M+1:(2*M)]
-
-    a /= a
-    b /= b
-    # ab = a.+b
-
-
-    # a /= ab
-    # b /= ab
-
-    a *= 1e6 / M
-    b *= 1e6 / M
 
     # divide O by a+b to maintain relative ab scaling?
 
     #Double64.
-    initial_state_variables = (zeros(length(instances(svars)))) #  convert(Array{BigFloat},zeros(length(instances(svars))))
+    initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
     initial_state_variables[iN_v] = tl.pore_N0
     initial_state_variables[iN_h] = tl.pore_N0
-
 
     c = O[(2*M)+1:(2*M)+6]
 
@@ -60,11 +57,13 @@ function evaluate_control(O)
     # d_d_X_t0 /= (t_f*t_f)
     # d_d_X_tf /= (t_f*t_f)
 
-    d_X_t0 = 0.1*d_L_(epsilon, a, b, m, t_f)
-    d_X_tf = 0.1*d_L_(t_f, a, b, m, t_f)
-    d_d_X_t0 = d_d_L_(epsilon, a, b, m, t_f)
-    d_d_X_tf = d_d_L_(t_f, a, b, m, t_f)
+    # d_X_t0 = 0.1*d_L_(epsilon, a, b, m, t_f)
+    # d_X_tf = 0.1*d_L_(t_f, a, b, m, t_f)
+    # d_d_X_t0 = d_d_L_(epsilon, a, b, m, t_f)
+    # d_d_X_tf = d_d_L_(t_f, a, b, m, t_f)
     
+
+
     P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
     p = P_BCs_to_p_coefficients(P_BCs, t_f)
     
@@ -73,18 +72,18 @@ function evaluate_control(O)
     cell_v = py_cell_to_julia_struct(virus)
     cell_h = py_cell_to_julia_struct(host_cell)
 
-
-
+    
     params = transmembrane_params(cell_v, cell_h, a, b, p, t_f, M, m, tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep, T0)
     
     # tspan = (Double64(epsilon), Double64(t_f))
-    # tspan = convert.(eltype(O),tspan)
     tspan = (epsilon, (t_f))
+    # tspan = convert.(eltype(O),tspan)
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
     # prob = remake(prob;u0=convert.(eltype(O),prob.u0), tspan=tspan) # needed for Dual numbers
     # prob = remake(prob; tspan=tspan)
 
-    solution = solve(prob, Tsit5(), atol=1e-7, dtmin=1e-20, dtmax = t_f / 300, progress = false, progress_steps = 500)
+    #atol=1e-7, dtmin=1e-20,
+    solution = solve(prob, RadauIIA5(), dtmax = t_f / 300, rtol=1e-3, atol=1e-3, progress = true, progress_steps = 100)
     # rk4 usually errorsout! Tsit5 seems to usually work
     # Vern9 is a bit faster on double64s.
 
@@ -115,8 +114,9 @@ end
 
 function optimize_coefficients()#global_Ostar) 
     # O0 = global_Ostar
-    O0 = (ones((2*M)+7)) # Double64. - needed for autodiff-based 
-    O0[(2*M)+1:(2*M)+6] .= 0.0
+    O0 = (ones((2*M)+7)) .* 0.01 # Double64. - needed for autodiff-based 
+    # O0[(2*M)+1:(2*M)+6] .= 0.0
+    O0[M+1:(2*M)] .= 0
     res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 1, show_trace=false))
                                 #  autodiff = :forward)
     # BFGS(); autodiff = :forward)
@@ -130,7 +130,7 @@ function optimize_coefficients()#global_Ostar)
     # Ostar = best_candidate(res)
 
     #=
-    The problem with gradien tmethods without a log cost function
+    The problem with gradient methods without a log cost function
     is that, if one is 1e20 and the other 1e3, the gradient will be *huge*. 
     Non-autodiff CongugateGradient works really well but gets stuck at 35
     =#
@@ -150,7 +150,19 @@ function optimize_coefficients()#global_Ostar)
     return Ostar
 end
 
-optimize_coefficients()
+# optimize_coefficients()
 
 
+Ostar = (ones((2*M)+7)) .* 0.01 # Double64. - needed for autodiff-based 
+Ostar[(2*M)+1:(2*M)+6] .= 0.0
+Ostar[M+1:(2*M)] .= 0
+solution, _, _,_,_ = evaluate_control(Ostar)
 
+formatstring = "with lines ls -1 dt 1 tit "
+@gp "set multiplot layout 3,2; set grid xtics ytics; set grid;"
+@gp :- 1 solution.t getindex.(solution.u, Int(iu0)+1) string(formatstring,"'u0'")
+@gp :- 2 solution.t getindex.(solution.u, Int(iu1)+1) string(formatstring,"'u1'")
+@gp :- 3 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
+@gp :- 4 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
+@gp :- 5 solution.t (getindex.(solution.u, Int(iN_v)+1).- tl.pore_N0) string(formatstring,"'N_v'")
+@gp :- 6 solution.t (getindex.(solution.u, Int(iN_h)+1).- tl.pore_N0) string(formatstring,"'N_h'")

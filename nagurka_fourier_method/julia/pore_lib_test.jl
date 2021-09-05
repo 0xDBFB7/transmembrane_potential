@@ -1,5 +1,27 @@
 
-# include("pore_lib.jl")
+include("pore_lib.jl")
+include("cell_lib.jl")
+
+@testset "coefficient_test" begin
+    cell_1 = tl.Cell((0.3), (80), (0.3), (80), (1e-7), (5), (20e-6), (5e-9), py"""np.array([])""")
+    l_m_ep = 0.0
+    t1 = electroporation_coefficients(cell_1, l_m_ep)
+    @test isapprox(t1[1], cell_1.alpha)    
+    @test isapprox(t1[2], cell_1.beta)    
+    @test isapprox(t1[3], cell_1.gamma)    
+    @test isapprox(t1[4], cell_1.phi)    
+    @test isapprox(t1[5], cell_1.xi)    
+
+    l_m_ep = 0.29
+    cell_2 = tl.Cell((0.3), (80), (0.3), (80), (1e-7 + l_m_ep), (5), (20e-6), (5e-9), py"""np.array([])""")
+    t1 = electroporation_coefficients(cell_1, l_m_ep)
+    @test isapprox(t1[1], cell_2.alpha, rtol=1e-4, atol=1e-4)    
+    @test isapprox(t1[2], cell_2.beta, rtol=1e-4, atol=1e-4)    
+    @test isapprox(t1[3], cell_2.gamma, rtol=1e-4, atol=1e-4)    
+    @test isapprox(t1[4], cell_2.phi, rtol=1e-4, atol=1e-4)    
+    @test isapprox(t1[5], cell_2.xi, rtol=1e-4, atol=1e-4)    
+
+end
 
 
 # @testset "a" begin

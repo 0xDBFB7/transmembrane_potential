@@ -6,10 +6,12 @@ py"""
 import numpy as np
 """
 
+
+
 virus = tl.default_virus(py"""np.array([])""")
 host_cell = tl.default_host_cell(py"""np.array([])""")
 
-function py_cell_to_julia_struct(input_cell):
+function py_cell_to_julia_struct(input_cell)
     return cell_struct(
         input_cell.alpha,
         input_cell.beta,
