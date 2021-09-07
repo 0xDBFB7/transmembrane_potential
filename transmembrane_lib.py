@@ -135,7 +135,7 @@ def default_virus(t):
     #     t = args[0]
     # else:
     #     t = np.array(0)
-    return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(14e-9),t)
+    return Cell(np.float128(0.3), np.float128(80), np.float128(0.005), np.float128(30), np.float128(1e-8), np.float128(60), np.float128(50e-9), np.float128(5e-9),t)
 
 '''
 

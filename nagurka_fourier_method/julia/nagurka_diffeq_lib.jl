@@ -41,6 +41,9 @@ global_logger(TerminalLogger())
 
     iI_ep_v
     iI_ep_h
+
+    ilm_ep_v
+    ilm_ep_h
 end
 Base.to_index(s::svars) = Int(s)+1
 Base.to_indices(I::Tuple) = (Int(I[1])+1, I[2])
@@ -144,8 +147,8 @@ function main_x2_ode(d_d_U, d_U, U, s, cell, T0, l_m_ep, is1, is0)
 
     alpha, beta, gamma, phi, xi = electroporation_coefficients(cell, l_m_ep)
 
+    # @show gamma*U0*U (U0 / T0)*beta*d_U (U0 / (T0*T0))*alpha*d_d_U
     # alpha, beta, gamma, phi, xi = (cell.alpha, cell.beta, cell.gamma, cell.phi, cell.xi)
-
     return  (((U0 / (T0*T0))*alpha*d_d_U + (U0 / T0)*beta*d_U 
                                 + gamma*U0*U - phi*(X0 / T0)*s[is1] - cell.xi*X0*s[is0])/(X0 / (T0*T0)))
 
@@ -171,35 +174,42 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
 
     @timeit to "diffeq" begin
     
-    # I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v], params.cell_v)    
+    # I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v], params.cell_v)
+    # I_ep_v = 0.0
     # delta in conductivity due to the formed pores
-    # if(s[ix0_v] > 0.01)
-    # l_m_ep_v = I_ep_v / abs(s[ix0_v])
-    # @show l_m_ep_v
-    l_m_ep_v = 0.1
+    # if(abs(s[ix0_v]) > 0.0001)
+    # l_m_ep_v = abs(I_ep_v / abs(s[ix0_v]))
     # else
-        # l_m_ep_v = 0.0
-    # end
-        
+    # end 
+    l_m_ep_v = 0.3 * (1 - exp(-s[iN_v] / 1e13))
+    s[ilm_ep_v] = l_m_ep_v
     # s[iI_ep_v] = I_ep_v
     
+    # if(t < 0.0001*t_f)
+    # l_m_ep_v = 0.0
+    # end
+
     s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
     d[ ix1_v ] = s[ix2_v] 
     d[ ix0_v ] = s[ix1_v]
     
 
 
-    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h)
+    # I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h)
 
-    # if(s[ix0_h] > 0.01)
-    l_m_ep_h = 0.1
-    # l_m_ep_h = I_ep_h / abs(s[ix0_h])
+    # if(abs(s[ix0_h]) > 0.0001)
+    # l_m_ep_h = abs(I_ep_h / abs(s[ix0_h]))
     # else
-        # l_m_ep_h = 0.0
     # end
+    
+    l_m_ep_h = 0.3 * (1 - exp(-s[iN_h] / 1e13))
 
+    s[ilm_ep_h] = l_m_ep_h
     # s[iI_ep_h] = I_ep_h
 
+    # if(t < 0.0001*t_f)
+    # l_m_ep_h = 0.0
+    # end
     s[ ix2_h ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_h, T0, l_m_ep_h, ix1_h, ix0_h)
     d[ ix1_h ] = s[ix2_h] 
     d[ ix0_h ] = s[ix1_h]
@@ -211,13 +221,32 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     
 
     # # this causes a lot of headache because of the large exponent - would be great to nondimensionalize this somehow, make it log perhaps
-    # d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0
-    # d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)/T0
+    # Adding a / T0 here makes the re-sealing time way unphysically fast - must not be correct.
+    # not sure if it should be * T0
+    # d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * T0
+    d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) 
 
     return
 end
 
+function plot_solution(solution)
+
+    formatstring = "with lines ls -1 dt 1 tit "
+    @gp "set multiplot layout 5,2; set grid xtics ytics; set grid;"
+    @gp :- 1 solution.t getindex.(solution.u, Int(iu0)+1) string(formatstring,"'u0'")
+    @gp :- 2 solution.t getindex.(solution.u, Int(iu2)+1) string(formatstring,"'u2'")
+
+    @gp :- 2 solution.t getindex.(solution.u, Int(iu1)+1) string(formatstring,"'u1'")
+    @gp :- 3 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
+    @gp :- 4 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
+    @gp :- 5 solution.t (getindex.(solution.u, Int(iN_v)+1).- tl.pore_N0) string(formatstring,"'N_v'")
+    @gp :- 6 solution.t (getindex.(solution.u, Int(iN_h)+1).- tl.pore_N0) string(formatstring,"'N_h'")
+    @gp :- 7 solution.t (getindex.(solution.u, Int(ilm_ep_v)+1)) string(formatstring,"' \\lambda_{ep V}'")
+    @gp :- 8 solution.t (getindex.(solution.u, Int(ilm_ep_h)+1)) string(formatstring,"' \\lambda_{ep H}'")
+    @gp :- 9 solution.t (getindex.(solution.u, Int(iI_ep_v)+1)) string(formatstring,"' \$ I_{ep V}\$'")
+    @gp :- 10 solution.t (getindex.(solution.u, Int(iI_ep_h)+1)) string(formatstring,"' \$ I_{ep H}\$'")
 
 
+end
 
 #@gp t "with lines"

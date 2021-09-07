@@ -23,7 +23,7 @@ function evaluate_control(O)
 
     m = [1.0:M;]
 
-    end_time = 5e-4
+    end_time = 5e-6
 
     T0 = 1e-6 
 
@@ -57,10 +57,10 @@ function evaluate_control(O)
     # d_d_X_t0 /= (t_f*t_f)
     # d_d_X_tf /= (t_f*t_f)
 
-    # d_X_t0 = 0.1*d_L_(epsilon, a, b, m, t_f)
-    # d_X_tf = 0.1*d_L_(t_f, a, b, m, t_f)
-    # d_d_X_t0 = d_d_L_(epsilon, a, b, m, t_f)
-    # d_d_X_tf = d_d_L_(t_f, a, b, m, t_f)
+    # d_X_t0 = d_L_(epsilon, a, b, m, t_f)
+    # d_X_tf = d_L_(t_f, a, b, m, t_f)
+    d_d_X_t0 = d_d_L_(epsilon, a, b, m, t_f)
+    d_d_X_tf = d_d_L_(t_f, a, b, m, t_f)
     
 
 
@@ -83,8 +83,8 @@ function evaluate_control(O)
     # prob = remake(prob; tspan=tspan)
 
     #atol=1e-7, dtmin=1e-20,
-    solution = solve(prob, RadauIIA5(), dtmax = t_f / 300, rtol=1e-3, atol=1e-3, progress = true, progress_steps = 100)
-    # rk4 usually errorsout! Tsit5 seems to usually work
+    solution = solve(prob, RadauIIA5(), dtmax = t_f / 300, maxiters= 100000, dtmin=1e-20, progress = true, progress_steps = 100)
+    # rk4 usually errorsout! Tsit5 seems to usually work - not after nondimensionalization!
     # Vern9 is a bit faster on double64s.
 
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0
@@ -114,7 +114,7 @@ end
 
 function optimize_coefficients()#global_Ostar) 
     # O0 = global_Ostar
-    O0 = (ones((2*M)+7)) .* 0.01 # Double64. - needed for autodiff-based 
+    O0 = (ones((2*M)+7))  # Double64. - needed for autodiff-based 
     # O0[(2*M)+1:(2*M)+6] .= 0.0
     O0[M+1:(2*M)] .= 0
     res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 1, show_trace=false))
@@ -138,31 +138,14 @@ function optimize_coefficients()#global_Ostar)
 
     solution, _, _,_,_ = evaluate_control(Ostar)
 
-    formatstring = "with lines ls -1 dt 1 tit "
-    @gp "set multiplot layout 3,2; set grid xtics ytics; set grid;"
-    @gp :- 1 solution.t getindex.(solution.u, Int(iu0)+1) string(formatstring,"'u0'")
-    @gp :- 2 solution.t getindex.(solution.u, Int(iu1)+1) string(formatstring,"'u1'")
-    @gp :- 3 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
-    @gp :- 4 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
-    @gp :- 5 solution.t (getindex.(solution.u, Int(iN_v)+1).- tl.pore_N0) string(formatstring,"'N_v'")
-    @gp :- 6 solution.t (getindex.(solution.u, Int(iN_h)+1).- tl.pore_N0) string(formatstring,"'N_h'")
-
     return Ostar
 end
 
 # optimize_coefficients()
 
 
-Ostar = (ones((2*M)+7)) .* 0.01 # Double64. - needed for autodiff-based 
+Ostar = (ones((2*M)+7)) .* -1.0
 Ostar[(2*M)+1:(2*M)+6] .= 0.0
 Ostar[M+1:(2*M)] .= 0
 solution, _, _,_,_ = evaluate_control(Ostar)
-
-formatstring = "with lines ls -1 dt 1 tit "
-@gp "set multiplot layout 3,2; set grid xtics ytics; set grid;"
-@gp :- 1 solution.t getindex.(solution.u, Int(iu0)+1) string(formatstring,"'u0'")
-@gp :- 2 solution.t getindex.(solution.u, Int(iu1)+1) string(formatstring,"'u1'")
-@gp :- 3 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
-@gp :- 4 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
-@gp :- 5 solution.t (getindex.(solution.u, Int(iN_v)+1).- tl.pore_N0) string(formatstring,"'N_v'")
-@gp :- 6 solution.t (getindex.(solution.u, Int(iN_h)+1).- tl.pore_N0) string(formatstring,"'N_h'")
+plot_solution(solution)

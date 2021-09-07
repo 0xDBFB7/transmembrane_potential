@@ -32,7 +32,7 @@ function d_pore_density(V_m, N, N0, alpha, q, V_ep)
     # if(abs(V_m) > 2.0)
     #     V_m = 2.0
     # end
-    k = (V_m/V_ep)^2
+    k = ((V_m^2) / (V_ep^2))
     return alpha * exp(k) * (1.0 - (N/N0)*exp(-q*k))
 end;
 
@@ -47,7 +47,7 @@ function electroporation_pore_current(V_m, N, cell)
     R = 8.314
 
     r_m = 0.76e-9 # pore radius constant
-    pore_solution_conductivity = 1.3 
+    pore_solution_conductivity = 0.2
     
     w0 = 2.65 # ?
     n = 0.15
@@ -56,8 +56,9 @@ function electroporation_pore_current(V_m, N, cell)
     i_ep_term_1 = (pi * (r_m^2) * pore_solution_conductivity * v_m * R * T) / (F * cell.membrane_thickness)
 
     i_ep_term_2_divisor_1 = exp(v_m)*((w0*exp(w0-n*v_m) - (n*v_m)) / (w0 - (n*v_m)))
+    
     i_ep_term_2_divisor_2 = -((w0*exp(w0+n*v_m) + (n*v_m)) / (w0 + (n*v_m)))
-    i_ep_term_2 = exp(v_m - 1) / (i_ep_term_2_divisor_1 + i_ep_term_2_divisor_2)
+    i_ep_term_2 = exp(v_m - 1) / (i_ep_term_2_divisor_1 + i_ep_term_2_divisor_2) # possible error here
 
     i_ep = i_ep_term_1 * i_ep_term_2
 
