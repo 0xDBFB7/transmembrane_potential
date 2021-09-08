@@ -7,7 +7,7 @@ using BlackBoxOptim
 # uncertainty stuff discussed in the unreasonable effectiveness video might be useful
 using Printf
 
-M = 2
+M = 10
 
 # pkg activate dev_nagurka
 
@@ -83,8 +83,8 @@ function evaluate_control(O)
     # prob = remake(prob; tspan=tspan)
 
     #atol=1e-7, dtmin=1e-20,
-    solution = solve(prob, RadauIIA5(), dtmax = t_f / 300, maxiters= 100000, dtmin=1e-20, progress = true, progress_steps = 100)
-    # rk4 usually errorsout! Tsit5 seems to usually work - not after nondimensionalization!
+    solution = solve(prob, Tsit5(), dtmax = t_f / 300, maxiters= 100000, dtmin=1e-20, progress = true, progress_steps = 100)
+    # rk4 usually errorsout! Tsit5 seems to usually work - not after nondimensionalization! RadauIIA5
     # Vern9 is a bit faster on double64s.
 
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0
@@ -143,9 +143,9 @@ end
 
 # optimize_coefficients()
 
-
+# a,b = square_wave(M)
 Ostar = (ones((2*M)+7)) .* -1.0
 Ostar[(2*M)+1:(2*M)+6] .= 0.0
-Ostar[M+1:(2*M)] .= 0
+# Ostar[M+1:(2*M)] .= 0
 solution, _, _,_,_ = evaluate_control(Ostar)
 plot_solution(solution)

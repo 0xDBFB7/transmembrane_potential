@@ -129,3 +129,26 @@ go back and forth with PyCall.
 TODO: replace analytic_ as the default; make forwarddiff optional
 """
 ##
+
+function square_wave(M)
+    # M=30
+    a = (zeros(M))
+    b = (zeros(M))
+    for i in [1.0:2.0:M;]
+        b[Int(i)] = (1/(i))
+    end
+     return a, b 
+ end 
+ 
+
+function logistic_curve(x, k, x0)
+    return 1 / (1+exp(-(k * (x-x0))))
+end
+
+function d_logistic_curve(x, k, x0)
+    return logistic_curve(x, k, x0) * (1 - logistic_curve(x, k, x0))
+end
+
+function d_d_logistic_curve(x, k, x0)
+    return logistic_curve(x, k, x0) * (1 - logistic_curve(x, k, x0)) * (1 - 2*logistic_curve(x, k, x0))
+end
