@@ -141,14 +141,18 @@ function square_wave(M)
  end 
  
 
-function logistic_curve(x, k, x0)
-    return 1 / (1+exp(-(k * (x-x0))))
+function logistic_curve(x, peak, k, k0)
+    # Nice smooth step function.
+    # https://calculus.subwiki.org/wiki/Logistic_function
+    return peak / (1+exp(-(k * (x-k0))))
 end
 
-function d_logistic_curve(x, k, x0)
-    return logistic_curve(x, k, x0) * (1 - logistic_curve(x, k, x0))
+function d_logistic_curve(x, peak, k, k0)
+    # return logistic_curve(x, peak, k, k0) * (peak - logistic_curve(x, peak, k, k0))
+    return k.*peak.*exp(-k.*(-k0 + x))./(1 + exp(-k.*(-k0 + x))).^2
 end
 
-function d_d_logistic_curve(x, k, x0)
-    return logistic_curve(x, k, x0) * (1 - logistic_curve(x, k, x0)) * (1 - 2*logistic_curve(x, k, x0))
+function d_d_logistic_curve(x, peak, k, k0)
+    return -k.^2 .* peak.*(1 - 2*exp(k.*(k0 - x))./(exp(k.*(k0 - x)) + 1)).*exp(k.*(k0 - x))./(exp(k.*(k0 - x)) + 1).^2
+    # return logistic_curve(x, peak, k, k0) * (peak - logistic_curve(x, peak, k, k0)) * (peak - 2*logistic_curve(x, peak, k, k0))
 end

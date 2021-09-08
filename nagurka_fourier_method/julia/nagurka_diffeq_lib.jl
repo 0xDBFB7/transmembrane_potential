@@ -65,6 +65,9 @@ mutable struct transmembrane_params
     pore_q
     pore_V_ep
     T0
+    ufun
+    d_ufun
+    d_d_ufun
 end
 
 
@@ -168,18 +171,17 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     t_f = params.t_f
     T0 = params.T0
 
-    k = t_f * 40
-    x0 = t_f / 4
-    s[iu0] = U = logistic_curve( t, k, x0)
-    s[iu1] = d_U = d_logistic_curve( t, k, x0)
-    s[iu2] = d_d_U = d_d_logistic_curve( t, k, x0)
+
+    s[iu0] = U = params.ufun(t)
+    s[iu1] = d_U = params.d_ufun(t)
+    s[iu2] = d_d_U = params.d_d_ufun(t)
     # @timeit to "us" begin
     #     s[iu0] = U = X_(t,params.p,params.a,params.b,m,t_f)
     #     s[iu1] = d_U = d_X_(t,params.p,params.a,params.b,m,t_f)
     #     s[iu2] = d_d_U = d_d_X_(t,params.p,params.a,params.b,m,t_f)
     # end
 
-    @timeit to "diffeq" begin
+    # @timeit to "diffeq" begin
     
     # I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v], params.cell_v)
     # I_ep_v = 0.0
@@ -188,12 +190,12 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     # l_m_ep_v = abs(I_ep_v / abs(s[ix0_v]))
     # else
     # end 
-    l_m_ep_v = 0.2 * (1 - exp(-s[iN_v] / 1e13))
-    s[ilm_ep_v] = l_m_ep_v
+    # l_m_ep_v = 0.2 * (1 - exp(-s[iN_v] / 1e13))
+    # s[ilm_ep_v] = l_m_ep_v
     # s[iI_ep_v] = I_ep_v
     
     # if(t < 0.0001*t_f)
-    # l_m_ep_v = 0.0
+    l_m_ep_v = 0.0
     # end
 
     s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
@@ -203,21 +205,25 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     # alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_v, l_m_ep_v)
     # @show alpha, beta, gamma, phi, xi
 
-    # I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h)
+    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h)
 
     # if(abs(s[ix0_h]) > 0.0001)
-    # l_m_ep_h = abs(I_ep_h / abs(s[ix0_h]))
+    l_m_ep_h = abs(I_ep_h / abs(s[ix0_h]))
     # else
+        
     # end
     
-    l_m_ep_h = 0.2 * (1 - exp(-s[iN_h] / 1e13))
+    # l_m_ep_h = 0.2 * (1 - exp(-s[iN_h] / 1e13))
+
+
+
+    if(abs(s[ix0_h]) < 0.01)
+        l_m_ep_h = 0.0
+    end
 
     s[ilm_ep_h] = l_m_ep_h
-    # s[iI_ep_h] = I_ep_h
+    s[iI_ep_h] = I_ep_h
 
-    # if(t < 0.0001*t_f)
-    # l_m_ep_h = 0.0
-    # end
     s[ ix2_h ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_h, T0, l_m_ep_h, ix1_h, ix0_h)
     d[ ix1_h ] = s[ix2_h] 
     d[ ix0_h ] = s[ix1_h]
@@ -225,16 +231,16 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     # @show d
     # @show s
 
-    end
-    irreversible_threshold = 1e15
-    irreversible_threshold_sharpness = 2.0 # sharper values seem to cause instabilities
-    exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
+    # end
+    # irreversible_threshold = 1e15
+    # irreversible_threshold_sharpness = 2.0 # sharper values seem to cause instabilities
+    # exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
 
     # # this causes a lot of headache because of the large exponent - would be great to nondimensionalize this somehow, make it log perhaps
     # Adding a / T0 here makes the re-sealing time way unphysically fast - must not be correct.
     # not sure if it should be * T0
-    d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * exp_limiter(iN_v)
-    d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * exp_limiter(iN_h)
+    # d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * exp_limiter(iN_v)
+    d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) #* exp_limiter(iN_h)
 
     return
 end
