@@ -37,7 +37,7 @@ function d_pore_density(V_m, N, N0, alpha, q, V_ep)
 end;
 
 
-function electroporation_pore_current(V_m, N, cell)
+function electroporation_pore_current(V_m, N, cell, pore_solution_conductivity)
     """
     The term of the first derivative of the transmembrane potential
     caused by the current flow through the 
@@ -47,7 +47,6 @@ function electroporation_pore_current(V_m, N, cell)
     R = 8.314
 
     r_m = 0.76e-9 # pore radius constant
-    pore_solution_conductivity = 0.2
     
     w0 = 2.65 # ?
     n = 0.15
@@ -65,6 +64,13 @@ function electroporation_pore_current(V_m, N, cell)
     return i_ep * N
 end
 
+function current_to_conductivity(current, voltage, membrane_thickness, cell_radius)
+    # insect:
+    # >>> (5 nm / (4 * pi * (50 nm)^2) ) * (1 A / 1 V) -> siemens/m 
+    return (current / voltage) * membrane_thickness / (4 * pi * (cell_radius^2))
+end
+
+
 function electroporation_coefficients(cell, l_m_ep)
     #correct all coefficients with electroporation current 
     alpha = cell.alpha + l_m_ep * cell.alpha_ep
@@ -74,4 +80,11 @@ function electroporation_coefficients(cell, l_m_ep)
     xi = cell.xi + l_m_ep * cell.xi_ep
 
     return alpha, beta, gamma, phi, xi
+end
+
+
+function simple_exponential_conductivity_model(solution_conductivity)
+    l_m_ep = solution_conductivity * (1 - exp(-s[iN_h] / 1e13))
+
+    return l_m_ep
 end

@@ -33,15 +33,10 @@ function evaluate_control(O)
 
     a = O[1:M]
     b = O[M+1:(2*M)]
-
-    # divide O by a+b to maintain relative ab scaling?
-
-    #Double64.
-    initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
-    initial_state_variables[iN_v] = tl.pore_N0
-    initial_state_variables[iN_h] = tl.pore_N0
-
     c = O[(2*M)+1:(2*M)+6]
+
+    
+
 
     X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf = c
 
@@ -66,19 +61,15 @@ function evaluate_control(O)
 
     P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
     p = P_BCs_to_p_coefficients(P_BCs, t_f)
-    
-    virus_membrane_thickness = virus.membrane_thickness# 5e-9 # overriding temporarily! FIXME TODO
 
     cell_v = py_cell_to_julia_struct(virus)
     cell_h = py_cell_to_julia_struct(host_cell)
 
-    k = t_f * 10
-    x0 = t_f / 4
-    peak = 1.5
+    #Double64.
+    initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
+    initial_state_variables[iN_v] = tl.pore_N0
+    initial_state_variables[iN_h] = tl.pore_N0
 
-    ufun(t) = logistic_curve( t, peak, k, x0)
-    d_ufun(t) = d_logistic_curve( t, peak, k, x0)
-    d_d_ufun(t) = d_d_logistic_curve( t, peak, k, x0)
     params = transmembrane_params(cell_v, cell_h, a, b, p, t_f, M, m, tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep, T0, ufun, d_ufun, d_d_ufun)
     
     # tspan = (Double64(epsilon), Double64(t_f))
@@ -90,7 +81,7 @@ function evaluate_control(O)
 
     #atol=1e-7, dtmin=1e-20,
     solution = solve(prob, Tsit5(), dtmax = t_f / 300, maxiters= 100000, dtmin=1e-20, progress = true, progress_steps = 100)
-    # rk4 usually errorsout! Tsit5 seems to usually work - not after nondimensionalization! RadauIIA5
+    # rk4 Tsit5 RadauIIA5
     # Vern9 is a bit faster on double64s.
 
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0

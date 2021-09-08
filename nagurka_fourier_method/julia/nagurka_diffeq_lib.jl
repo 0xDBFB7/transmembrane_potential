@@ -171,7 +171,6 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     t_f = params.t_f
     T0 = params.T0
 
-
     s[iu0] = U = params.ufun(t)
     s[iu1] = d_U = params.d_ufun(t)
     s[iu2] = d_d_U = params.d_d_ufun(t)
@@ -208,12 +207,13 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h)
 
     # if(abs(s[ix0_h]) > 0.0001)
-    l_m_ep_h = abs(I_ep_h / abs(s[ix0_h]))
+    # l_m_ep_h = abs(I_ep_h / abs(s[ix0_h]))
+    l_m_ep_h = current_to_conductivity(I_ep_h, s[ix0_h], params.cell_h.membrane_thickness, params.cell_h.cell_diameter / 2)
     # else
         
     # end
     
-    # l_m_ep_h = 0.2 * (1 - exp(-s[iN_h] / 1e13))
+    # 
 
 
 
