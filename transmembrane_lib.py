@@ -123,6 +123,10 @@ class Cell:
             6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o - 2*d**3*e_i*e_m +
             2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
         #
+        
+    def compute_step_response(self, t):
+        self.t = t
+        self.step_response = delta_transmembrane_unit_step(t, self)
 
 
 def default_host_cell(t):

@@ -23,7 +23,7 @@ function evaluate_control(O)
 
     m = [1.0:M;]
 
-    end_time = 5e-6
+    end_time = 1.2e-6
 
     T0 = 1e-6 
 
@@ -65,16 +65,25 @@ function evaluate_control(O)
     cell_v = py_cell_to_julia_struct(virus)
     cell_h = py_cell_to_julia_struct(host_cell)
 
-    #Double64.
-    initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
-    initial_state_variables[iN_v] = tl.pore_N0
-    initial_state_variables[iN_h] = tl.pore_N0
+
+
+    k = t_f * 100
+    x0 = t_f / 4
+    peak = 1.5
+
+    ufun(t) = logistic_curve( t, peak, k, x0)
+    d_ufun(t) = d_logistic_curve( t, peak, k, x0)
+    d_d_ufun(t) = d_d_logistic_curve( t, peak, k, x0)
 
     params = transmembrane_params(cell_v, cell_h, a, b, p, t_f, M, m, tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep, T0, ufun, d_ufun, d_d_ufun)
     
     # tspan = (Double64(epsilon), Double64(t_f))
     tspan = (epsilon, (t_f))
     # tspan = convert.(eltype(O),tspan)
+    #Double64.
+    initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
+    initial_state_variables[iN_v] = tl.pore_N0
+    initial_state_variables[iN_h] = tl.pore_N0
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
     # prob = remake(prob;u0=convert.(eltype(O),prob.u0), tspan=tspan) # needed for Dual numbers
     # prob = remake(prob; tspan=tspan)

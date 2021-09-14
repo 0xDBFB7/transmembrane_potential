@@ -57,7 +57,7 @@ function electroporation_pore_current(V_m, N, cell, pore_solution_conductivity)
     i_ep_term_2_divisor_1 = exp(v_m)*((w0*exp(w0-n*v_m) - (n*v_m)) / (w0 - (n*v_m)))
     
     i_ep_term_2_divisor_2 = -((w0*exp(w0+n*v_m) + (n*v_m)) / (w0 + (n*v_m)))
-    i_ep_term_2 = exp(v_m - 1) / (i_ep_term_2_divisor_1 + i_ep_term_2_divisor_2) # possible error here
+    i_ep_term_2 = (exp(v_m)-1) / (i_ep_term_2_divisor_1 + i_ep_term_2_divisor_2) # possible error here
 
     i_ep = i_ep_term_1 * i_ep_term_2
 
@@ -65,6 +65,8 @@ function electroporation_pore_current(V_m, N, cell, pore_solution_conductivity)
 end
 
 function current_to_conductivity(current, voltage, membrane_thickness, cell_radius)
+
+    #eq 18 in talele
     # insect:
     # >>> (5 nm / (4 * pi * (50 nm)^2) ) * (1 A / 1 V) -> siemens/m 
     return (current / voltage) * membrane_thickness / (4 * pi * (cell_radius^2))

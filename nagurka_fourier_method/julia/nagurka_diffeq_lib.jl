@@ -5,11 +5,13 @@ include("nagurka_fourier_lib.jl")
 include("pore_lib.jl")
 include("cell_lib.jl")
 
+using Printf
 using TimerOutputs
 to = TimerOutput()
 disable_timer!(to)
 # call reset_timer!() to reset
 
+using ForwardDiff
 using DoubleFloats
 
 # try --color
@@ -44,6 +46,12 @@ global_logger(TerminalLogger())
 
     ilm_ep_v
     ilm_ep_h
+
+    ialpha 
+    ibeta 
+    igamma 
+    iphi
+    ixi
 end
 Base.to_index(s::svars) = Int(s)+1
 Base.to_indices(I::Tuple) = (Int(I[1])+1, I[2])
@@ -64,6 +72,8 @@ mutable struct transmembrane_params
     pore_alpha
     pore_q
     pore_V_ep
+    pore_solution_conductivity
+    pore_model_enabled
     T0
     ufun
     d_ufun
@@ -152,6 +162,7 @@ function main_x2_ode(d_d_U, d_U, U, s, cell, T0, l_m_ep, is1, is0)
 
     alpha, beta, gamma, phi, xi = electroporation_coefficients(cell, l_m_ep)
 
+    # @printf("%f\n %f\n  %f\n  %f\n %f\n", ForwardDiff.value(alpha), ForwardDiff.value(beta), ForwardDiff.value(gamma), ForwardDiff.value(phi), ForwardDiff.value(xi))
     # @show gamma*U0*U (U0 / T0)*beta*d_U (U0 / (T0*T0))*alpha*d_d_U
     # alpha, beta, gamma, phi, xi = (cell.alpha, cell.beta, cell.gamma, cell.phi, cell.xi)
     return  (((U0 / (T0*T0))*alpha*d_d_U + (U0 / T0)*beta*d_U 
@@ -197,14 +208,14 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     l_m_ep_v = 0.0
     # end
 
-    s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
+    # s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
     d[ ix1_v ] = s[ix2_v] 
     d[ ix0_v ] = s[ix1_v]
     
     # alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_v, l_m_ep_v)
     # @show alpha, beta, gamma, phi, xi
 
-    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h)
+    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h, params.pore_solution_conductivity)
 
     # if(abs(s[ix0_h]) > 0.0001)
     # l_m_ep_h = abs(I_ep_h / abs(s[ix0_h]))
@@ -221,6 +232,10 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
         l_m_ep_h = 0.0
     end
 
+    if(l_m_ep_h > 1.3)
+        l_m_ep_h = 1.3
+    end
+
     s[ilm_ep_h] = l_m_ep_h
     s[iI_ep_h] = I_ep_h
 
@@ -228,6 +243,14 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     d[ ix1_h ] = s[ix2_h] 
     d[ ix0_h ] = s[ix1_h]
 
+
+    alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_h, l_m_ep_h)
+
+    s[ialpha] = alpha
+    s[ibeta] = beta
+    s[igamma] = gamma
+    s[iphi] = phi
+    s[ixi] = xi
     # @show d
     # @show s
 
@@ -240,7 +263,7 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     # Adding a / T0 here makes the re-sealing time way unphysically fast - must not be correct.
     # not sure if it should be * T0
     # d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * exp_limiter(iN_v)
-    d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) #* exp_limiter(iN_h)
+    d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)  #* exp_limiter(iN_h)
 
     return
 end
@@ -262,6 +285,16 @@ function plot_solution(solution)
     @gp :- 9 solution.t (getindex.(solution.u, Int(iI_ep_v)+1)) string(formatstring,"' \$ I_{ep V}\$'")
     @gp :- 10 solution.t (getindex.(solution.u, Int(iI_ep_h)+1)) string(formatstring,"' \$ I_{ep H}\$'")
 
+
+end
+
+function schwan_steady_state_with_conductivities(E, G_m, cell)
+
+    # eq. 7 from Dielectrophoresis and rotation of Cells, in the book 
+    # G_m is the membrane conductance (S/m^2)
+    # E is electric field intensity (V/m)
+    return 1.5 * E * (cell.cell_diameter/2) / (1 + (cell.cell_diameter/2)*G_m*
+                        ((1/cell.intracellular_conductivity) + 0.5*(1/cell.extracellular_conductivity))) 
 
 end
 
