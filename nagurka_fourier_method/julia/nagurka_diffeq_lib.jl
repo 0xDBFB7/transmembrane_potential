@@ -226,8 +226,6 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     
     # 
 
-
-
     if(abs(s[ix0_h]) < 0.01)
         l_m_ep_h = 0.0
     end

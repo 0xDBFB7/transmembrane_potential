@@ -116,14 +116,18 @@ end
 
 # end
 
-@testset "Talele validation" begin
+@testset "Talele transmembrane potential validation" begin
+
+    tal_ref_pore_density_interpolate, tal_ref_transmembrane_voltage_interpolate = import_talele_test_data()
+
+
     # Note: compare specify cell radius, not diameter, as 15e-6! 
     cell_radius = 15e-6
     compare_cell = tl.Cell((1.2), (80), (0.3), (80), (3e-7), (5), (cell_radius * 2), (5e-9), py"""np.array([])""")
 
     cell_v = cell_h = py_cell_to_julia_struct(compare_cell)
 
-    end_time = 10e-6
+    end_time = 1e-6
     T0 = 1e-6
     # this is the "apparent" nondimensionalized end time to the algorithm
     t_f = end_time / T0
@@ -150,7 +154,12 @@ end
     N_h_course = getindex.(solution.u, Int(iN_h)+1) # note: not subtracted from N0
     
     plot_solution(solution)
-    
+
+    @gp :- :GP2 1 solution.t transmembrane_voltage_interpolate(solution.t)
+    @gp :- :GP2 2 solution.t pore_density_interpolate(solution.t)
+
+
+
     compare_cell.compute_step_response(solution.t*T0)
     
     G_m = 1.9 # membrane conductance
@@ -163,14 +172,13 @@ end
     # @gp :- :GP2 1 solution.t getindex.(solution.u, Int(ix0_h)+1)
     # @gp :- :GP2 1 solution.t compare_cell.step_response * 52000
 
-    @gp :GP2 "set multiplot layout 5,1; set grid xtics ytics; set grid;"
-    @gp :- :GP2 1 solution.t getindex.(solution.u, Int(ialpha)+1)
-    @gp :- :GP2 2 solution.t getindex.(solution.u, Int(ibeta)+1)
-    @gp :- :GP2 3 solution.t getindex.(solution.u, Int(igamma)+1)
-    @gp :- :GP2 4 solution.t getindex.(solution.u, Int(iphi)+1)
-    @gp :- :GP2 5 solution.t getindex.(solution.u, Int(ixi)+1)
-
-
+    # @gp :GP2 "set multiplot layout 5,1; set grid xtics ytics; set grid;"
+    # @gp :- :GP2 1 solution.t getindex.(solution.u, Int(ialpha)+1)
+    # @gp :- :GP2 2 solution.t getindex.(solution.u, Int(ibeta)+1)
+    # @gp :- :GP2 3 solution.t getindex.(solution.u, Int(igamma)+1)
+    # @gp :- :GP2 4 solution.t getindex.(solution.u, Int(iphi)+1)
+    # @gp :- :GP2 5 solution.t getindex.(solution.u, Int(ixi)+1)
+    
     @test_broken isapprox(getindex.(solution.u, Int(ix0_h)+1)[end], schwan_analytic)
     @test_broken isapprox(maximum(N_h_course), 3.334e13)
 
