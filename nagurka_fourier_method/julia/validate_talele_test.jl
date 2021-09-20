@@ -15,14 +15,14 @@ end
 
 @testset "Talele pore formation rate comparison" begin
     """
-    Since the 
+    Bypassing the V_m model, directly uses the transmembrane voltages digitized from 
+    the plots in Talele et al 2007 fig. 2b as input.
 
-    Uses the transmembrane voltages digitized from the plots in Talele et al 2007 fig. 2b.
-
-    The peak of the pore is quite sensitive to the accuracy of the V_m digitization,
+    The peak of the pore N is quite sensitive to the accuracy of the V_m digitization,
     so some deviation can be expected.
     """
-    tal_ref_pore_density_interpolate, tal_ref_transmembrane_voltage_interpolate = import_talele_test_data()
+
+    tal_ref_pore_density_interpolate, tal_ref_transmembrane_voltage_interpolate, _ = import_talele_test_data()
 
     tspan = (epsilon, 1e-6)
 

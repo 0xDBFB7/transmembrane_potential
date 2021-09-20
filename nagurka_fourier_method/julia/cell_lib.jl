@@ -25,7 +25,8 @@ function py_cell_to_julia_struct(input_cell)
         input_cell.xi_ep,
         input_cell.membrane_permittivity,
         input_cell.membrane_thickness,
-        input_cell.cell_diameter)
+        input_cell.cell_diameter,
+        input_cell.R)
 end
 
 # this darn redundancy needed because virus is global pystruct and slow mutable
@@ -43,4 +44,5 @@ struct cell_struct
     membrane_permittivity
     membrane_thickness
     cell_diameter
+    R
 end

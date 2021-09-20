@@ -90,3 +90,12 @@ function simple_exponential_conductivity_model(solution_conductivity)
 
     return l_m_ep
 end
+
+function pore_area_factor(N, cell_radius)
+    cell_membrane_area = (4 * pi * (cell_radius^2))
+    r_m = 0.76e-9 # pore radius constant
+
+    total_pore_area = N * pi * (r_m^2)
+
+    return total_pore_area / cell_membrane_area
+end

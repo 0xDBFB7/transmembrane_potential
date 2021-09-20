@@ -57,6 +57,10 @@ class Cell:
 
         d = self.membrane_thickness
 
+        self.membrane_area = 4 * pi * (R**2.0)
+        # Note that this is the area of the outside shell. There could be different definitions of the area.
+
+
         sub1 = (3.0 * (R**2.0) - 3.0 * d * R + d**2.0)
         sub2 = (3.0 * d * R - d**2.0)
 
@@ -446,3 +450,16 @@ def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
     # return solve_ivp(d_pore_density,t_span=(t[0], t[-1]),y0=[0],
     #                 args = (interp_transmembrane_potential, N0, alpha, q, V_ep),
     #                     t_eval=t, atol=1e-9, rtol=1e-9)["y"][0]
+
+
+def surface_conductance_DC_factor(cell, surface_conductance):
+    """
+    From grosse and schwan 1992
+    """
+
+    # # Note the different definition of C_m - per unit area rather than total!
+    # # note the 
+    # C_m = cell.e_m / cell.membrane_thickness  # absolute permittivity of the membrane 
+
+    # # delta_u = (3/2) * 1 * cell.R / (1 + )
+

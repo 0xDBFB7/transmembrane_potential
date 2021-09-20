@@ -1,27 +1,36 @@
 using OrdinaryDiffEq
 using Gnuplot
 
+# julia --project=dev_nagurka/
+# using Revise 
+# 
+
 include("nagurka_fourier_lib.jl")
 include("pore_lib.jl")
 include("cell_lib.jl")
 
 using Printf
+
+
+
 using TimerOutputs
 to = TimerOutput()
 disable_timer!(to)
 # call reset_timer!() to reset
+
+
 
 using ForwardDiff
 using DoubleFloats
 
 # try --color
 
+
 using Logging: global_logger
 using TerminalLoggers: TerminalLogger
 global_logger(TerminalLogger())
 
 
-# julia --project=dev_nagurka/
 
 # see https://discourse.julialang.org/t/enums-for-array-indexing/669/8
 @enum svars begin
@@ -53,8 +62,8 @@ global_logger(TerminalLogger())
     iphi
     ixi
 end
-Base.to_index(s::svars) = Int(s)+1
-Base.to_indices(I::Tuple) = (Int(I[1])+1, I[2])
+# Base.to_index(s::svars) = Int(s)+1
+# Base.to_indices(I::Tuple) = (Int(I[1])+1, I[2])
 
 
 
@@ -62,12 +71,7 @@ mutable struct transmembrane_params
     # this makes it hard to use DiffEqParamEstim, but I can't see a way to pass t_f to diffeq otherwise.
     cell_v
     cell_h
-    a
-    b
-    p
     t_f 
-    M 
-    m
     pore_N0
     pore_alpha
     pore_q
@@ -145,12 +149,39 @@ An artificial value of conductivity has been used in the pore.
 
 Test 
 
+It's not obvious to me what the limiting conditon. Clearly the definition of the transmembrane voltage
+becomes fuzzier, because the membrane no longer exists to some degree
 
 # irreversible_threshold = 1e40
 # irreversible_threshold_sharpness = 2.0 # sharper values seem to cause instabilities
 # exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
 
 =#
+
+
+function affect!(integrator)
+    terminate!(integrator)
+    @warn("ODE integration terminated early due to irreversible regime.")
+end
+
+
+function solve_response(params)
+
+    condition(u,t,integrator) = (u[iN_v] > 1e16 || u[iN_h] > 1e16)
+                        # pore_area_factor(u[iN_v], integrator.p.cell_h.cell_diameter / 2) > 0.9069 ||
+                        # pore_area_factor(u[iN_h], integrator.p.cell_h.cell_diameter / 2) > 0.9069)
+    cb = DiscreteCallback(condition,affect!)
+
+    tspan = (epsilon, params.t_f)
+    initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
+    initial_state_variables[iN_v] = tl.pore_N0
+    initial_state_variables[iN_h] = tl.pore_N0
+    prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params, callback=cb)
+    solution = solve(prob, RadauIIA5(), dtmax = params.t_f / 200, maxiters= 1000000, dtmin=1e-20, 
+                                                            progress = true, progress_steps = 100)
+    #Tsit5
+    return solution
+end
 
 
 function main_x2_ode(d_d_U, d_U, U, s, cell, T0, l_m_ep, is1, is0)
@@ -185,28 +216,48 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     s[iu0] = U = params.ufun(t)
     s[iu1] = d_U = params.d_ufun(t)
     s[iu2] = d_d_U = params.d_d_ufun(t)
-    # @timeit to "us" begin
-    #     s[iu0] = U = X_(t,params.p,params.a,params.b,m,t_f)
-    #     s[iu1] = d_U = d_X_(t,params.p,params.a,params.b,m,t_f)
-    #     s[iu2] = d_d_U = d_d_X_(t,params.p,params.a,params.b,m,t_f)
-    # end
 
     # @timeit to "diffeq" begin
+
+
+    I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v], params.cell_v, params.pore_solution_conductivity)
+
+    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h, params.pore_solution_conductivity)
+
+
+    if(params.pore_model_enabled)
+        # # this causes a lot of headache because of the large exponent - would be great to nondimensionalize this somehow, make it log perhaps
+        # Adding a / T0 here makes the re-sealing time way unphysically fast - must not be correct.
+        # not sure if it should be * T0
+        d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) #* exp_limiter(iN_v)
+        d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)  #* exp_limiter(iN_h)
+
+        l_m_ep_v = current_to_conductivity(I_ep_v, s[ix0_v], params.cell_v.membrane_thickness, params.cell_v.R)
+        l_m_ep_h = current_to_conductivity(I_ep_h, s[ix0_h], params.cell_h.membrane_thickness, params.cell_h.R)
+
+        if(abs(s[ix0_h]) < 0.01)
+            l_m_ep_h = 0.0
+        end
     
-    # I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v], params.cell_v)
-    # I_ep_v = 0.0
-    # delta in conductivity due to the formed pores
-    # if(abs(s[ix0_v]) > 0.0001)
-    # l_m_ep_v = abs(I_ep_v / abs(s[ix0_v]))
-    # else
-    # end 
+        if(l_m_ep_h > 1.3) #should be pore_solution_conductivity
+            l_m_ep_h = 1.3
+        end
+
+        
+    else 
+        l_m_ep_v = 0.0
+        l_m_ep_h = 0.0
+    end
+    
+    s[ilm_ep_v] = l_m_ep_v
+    s[iI_ep_v] = I_ep_v
+    
+    s[ilm_ep_h] = l_m_ep_h
+    s[iI_ep_h] = I_ep_h
+
+
     # l_m_ep_v = 0.2 * (1 - exp(-s[iN_v] / 1e13))
-    # s[ilm_ep_v] = l_m_ep_v
-    # s[iI_ep_v] = I_ep_v
     
-    # if(t < 0.0001*t_f)
-    l_m_ep_v = 0.0
-    # end
 
     # s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
     d[ ix1_v ] = s[ix2_v] 
@@ -214,28 +265,6 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     
     # alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_v, l_m_ep_v)
     # @show alpha, beta, gamma, phi, xi
-
-    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h, params.pore_solution_conductivity)
-
-    # if(abs(s[ix0_h]) > 0.0001)
-    # l_m_ep_h = abs(I_ep_h / abs(s[ix0_h]))
-    l_m_ep_h = current_to_conductivity(I_ep_h, s[ix0_h], params.cell_h.membrane_thickness, params.cell_h.cell_diameter / 2)
-    # else
-        
-    # end
-    
-    # 
-
-    if(abs(s[ix0_h]) < 0.01)
-        l_m_ep_h = 0.0
-    end
-
-    if(l_m_ep_h > 1.3)
-        l_m_ep_h = 1.3
-    end
-
-    s[ilm_ep_h] = l_m_ep_h
-    s[iI_ep_h] = I_ep_h
 
     s[ ix2_h ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_h, T0, l_m_ep_h, ix1_h, ix0_h)
     d[ ix1_h ] = s[ix2_h] 
@@ -251,17 +280,6 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     s[ixi] = xi
     # @show d
     # @show s
-
-    # end
-    # irreversible_threshold = 1e15
-    # irreversible_threshold_sharpness = 2.0 # sharper values seem to cause instabilities
-    # exp_limiter(iN) = (exp(-(s[iN] / irreversible_threshold)^irreversible_threshold_sharpness))
-
-    # # this causes a lot of headache because of the large exponent - would be great to nondimensionalize this somehow, make it log perhaps
-    # Adding a / T0 here makes the re-sealing time way unphysically fast - must not be correct.
-    # not sure if it should be * T0
-    # d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * exp_limiter(iN_v)
-    d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)  #* exp_limiter(iN_h)
 
     return
 end
@@ -296,4 +314,13 @@ function schwan_steady_state_with_conductivities(E, G_m, cell)
 
 end
 
-#@gp t "with lines"
+function schwan_sinusoidal_analytic(cell_radius, membrane_capacitance, extracellular_conductivity, intracellular_conductivity)
+    """
+    As described in Eq. 2.65 in Talele's thesis
+    """
+
+    # a = radius
+    # C_m = 
+    # tau_membrane = 
+
+end
