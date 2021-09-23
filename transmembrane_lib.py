@@ -452,14 +452,16 @@ def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
     #                     t_eval=t, atol=1e-9, rtol=1e-9)["y"][0]
 
 
-def surface_conductance_DC_factor(cell, surface_conductance):
-    """
-    From grosse and schwan 1992
-    """
+# def surface_conductance_factor(cell, surface_conductance):
+    # """
+    # From grosse and schwan 1992
+    # """
 
     # # Note the different definition of C_m - per unit area rather than total!
     # # note the 
-    # C_m = cell.e_m / cell.membrane_thickness  # absolute permittivity of the membrane 
+    C_m = cell.e_m / cell.membrane_thickness  # absolute permittivity of the membrane 
 
-    # # delta_u = (3/2) * 1 * cell.R / (1 + )
+    # delta_u = (3/2) * 1 * cell.R / (1 + )
 
+def conductivity_to_conductance(radius):
+    raise NotImplementedError
