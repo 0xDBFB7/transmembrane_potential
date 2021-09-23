@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 from math import pi, sqrt, e, log, isclose, exp
 # from scipy.optimize import curve_fit
 
@@ -42,7 +43,7 @@ class Cell:
     cell_diameter: np.float64 # meters
     membrane_thickness: np.float64
 
-    t: np.ndarray
+    t: 'typing.Any' = None
 
     def __post_init__(self):
         e_o = self.extracellular_permittivity * epsilon_0 # S/m
@@ -84,8 +85,8 @@ class Cell:
         self.tau_1 = tau_1_f(self.b_1, self.b_2, self.b_3)
         self.tau_2 = tau_2_f(self.b_1, self.b_2, self.b_3)
 
-
-        self.step_response = delta_transmembrane_unit_step(self.t, self)
+        if(not self.t is None):
+            self.step_response = delta_transmembrane_unit_step(self.t, self)
 
         # coefficients in front of the differential equation.
         # note the error in kotnik et al transfer function!
@@ -465,3 +466,4 @@ def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
 
 def conductivity_to_conductance(radius):
     raise NotImplementedError
+

@@ -54,9 +54,6 @@ close tab: ctl w
 
 
 function step_function(E = 1e5)
-    T0 = 1e-6
-    # this is the "apparent" nondimensionalized end time to the algorithm
-    t_f = end_time / T0
 
     edge_rise_time = 1e-9
     k = 1 / (edge_rise_time / T0)
@@ -73,19 +70,31 @@ function step_function(E = 1e5)
     return 
 end
 
+
+
+function initialize_membrane_computation(cell_v, cell_h, end_time, pore_model_enabled::Bool, control_function)
+    julia_cell_v = py_cell_to_julia_struct(cell_v)
+    julia_cell_h = py_cell_to_julia_struct(cell_h)
+    T0 = 1e-6
+    # this is the "apparent" nondimensionalized end time to the algorithm
+    t_f = end_time / T0
+    params = transmembrane_params(cell_v, cell_h, t_f, tl.pore_N0, tl.pore_alpha, 
+                            tl.pore_q, tl.pore_V_ep, pore_solution_conductivity, true, T0, ufun, d_ufun, d_d_ufun)
+
+
+end
+
 function kotnik_validation()
     # fig 3 in kotnik 1998, should reach ~1.35 v in 1 microsecond
 
     cell_radius = 10e-6
-    compare_cell = tl.Cell((0.3), (80), (0.3), (80), (3e-7), (5), (cell_radius * 2), (5e-9), py"""np.array([])""")
+    compare_cell = tl.Cell((0.3), (80), (0.3), (80), (3e-7), (5), (cell_radius * 2), (5e-9))
 
-    cell_v = cell_h = py_cell_to_julia_struct(compare_cell)
+    
 
     end_time = 1e-6
     
     pore_solution_conductivity = 0.6 
-    params = transmembrane_params(cell_v, cell_h, t_f, tl.pore_N0, tl.pore_alpha, 
-                            tl.pore_q, tl.pore_V_ep, pore_solution_conductivity, true, T0, ufun, d_ufun, d_d_ufun)
                             
     solution = solve_response(params)
 
