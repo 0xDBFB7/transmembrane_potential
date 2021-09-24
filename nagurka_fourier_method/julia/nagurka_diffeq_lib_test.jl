@@ -1,5 +1,6 @@
 include("nagurka_diffeq_lib.jl")
 include("import_test_data.jl")
+include("square_wave.jl")
 # BenchmarkTools.DEFAULT_PARAMETERS.samples = 30
 
 # using Revise 
@@ -45,44 +46,7 @@ close tab: ctl w
     # @btime integrate($solution.t, getindex.($solution.u, Int(iu0)+1))
 # end
 
-# @timeit to "us" begin
-#     s[iu0] = U = X_(t,params.p,params.a,params.b,m,t_f)
-#     s[iu1] = d_U = d_X_(t,params.p,params.a,params.b,m,t_f)
-#     s[iu2] = d_d_U = d_d_X_(t,params.p,params.a,params.b,m,t_f)
-# end
 
-
-
-function step_function(E = 1e5)
-
-    edge_rise_time = 1e-9
-    k = 1 / (edge_rise_time / T0)
-    x0 = 0.01
-
-
-
-    peak = E * (cell_h.gamma / cell_h.xi) 
-
-    ufun(t) = logistic_curve( t, peak, k, x0)
-    d_ufun(t) = d_logistic_curve( t, peak, k, x0)
-    d_d_ufun(t) = d_d_logistic_curve( t, peak, k, x0)
-
-    return 
-end
-
-
-
-function initialize_membrane_computation(cell_v, cell_h, end_time, pore_model_enabled::Bool, control_function)
-    julia_cell_v = py_cell_to_julia_struct(cell_v)
-    julia_cell_h = py_cell_to_julia_struct(cell_h)
-    T0 = 1e-6
-    # this is the "apparent" nondimensionalized end time to the algorithm
-    t_f = end_time / T0
-    params = transmembrane_params(cell_v, cell_h, t_f, tl.pore_N0, tl.pore_alpha, 
-                            tl.pore_q, tl.pore_V_ep, pore_solution_conductivity, true, T0, ufun, d_ufun, d_d_ufun)
-
-
-end
 
 function kotnik_validation()
     # fig 3 in kotnik 1998, should reach ~1.35 v in 1 microsecond
@@ -90,16 +54,18 @@ function kotnik_validation()
     cell_radius = 10e-6
     compare_cell = tl.Cell((0.3), (80), (0.3), (80), (3e-7), (5), (cell_radius * 2), (5e-9))
 
-    
-
+    E = 1e5
     end_time = 1e-6
     
-    pore_solution_conductivity = 0.6 
-                            
-    solution = solve_response(params)
+    params = initialize_membrane_parameters(compare_cell, compare_cell, end_time, false)
+    params.control_function = init_step_function(params, E, 1e-9, 1e-8)
+    solution = solve_response_integrator(params)
 
     plot_solution(solution)
 end
+
+
+kotnik_validation()
 
 @testset "Talele thesis analytic sinusoidal validation" begin
 

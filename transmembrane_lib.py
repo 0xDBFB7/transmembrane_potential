@@ -61,6 +61,7 @@ class Cell:
         self.membrane_area = 4 * pi * (R**2.0)
         # Note that this is the area of the outside shell. There could be different definitions of the area.
 
+        self.pore_solution_conductivity = 0.6 
 
         sub1 = (3.0 * (R**2.0) - 3.0 * d * R + d**2.0)
         sub2 = (3.0 * d * R - d**2.0)

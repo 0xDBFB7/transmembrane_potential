@@ -120,39 +120,23 @@ function d_d_P_(t, p, a, b, m, t_f)
     return 2*p_2 + 6*p_3*t + 12*p_4*t^2 + 20*p_5*t^3
 end
 
+function init_fourier_parametrization(params, M, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf)
+    m = [1.0:M;]
 
-
-"""
-Switching back to Python because all of the transmembrane stuff is in that and it might be clunky to
-go back and forth with PyCall.
-
-TODO: replace analytic_ as the default; make forwarddiff optional
-"""
-##
-
-function square_wave(M)
-    # M=30
-    a = (zeros(M))
-    b = (zeros(M))
-    for i in [1.0:2.0:M;]
-        b[Int(i)] = (1/(i))
-    end
-     return a, b 
- end 
- 
-
-function logistic_curve(x, peak, k, k0)
-    # Nice smooth step function.
-    # https://calculus.subwiki.org/wiki/Logistic_function
-    return peak / (1+exp(-(k * (x-k0))))
+    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
+    p = P_BCs_to_p_coefficients(P_BCs, t_f)
+    
+    control_function(t) = evaluate_fourier_parametrization(t,p,a,b,m,t_f)
+    return control_function
 end
 
-function d_logistic_curve(x, peak, k, k0)
-    # return logistic_curve(x, peak, k, k0) * (peak - logistic_curve(x, peak, k, k0))
-    return k.*peak.*exp(-k.*(-k0 + x))./(1 + exp(-k.*(-k0 + x))).^2
+function evaluate_fourier_parametrization(t,p,a,b,m,t_f)
+    v = X_(t,p,a,b,m,t_f)
+    d_v = d_X_(t,p,a,b,m,t_f)
+    d_d_v = d_d_X_(t,p,a,b,m,t_f)
+
+    return v, d_v, d_d_v
 end
 
-function d_d_logistic_curve(x, peak, k, k0)
-    return -k.^2 .* peak.*(1 - 2*exp(k.*(k0 - x))./(exp(k.*(k0 - x)) + 1)).*exp(k.*(k0 - x))./(exp(k.*(k0 - x)) + 1).^2
-    # return logistic_curve(x, peak, k, k0) * (peak - logistic_curve(x, peak, k, k0)) * (peak - 2*logistic_curve(x, peak, k, k0))
-end
+
+

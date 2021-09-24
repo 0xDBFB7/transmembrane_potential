@@ -62,7 +62,7 @@ global_logger(TerminalLogger())
     iphi
     ixi
 end
-# Base.to_index(s::svars) = Int(s)+1
+Base.to_index(s::svars) = Int(s)+1
 # Base.to_indices(I::Tuple) = (Int(I[1])+1, I[2])
 
 
@@ -76,12 +76,9 @@ mutable struct transmembrane_params
     pore_alpha
     pore_q
     pore_V_ep
-    pore_solution_conductivity
     pore_model_enabled
     T0
-    ufun
-    d_ufun
-    d_d_ufun
+    control_function
 end
 
 
@@ -165,7 +162,7 @@ function affect!(integrator)
 end
 
 
-function solve_response(params)
+function solve_response_integrator(params)
 
     condition(u,t,integrator) = (u[iN_v] > 1e16 || u[iN_h] > 1e16)
                         # pore_area_factor(u[iN_v], integrator.p.cell_h.cell_diameter / 2) > 0.9069 ||
@@ -201,6 +198,22 @@ function main_x2_ode(d_d_U, d_U, U, s, cell, T0, l_m_ep, is1, is0)
 
 end
 
+
+function initialize_membrane_parameters(cell_v, cell_h, end_time, pore_model_enabled::Bool)
+    T0 = 1e-6
+
+    julia_cell_v = py_cell_to_julia_struct(cell_v)
+    julia_cell_h = py_cell_to_julia_struct(cell_h)
+
+    # this is the "apparent" nondimensionalized end time to the algorithm
+    t_f = end_time / T0
+    params = transmembrane_params(cell_v, cell_h, t_f, 
+                            tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep, pore_model_enabled, T0, nothing)
+
+    return params
+end
+
+
 function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     """
     S is current state vectors.
@@ -208,21 +221,21 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     O is a vector of parameters.
     """
     
-    m = params.m
-    M = params.M
     t_f = params.t_f
     T0 = params.T0
 
-    s[iu0] = U = params.ufun(t)
-    s[iu1] = d_U = params.d_ufun(t)
-    s[iu2] = d_d_U = params.d_d_ufun(t)
+    U, d_U, d_d_U = params.control_function(t)
+
+    s[iu0] = U
+    s[iu1] = d_U
+    s[iu2] = d_d_U
 
     # @timeit to "diffeq" begin
 
 
-    I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v], params.cell_v, params.pore_solution_conductivity)
+    I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v], params.cell_v, params.cell_v.pore_solution_conductivity)
 
-    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h, params.pore_solution_conductivity)
+    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h, params.cell_h.pore_solution_conductivity)
 
 
     if(params.pore_model_enabled)
@@ -259,7 +272,7 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     # l_m_ep_v = 0.2 * (1 - exp(-s[iN_v] / 1e13))
     
 
-    # s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
+    s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
     d[ ix1_v ] = s[ix2_v] 
     d[ ix0_v ] = s[ix1_v]
     
@@ -269,7 +282,6 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     s[ ix2_h ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_h, T0, l_m_ep_h, ix1_h, ix0_h)
     d[ ix1_h ] = s[ix2_h] 
     d[ ix0_h ] = s[ix1_h]
-
 
     alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_h, l_m_ep_h)
 
@@ -324,3 +336,5 @@ function schwan_sinusoidal_analytic(cell_radius, membrane_capacitance, extracell
     # tau_membrane = 
 
 end
+
+
