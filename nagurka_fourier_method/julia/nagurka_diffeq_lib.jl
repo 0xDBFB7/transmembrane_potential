@@ -164,7 +164,7 @@ end
 
 function solve_response_integrator(params)
 
-    condition(u,t,integrator) = (u[iN_v] > 1e25 || u[iN_h] > 1e25)
+    condition(u,t,integrator) = (u[iN_v] > 1e20 || u[iN_h] > 1e20)
                         # pore_area_factor(u[iN_v], integrator.p.cell_h.cell_diameter / 2) > 0.9069 ||
                         # pore_area_factor(u[iN_h], integrator.p.cell_h.cell_diameter / 2) > 0.9069)
     cb = DiscreteCallback(condition,affect!)

@@ -70,26 +70,43 @@ function talele_validation()
     # Note: compare specify cell radius, not diameter, as 15e-6! 
     cell_radius = 15e-6
     compare_cell = tl.Cell((1.2), (80), (0.3), (80), (3e-7), (5), (cell_radius * 2), (5e-9), py"""np.array([])""")
-
+    compare_cell.pore_solution_conductivity = 0.6
     E = 52000
-    end_time = 1e-6
+    end_time = 10e-6
     
     params = initialize_membrane_parameters(compare_cell, compare_cell, end_time, false)
     params.control_function = init_step_function(params, E, 1e-9, 1e-8)
-    solution = solve_response_integrator(params)
+    solution_no_ep = solve_response_integrator(params)
 
-    plot_solution(solution)
+    params = initialize_membrane_parameters(compare_cell, compare_cell, end_time, true)
+    params.control_function = init_step_function(params, E, 1e-9, 1e-8)
+    solution_ep = solve_response_integrator(params)
+
+    formatstring = "with lines dt 1 tit "
+    @gp :GP2 "set multiplot layout 1,1; set grid xtics ytics; set grid;"
+    @gp :- :GP2 1 solution_no_ep.t col(solution_no_ep, ix0_h) string(formatstring,"'No_ep'")
+    @gp :- :GP2 1 solution_ep.t col(solution_ep, ix0_h) string(formatstring,"'ep'")
+
+    plot_solution(solution_ep)
 
     tau_1 = tl.first_order_schwan_time_constant(compare_cell)
 
-    analytic_output = (1 .- exp.(-(solution.t * params.T0) / tau_1))
+    analytic_output = (1 .- exp.(-(solution_ep.t * params.T0) / tau_1))
 
-    formatstring = "with lines dt 1 tit "
-    @gp :GP2 "set multiplot layout 2,1; set grid xtics ytics; set grid;"
-    # @gp :- :GP2 1 solution.t tal_ref_transmembrane_voltage_interpolate(solution.t * params.T0)
-    @gp :- :GP2 1 solution.t no_ep_Vm_interpolate(solution.t * params.T0) string(formatstring,"'Talele data'")
-    @gp :- :GP2 1 solution.t col(solution, ix0_h) string(formatstring,"'Kotnik formulation'")
-    @gp :- :GP2 1 solution.t analytic_output string(formatstring,"'Schwan first order'")
+    # formatstring = "with lines dt 1 tit "
+    # @gp :GP2 "set multiplot layout 2,1; set grid xtics ytics; set grid;"
+    # # @gp :- :GP2 1 solution.t tal_ref_transmembrane_voltage_interpolate(solution.t * params.T0)
+    # @gp :- :GP2 1 solution.t no_ep_Vm_interpolate(solution.t * params.T0) string(formatstring,"'Talele data'")
+    # @gp :- :GP2 1 solution.t col(solution, ix0_h) string(formatstring,"'Kotnik formulation'")
+    # @gp :- :GP2 1 solution.t analytic_output string(formatstring,"'Schwan first order'")
+
+    @gp :GP3 "set multiplot layout 5,1; set grid xtics ytics; set grid;"
+    @gp :- :GP3 1 solution_ep.t getindex.(solution_ep.u, Int(ialpha)+1)
+    @gp :- :GP3 2 solution_ep.t getindex.(solution_ep.u, Int(ibeta)+1)
+    @gp :- :GP3 3 solution_ep.t getindex.(solution_ep.u, Int(igamma)+1)
+    @gp :- :GP3 4 solution_ep.t getindex.(solution_ep.u, Int(iphi)+1)
+    @gp :- :GP3 5 solution_ep.t getindex.(solution_ep.u, Int(ixi)+1)
+    
 
 end
 
@@ -152,13 +169,7 @@ end
 #     # @gp :- :GP2 1 solution.t getindex.(solution.u, Int(ix0_h)+1)
 #     # @gp :- :GP2 1 solution.t compare_cell.step_response * 52000
 
-#     # @gp :GP2 "set multiplot layout 5,1; set grid xtics ytics; set grid;"
-#     # @gp :- :GP2 1 solution.t getindex.(solution.u, Int(ialpha)+1)
-#     # @gp :- :GP2 2 solution.t getindex.(solution.u, Int(ibeta)+1)
-#     # @gp :- :GP2 3 solution.t getindex.(solution.u, Int(igamma)+1)
-#     # @gp :- :GP2 4 solution.t getindex.(solution.u, Int(iphi)+1)
-#     # @gp :- :GP2 5 solution.t getindex.(solution.u, Int(ixi)+1)
-    
+#
 #     @test_broken isapprox(getindex.(solution.u, Int(ix0_h)+1)[end], schwan_analytic)
 #     @test_broken isapprox(maximum(N_h_course), 3.334e13)
 
@@ -172,7 +183,7 @@ function debruin_validation()
     E = 40000.0 # 400 V/cm to V/m
     # compare_cell = tl.Cell((0.3), (0.001), (0.3), (0.001), (3e-7), (5), (cell_radius * 2), (5e-9))
     compare_cell = tl.Cell((5.0), (0.001), (0.455), (0.001), (3e-7), (5), (cell_radius * 2), (5e-9), py"""np.array([])""")
-    compare_cell.pore_solution_conductivity = 1.3
+    compare_cell.pore_solution_conductivity = 0.13
 
     end_time = 10e-6
     
@@ -190,11 +201,24 @@ function debruin_validation()
     @gp :- :GP2 1 solution_ep.t col(solution_ep, ix0_h) string(formatstring,"'ep'")
 
     plot_solution(solution_ep)
+    """
+    N is totally different.
+    """
+
+    save(term="png size 1500,1500",output="runs/flipped_sign_coefficient/flipped_sign_coefficient_no_limit_output.png")
+
+    @gp :GP3 "set multiplot layout 5,1; set grid xtics ytics; set grid;"
+    @gp :- :GP3 1 solution_ep.t getindex.(solution_ep.u, Int(ialpha)+1)
+    @gp :- :GP3 2 solution_ep.t getindex.(solution_ep.u, Int(ibeta)+1)
+    @gp :- :GP3 3 solution_ep.t getindex.(solution_ep.u, Int(igamma)+1)
+    @gp :- :GP3 4 solution_ep.t getindex.(solution_ep.u, Int(iphi)+1)
+    @gp :- :GP3 5 solution_ep.t getindex.(solution_ep.u, Int(ixi)+1)
+    
 end
 
 
 
 
 # kotnik_validation()
-# talele_validation()
-debruin_validation()
+talele_validation()
+# debruin_validation()
