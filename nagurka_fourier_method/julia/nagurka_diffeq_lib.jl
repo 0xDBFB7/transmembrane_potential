@@ -164,7 +164,7 @@ end
 
 function solve_response_integrator(params)
 
-    condition(u,t,integrator) = (u[iN_v] > 1e16 || u[iN_h] > 1e16)
+    condition(u,t,integrator) = (u[iN_v] > 1e25 || u[iN_h] > 1e25)
                         # pore_area_factor(u[iN_v], integrator.p.cell_h.cell_diameter / 2) > 0.9069 ||
                         # pore_area_factor(u[iN_h], integrator.p.cell_h.cell_diameter / 2) > 0.9069)
     cb = DiscreteCallback(condition,affect!)
@@ -252,9 +252,9 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
             l_m_ep_h = 0.0
         end
     
-        if(l_m_ep_h > 1.3) #should be pore_solution_conductivity
-            l_m_ep_h = 1.3
-        end
+        # if(l_m_ep_h > params.cell_h.pore_solution_conductivity) #should be pore_solution_conductivity
+        #     l_m_ep_h = params.cell_h.pore_solution_conductivity
+        # end
 
         
     else 
@@ -272,7 +272,7 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     # l_m_ep_v = 0.2 * (1 - exp(-s[iN_v] / 1e13))
     
 
-    s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
+    # s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
     d[ ix1_v ] = s[ix2_v] 
     d[ ix0_v ] = s[ix1_v]
     
@@ -314,6 +314,10 @@ function plot_solution(solution)
     @gp :- 10 solution.t (getindex.(solution.u, Int(iI_ep_h)+1)) string(formatstring,"' \$ I_{ep H}\$'")
 
 
+end
+
+function col(solution, idx)
+    return getindex.(solution.u, Int(idx)+1)
 end
 
 function schwan_steady_state_with_conductivities(E, G_m, cell)

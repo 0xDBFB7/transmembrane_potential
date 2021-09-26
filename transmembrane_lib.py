@@ -46,17 +46,17 @@ class Cell:
     t: 'typing.Any' = None
 
     def __post_init__(self):
-        e_o = self.extracellular_permittivity * epsilon_0 # S/m
-        e_i = self.intracellular_permittivity * epsilon_0 #S/m
-        e_m = self.membrane_permittivity * epsilon_0 #S/m
+        e_o = self.e_o = self.extracellular_permittivity * epsilon_0 # S/m
+        e_i = self.e_i = self.intracellular_permittivity * epsilon_0 #S/m
+        e_m = self.e_m = self.membrane_permittivity * epsilon_0 #S/m
         R = self.cell_diameter / 2.0
         self.R = R
 
-        l_o = self.extracellular_conductivity # S/m
-        l_i = self.intracellular_conductivity #S/m
-        l_m = self.membrane_conductivity #S/m
+        l_o = self.l_o = self.extracellular_conductivity # S/m
+        l_i = self.l_i = self.intracellular_conductivity #S/m
+        l_m = self.l_m = self.membrane_conductivity #S/m
 
-        d = self.membrane_thickness
+        self.d = d = self.membrane_thickness
 
         self.membrane_area = 4 * pi * (R**2.0)
         # Note that this is the area of the outside shell. There could be different definitions of the area.
@@ -467,4 +467,13 @@ def integrate_pore_density(t, transmembrane_potential, N0, alpha, q, V_ep):
 
 def conductivity_to_conductance(radius):
     raise NotImplementedError
+
+def first_order_schwan_time_constant(cell):
+    """
+    Eq. 1 in "Second-order model", Kotnik 2000
+    """
+    return (cell.R * (cell.e_m / cell.d)) / (((2*(cell.l_i * cell.l_o)) /
+                         (cell.l_i + 2*cell.l_o)) + (cell.R/cell.d)*cell.l_m)
+
+
 
