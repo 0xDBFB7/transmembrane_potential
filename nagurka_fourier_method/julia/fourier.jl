@@ -9,7 +9,7 @@ using BlackBoxOptim
 using Printf
 
 #M = 10
-M = 5
+M = 20
 # pkg activate dev_nagurka
 
 # using dev version of OrdinaryDiffEq
@@ -29,7 +29,7 @@ function evaluate_control(O)
     c = O[(2*M)+1:(2*M)+6]
 
     X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf = c
-
+    
     X_t0 = 0.0 # override
     X_tf = 0.0
     d_X_t0 = 0.0
@@ -51,8 +51,9 @@ function evaluate_control(O)
     m = [1.0:M;]
     # d_X_t0 = d_L_(epsilon, a, b, m, t_f)
     # d_X_tf = d_L_(t_f, a, b, m, t_f)
-    d_d_X_t0 = d_d_L_(epsilon, a, b, m, params.t_f)
-    d_d_X_tf = d_d_L_(params.t_f, a, b, m, params.t_f)
+
+    d_d_X_t0 += d_d_L_(epsilon, a, b, m, params.t_f)
+    d_d_X_tf += d_d_L_(params.t_f, a, b, m, params.t_f)
 
 
     params.control_function = init_fourier_parametrization(params, a, b, M, X_t0,
@@ -109,11 +110,11 @@ function optimize_coefficients()#global_Ostar)
 
     # O0[(2*M)+1:(2*M)+6] .= 0.0
     O0[M+1:(2*M)] .= 0 #NelderMead
-    res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 5000, show_trace=false))
+    res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 10000, store_trace=true, show_trace=false))
                                  #autodiff = :forward)
     # BFGS(); autodiff = :forward)
     Ostar = Optim.minimizer(res)
-
+    convergence_trace = Optim.f_trace(res)
     # interval_ = IntervalBox(-1e2..1e2, (2*M)+7)
     # _, Ostar = minimise(cost_function, interval_, tol=1e-2)
 
@@ -130,10 +131,10 @@ function optimize_coefficients()#global_Ostar)
 
     # solution, _, _,_,_ = evaluate_control(Ostar)
 
-    return Ostar
+    return Ostar, convergence_trace
 end
 
-Ostar = optimize_coefficients()
+Ostar, convergence_trace = optimize_coefficients()
 
 # a,b = square_wave(M)
 # Ostar = (ones((2*M)+7)) .* -1.0 / ((2*M) * 2.0)
@@ -153,4 +154,14 @@ solution_ep = solution
 @gp :- :GP3 3 solution_ep.t getindex.(solution_ep.u, Int(igamma)+1)
 @gp :- :GP3 4 solution_ep.t getindex.(solution_ep.u, Int(iphi)+1)
 @gp :- :GP3 5 solution_ep.t getindex.(solution_ep.u, Int(ixi)+1)
+
+@gp :converge convergence_trace
+
+# @gp :validate "set multiplot layout 3,1; set grid xtics ytics; set grid;"
+# virus.compute_step_response(solution_ep.t * 1e-6)
+# host_cell.compute_step_response(col(solution, iu0))
+# tl.convolve_output(col(solution, iu0)
+# @gp :- :GP3 1 solution_ep.t getindex.(solution_ep.u, Int(ialpha)+1)
+# @gp :- :GP3 2 solution_ep.t getindex.(solution_ep.u, Int(ibeta)+1)
+# @gp :- :GP3 3 solution_ep.t getindex.(solution_ep.u, Int(igamma)+1)
 # @show virus.gamma_ep
