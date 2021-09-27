@@ -164,7 +164,7 @@ end
 
 function solve_response_integrator(params)
 
-    condition(u,t,integrator) = (u[iN_v] > 1e20 || u[iN_h] > 1e20)
+    condition(u,t,integrator) = (u[iN_v] > 1e25 || u[iN_h] > 1e25)
                         # pore_area_factor(u[iN_v], integrator.p.cell_h.cell_diameter / 2) > 0.9069 ||
                         # pore_area_factor(u[iN_h], integrator.p.cell_h.cell_diameter / 2) > 0.9069)
     cb = DiscreteCallback(condition,affect!)
@@ -174,7 +174,7 @@ function solve_response_integrator(params)
     initial_state_variables[iN_v] = tl.pore_N0 # / 1e7  # check if this should be scaled by area
     initial_state_variables[iN_h] = tl.pore_N0
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params, callback=cb)
-    solution = solve(prob, RadauIIA5(), dtmax = params.t_f / 200, maxiters= 1000000, dtmin=1e-20, 
+    solution = solve(prob, Tsit5(), dtmax = params.t_f / 200, maxiters= 1000000, dtmin=1e-20, 
                                                             progress = true, progress_steps = 100)
     #Tsit5
     return solution

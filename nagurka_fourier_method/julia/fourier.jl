@@ -43,8 +43,8 @@ function evaluate_control(O)
     # d_d_X_tf /= (t_f*t_f)
 
     
-    virus.pore_solution_conductivity = 0.15
-    host_cell.pore_solution_conductivity = 0.6
+    virus.pore_solution_conductivity = 0.0
+    host_cell.pore_solution_conductivity = 0.0
     
     params = initialize_membrane_parameters(virus, host_cell, end_time, true)
 
@@ -65,17 +65,19 @@ function evaluate_control(O)
     N_v_integral = NumericalIntegration.integrate(solution.t, N_v_course)/params.t_f
     N_h_integral = NumericalIntegration.integrate(solution.t, N_h_course)/params.t_f
 
+    u0_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(iu0)+1))/params.t_f
+
     x0_v_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(ix0_v)+1))/params.t_f
     x0_h_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(ix0_h)+1))/params.t_f
 
-    return solution, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral
+    return solution, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral
 end 
 
 function cost_function(O) 
-    _, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral = evaluate_control(O)
+    _, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral = evaluate_control(O)
     # cost = -log(N_v_integral) + log(N_h_integral) #+ 1/N_v_integral
-    cost = -log(N_v_integral) + log(N_h_integral) #+ 1/N_v_integral
-    # cost = -N_v_integral + N_h_integral
+    # cost = -log(N_v_integral) + log(N_h_integral) #+ 1/N_v_integral
+    cost = -N_v_integral + N_h_integral + (0.1 - u0_integral)^2.0
     @printf("N_v: %.3e | N_h: %.3e | (%.3e) | x0_v: %.3e | x0_h: %.3e | (%.3e) | Cost: %.3e\n",ForwardDiff.value(N_v_integral), ForwardDiff.value(N_h_integral),
                                         (ForwardDiff.value(N_h_integral)/ForwardDiff.value(N_v_integral)),
                                         ForwardDiff.value(x0_v_integral), ForwardDiff.value(x0_h_integral), 
@@ -86,11 +88,13 @@ end
 
 function optimize_coefficients()#global_Ostar) 
     # O0 = global_Ostar
-    O0 = (ones((2*M)+7))  # Double64. - needed for autodiff-based 
+    # O0 = (ones((2*M)+7))  # Double64. - needed for autodiff-based 
+    O0 = (ones((2*M)+7)) .* -1.0 / ((2*M) * 2.0)
+
     # O0[(2*M)+1:(2*M)+6] .= 0.0
-    O0[M+1:(2*M)] .= 0
-    res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 1, show_trace=false))
-                                #  autodiff = :forward)
+    O0[M+1:(2*M)] .= 0 #NelderMead
+    res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 5000, show_trace=false))
+                                 #autodiff = :forward)
     # BFGS(); autodiff = :forward)
     Ostar = Optim.minimizer(res)
 
@@ -108,20 +112,22 @@ function optimize_coefficients()#global_Ostar)
     =#
 
 
-    solution, _, _,_,_ = evaluate_control(Ostar)
+    # solution, _, _,_,_ = evaluate_control(Ostar)
 
     return Ostar
 end
 
-# optimize_coefficients()
+Ostar = optimize_coefficients()
 
 # a,b = square_wave(M)
-Ostar = (ones((2*M)+7)) .* -1.0 / (2*M) * 2.0
+# Ostar = (ones((2*M)+7)) .* -1.0 / ((2*M) * 2.0)
 
 # twiddling 
 
-Ostar[(2*M)+1:(2*M)+6] .= 0.0
+# Ostar[(2*M)+1:(2*M)+6] .= 0.0
 # Ostar[M+1:(2*M)] .= 0
+
+
 solution, _, _,_,_ = evaluate_control(Ostar)
 plot_solution(solution)
 solution_ep = solution
@@ -131,4 +137,4 @@ solution_ep = solution
 @gp :- :GP3 3 solution_ep.t getindex.(solution_ep.u, Int(igamma)+1)
 @gp :- :GP3 4 solution_ep.t getindex.(solution_ep.u, Int(iphi)+1)
 @gp :- :GP3 5 solution_ep.t getindex.(solution_ep.u, Int(ixi)+1)
-@show virus.gamma_ep
+# @show virus.gamma_ep
