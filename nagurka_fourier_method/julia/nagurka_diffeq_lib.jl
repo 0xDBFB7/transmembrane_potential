@@ -228,8 +228,8 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
 
     s[iu0] = U
     s[iu1] = d_U
-    s[iu2] = d_d_U
-
+    s[iu2] = d_d_U    
+    
     # @timeit to "diffeq" begin
 
 
@@ -240,12 +240,10 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
 
     if(params.pore_model_enabled)
         # # this causes a lot of headache because of the large exponent - would be great to nondimensionalize this somehow, make it log perhaps
-        # Adding a / T0 here makes the re-sealing time way unphysically fast - must not be correct.
         # not sure if it should be * T0
         d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * T0 #* exp_limiter(iN_v)
         d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * T0 #* exp_limiter(iN_h)
 
-        
         l_m_ep_v = current_to_conductivity(I_ep_v, s[ix0_v], params.cell_v.membrane_thickness, params.cell_v.R)
         l_m_ep_h = current_to_conductivity(I_ep_h, s[ix0_h], params.cell_h.membrane_thickness, params.cell_h.R)
 
@@ -253,11 +251,20 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
             l_m_ep_h = 0.0
         end
     
+        if(abs(s[ix0_v]) < 0.01)
+            l_m_ep_v = 0.0
+        end
+    
+
         # if(l_m_ep_h > params.cell_h.pore_solution_conductivity) #should be pore_solution_conductivity
         #     l_m_ep_h = params.cell_h.pore_solution_conductivity
         # end
-
         
+        if(l_m_ep_v > params.cell_v.pore_solution_conductivity) #should be pore_solution_conductivity
+            l_m_ep_v = params.cell_v.pore_solution_conductivity
+        end
+
+
     else 
         l_m_ep_v = 0.0
         l_m_ep_h = 0.0
@@ -270,20 +277,16 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     s[iI_ep_h] = I_ep_h
 
 
-    # l_m_ep_v = 0.2 * (1 - exp(-s[iN_v] / 1e13))
-    
-
-    # s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
+    s[ ix2_v ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_v, T0, l_m_ep_v, ix1_v, ix0_v)
     d[ ix1_v ] = s[ix2_v] 
     d[ ix0_v ] = s[ix1_v]
     
-    # alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_v, l_m_ep_v)
-    # @show alpha, beta, gamma, phi, xi
 
     s[ ix2_h ] = main_x2_ode(d_d_U, d_U, U, s, params.cell_h, T0, l_m_ep_h, ix1_h, ix0_h)
     d[ ix1_h ] = s[ix2_h] 
     d[ ix0_h ] = s[ix1_h]
 
+    
     alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_h, l_m_ep_h)
 
     s[ialpha] = alpha
@@ -291,7 +294,9 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     s[igamma] = gamma
     s[iphi] = phi
     s[ixi] = xi
+
     # @show d
+    # l_m_ep_v = 0.2 * (1 - exp(-s[iN_v] / 1e13))
     # @show s
 
     return

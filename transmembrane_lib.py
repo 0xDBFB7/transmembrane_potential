@@ -63,6 +63,8 @@ class Cell:
 
         self.pore_solution_conductivity = 0.6 
 
+
+        # From Kotnik et al 1998
         sub1 = (3.0 * (R**2.0) - 3.0 * d * R + d**2.0)
         sub2 = (3.0 * d * R - d**2.0)
 
@@ -77,6 +79,23 @@ class Cell:
 
 
         self.b_3 = 2.0 * R**3.0 * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * (R-d)**3.0 * (e_m - e_o) * (e_i - e_m)
+
+        ###
+
+        # From Kotnik et al 2000 (revised?), but retaining same coefficient order as ^
+        # oh, the only difference is that the transfer function has the R baked into it now.
+        # no, but the B coefficients are the same, that doesn't make sense
+        e_e = e_o # "exterior" vs "outer"
+        l_e = l_o
+        sub1 = (3*R**3.0 - 3*d*R**2.0 + d**2.0 * R)
+        sub2 = (3*d*R**2.0 - d**2.0*R)
+        
+        self.a_3 = 3 * e_i * e_e * sub1 + 3 * e_m * e_e * sub2
+        self.a_2 = 3 * (l_i * e_e + l_e * e_i) * sub1 +  \
+                        3 * (l_m * e_e + l_e * e_m) * sub2
+        self.a_1 = 3 * l_i * l_e * sub1 + 3 * l_m * l_e * sub2
+        ###
+
 
         # to check, use
         # py2tex("b_3 = 2.0 - R**3.0 * (e_m + 2.0*e_o) * (e_m + 0.5 * e_i) + 2.0 * (R-d)**3.0 * (e_m - e_o) * (e_i - e_m)")
@@ -102,16 +121,16 @@ class Cell:
         self.alpha_ep = 0
         #
         #
-        self.beta_ep = 3*R*d**2*e_o*(3*R - d)/(3.0*R**3*e_i*e_m + 6*R**3*e_m*e_o - 6*R**2*d*e_i*e_m +
-            6*R**2*d*e_i*e_o + 6*R**2*d*e_m**2 - 6*R**2*d*e_m*e_o + 6*R*d**2*e_i*e_m -
-            6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o - 2*d**3*e_i*e_m +
-            2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
+        self.beta_ep = 3*e_o*(-R**2*d**2.0 + 3*R**3.0*d)/(3.0*R**3*e_i*e_m + 6*R**3*e_m*e_o -
+            6*R**2*d*e_i*e_m + 6*R**2*d*e_i*e_o + 6*R**2*d*e_m**2 - 6*R**2*d*e_m*e_o +
+            6*R*d**2*e_i*e_m - 6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o -
+            2*d**3*e_i*e_m + 2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
         #
         #
-        self.gamma_ep = 3*R*d**2*l_o*(3*R - d)/(3.0*R**3*e_i*e_m + 6*R**3*e_m*e_o - 6*R**2*d*e_i*e_m +
-            6*R**2*d*e_i*e_o + 6*R**2*d*e_m**2 - 6*R**2*d*e_m*e_o + 6*R*d**2*e_i*e_m -
-            6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o - 2*d**3*e_i*e_m +
-            2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
+        self.gamma_ep = 3*l_o*(-R**2*d**2.0 + 3*R**3.0*d)/(3.0*R**3*e_i*e_m + 6*R**3*e_m*e_o -
+            6*R**2*d*e_i*e_m + 6*R**2*d*e_i*e_o + 6*R**2*d*e_m**2 - 6*R**2*d*e_m*e_o +
+            6*R*d**2*e_i*e_m - 6*R*d**2*e_i*e_o - 6*R*d**2*e_m**2 + 6*R*d**2*e_m*e_o -
+            2*d**3*e_i*e_m + 2*d**3*e_i*e_o + 2*d**3*e_m**2 - 2*d**3*e_m*e_o)
         #
         #
         self.xi_ep = (3.0*R**3*l_i + 6*R**3*l_o - 6*R**2*d*l_i + 12*R**2*d*l_m - 6*R**2*d*l_o +
