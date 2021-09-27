@@ -220,5 +220,5 @@ end
 
 
 # kotnik_validation()
-talele_validation()
-# debruin_validation()
+# talele_validation()
+debruin_validation()
