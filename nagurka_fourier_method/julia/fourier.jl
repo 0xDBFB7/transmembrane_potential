@@ -72,7 +72,6 @@ function evaluate_control(O)
     x0_v_integral = NumericalIntegration.integrate(solution.t, x0_v_course)/params.t_f
     x0_h_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(ix0_h)+1))/params.t_f
 
-    
 
     return solution, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral, N_v_course, N_h_course, u0_course, x0_v_course
 end 
