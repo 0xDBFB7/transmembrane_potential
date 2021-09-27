@@ -120,13 +120,13 @@ function d_d_P_(t, p, a, b, m, t_f)
     return 2*p_2 + 6*p_3*t + 12*p_4*t^2 + 20*p_5*t^3
 end
 
-function init_fourier_parametrization(params, M, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf)
+function init_fourier_parametrization(params, a, b, M, X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf)
     m = [1.0:M;]
 
-    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
-    p = P_BCs_to_p_coefficients(P_BCs, t_f)
+    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, params.t_f, a, b, m)
+    p = P_BCs_to_p_coefficients(P_BCs, params.t_f)
     
-    control_function(t) = evaluate_fourier_parametrization(t,p,a,b,m,t_f)
+    control_function(t) = evaluate_fourier_parametrization(t,p,a,b,m,params.t_f)
     return control_function
 end
 

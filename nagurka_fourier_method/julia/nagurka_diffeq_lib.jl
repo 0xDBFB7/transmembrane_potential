@@ -242,8 +242,8 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
         # # this causes a lot of headache because of the large exponent - would be great to nondimensionalize this somehow, make it log perhaps
         # Adding a / T0 here makes the re-sealing time way unphysically fast - must not be correct.
         # not sure if it should be * T0
-        d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) #* exp_limiter(iN_v)
-        d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep)  #* exp_limiter(iN_h)
+        d[iN_v] = d_pore_density(s[ix0_v], s[iN_v], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * T0 #* exp_limiter(iN_v)
+        d[iN_h] = d_pore_density(s[ix0_h], s[iN_h], params.pore_N0, params.pore_alpha, params.pore_q, params.pore_V_ep) * T0 #* exp_limiter(iN_h)
 
         l_m_ep_v = current_to_conductivity(I_ep_v, s[ix0_v], params.cell_v.membrane_thickness, params.cell_v.R)
         l_m_ep_h = current_to_conductivity(I_ep_h, s[ix0_h], params.cell_h.membrane_thickness, params.cell_h.R)

@@ -2,6 +2,7 @@ include("nagurka_diffeq_lib.jl")
 
 using Optim
 using ForwardDiff
+using NumericalIntegration
 # using IntervalArithmetic, IntervalOptimisation
 using BlackBoxOptim
 # uncertainty stuff discussed in the unreasonable effectiveness video might be useful
@@ -21,22 +22,11 @@ M = 10
 function evaluate_control(O) 
     # basetype(n) = Double64(n)
 
-    m = [1.0:M;]
-
-    end_time = 1.2e-6
-
-    T0 = 1e-6 
-
-    # this is the "apparent" nondimensionalized end time to the algorithm
-    t_f = end_time / T0
-    
+    end_time = 10e-6
 
     a = O[1:M]
     b = O[M+1:(2*M)]
     c = O[(2*M)+1:(2*M)+6]
-
-    
-
 
     X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf = c
 
@@ -52,55 +42,31 @@ function evaluate_control(O)
     # d_d_X_t0 /= (t_f*t_f)
     # d_d_X_tf /= (t_f*t_f)
 
+    
+    virus.pore_solution_conductivity = 0.6
+    host_cell.pore_solution_conductivity = 0.6
+    
+    params = initialize_membrane_parameters(virus, host_cell, end_time, true)
+
+    m = [1.0:M;]
     # d_X_t0 = d_L_(epsilon, a, b, m, t_f)
     # d_X_tf = d_L_(t_f, a, b, m, t_f)
-    d_d_X_t0 = d_d_L_(epsilon, a, b, m, t_f)
-    d_d_X_tf = d_d_L_(t_f, a, b, m, t_f)
-    
+    d_d_X_t0 = d_d_L_(epsilon, a, b, m, params.t_f)
+    d_d_X_tf = d_d_L_(params.t_f, a, b, m, params.t_f)
 
 
-    P_BCs = X_to_P_BCs(X_t0, d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf, t_f, a, b, m)
-    p = P_BCs_to_p_coefficients(P_BCs, t_f)
-
-    cell_v = py_cell_to_julia_struct(virus)
-    cell_h = py_cell_to_julia_struct(host_cell)
-
-
-
-    k = t_f * 100
-    x0 = t_f / 4
-    peak = 1.5
-
-    ufun(t) = logistic_curve( t, peak, k, x0)
-    d_ufun(t) = d_logistic_curve( t, peak, k, x0)
-    d_d_ufun(t) = d_d_logistic_curve( t, peak, k, x0)
-
-    params = transmembrane_params(cell_v, cell_h, a, b, p, t_f, M, m, tl.pore_N0, tl.pore_alpha, tl.pore_q, tl.pore_V_ep, T0, ufun, d_ufun, d_d_ufun)
-    
-    # tspan = (Double64(epsilon), Double64(t_f))
-    tspan = (epsilon, (t_f))
-    # tspan = convert.(eltype(O),tspan)
-    #Double64.
-    initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
-    initial_state_variables[iN_v] = tl.pore_N0
-    initial_state_variables[iN_h] = tl.pore_N0
-    prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params)
-    # prob = remake(prob;u0=convert.(eltype(O),prob.u0), tspan=tspan) # needed for Dual numbers
-    # prob = remake(prob; tspan=tspan)
-
-    #atol=1e-7, dtmin=1e-20,
-    solution = solve(prob, Tsit5(), dtmax = t_f / 300, maxiters= 100000, dtmin=1e-20, progress = true, progress_steps = 100)
-    # rk4 Tsit5 RadauIIA5
-    # Vern9 is a bit faster on double64s.
+    params.control_function = init_fourier_parametrization(params, a, b, M, X_t0,
+                                                 d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf)
+    solution = solve_response_integrator(params)
 
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0
     N_h_course = getindex.(solution.u, Int(iN_h)+1) .- tl.pore_N0
 
-    N_v_integral = integrate(solution.t, N_v_course)/t_f
-    N_h_integral = integrate(solution.t, N_h_course)/t_f
+    N_v_integral = integrate(solution.t, N_v_course)/params.t_f
+    N_h_integral = integrate(solution.t, N_h_course)/params.t_f
 
-    x0_v_integral = integrate(solution.t, getindex.(solution.u, Int(ix0_v)+1))/t_f
-    x0_h_integral = integrate(solution.t, getindex.(solution.u, Int(ix0_h)+1))/t_f
+    x0_v_integral = integrate(solution.t, getindex.(solution.u, Int(ix0_v)+1))/params.t_f
+    x0_h_integral = integrate(solution.t, getindex.(solution.u, Int(ix0_h)+1))/params.t_f
 
     return solution, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral
 end 
