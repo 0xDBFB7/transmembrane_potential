@@ -171,7 +171,7 @@ function solve_response_integrator(params)
 
     tspan = (epsilon, params.t_f)
     initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
-    initial_state_variables[iN_v] = tl.pore_N0
+    initial_state_variables[iN_v] = tl.pore_N0 # / 1e7  # check if this should be scaled by area
     initial_state_variables[iN_h] = tl.pore_N0
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params, callback=cb)
     solution = solve(prob, RadauIIA5(), dtmax = params.t_f / 200, maxiters= 1000000, dtmin=1e-20, 
@@ -232,10 +232,12 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     
     # @timeit to "diffeq" begin
 
+    # Aha! Do we have to distinguish between N, pore *density*, and N, pore *count*?
+    # or is that already baked into this pore current equation?
+    I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v] * 4 * pi * params.cell_v.R^2, params.cell_v, params.cell_v.pore_solution_conductivity)
 
-    I_ep_v = electroporation_pore_current(s[ix0_v], s[iN_v], params.cell_v, params.cell_v.pore_solution_conductivity)
+    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h] * 4 * pi * params.cell_h.R^2, params.cell_h, params.cell_h.pore_solution_conductivity)
 
-    I_ep_h = electroporation_pore_current(s[ix0_h], s[iN_h], params.cell_h, params.cell_h.pore_solution_conductivity)
 
 
     if(params.pore_model_enabled)
@@ -247,22 +249,22 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
         l_m_ep_v = current_to_conductivity(I_ep_v, s[ix0_v], params.cell_v.membrane_thickness, params.cell_v.R)
         l_m_ep_h = current_to_conductivity(I_ep_h, s[ix0_h], params.cell_h.membrane_thickness, params.cell_h.R)
 
-        if(abs(s[ix0_h]) < 0.01)
-            l_m_ep_h = 0.0
-        end
+        # if(abs(s[ix0_h]) < 0.1)
+        #     l_m_ep_h = 0.0
+        # end
     
-        if(abs(s[ix0_v]) < 0.01)
-            l_m_ep_v = 0.0
-        end
+        # if(abs(s[ix0_v]) < 0.1)
+        #     l_m_ep_v = 0.0
+        # end
     
 
-        # if(l_m_ep_h > params.cell_h.pore_solution_conductivity) #should be pore_solution_conductivity
-        #     l_m_ep_h = params.cell_h.pore_solution_conductivity
-        # end
+        if(l_m_ep_h > params.cell_h.pore_solution_conductivity) #should be pore_solution_conductivity
+            l_m_ep_h = params.cell_h.pore_solution_conductivity
+        end
         
-        # if(l_m_ep_v > params.cell_v.pore_solution_conductivity) #should be pore_solution_conductivity
-        #     l_m_ep_v = params.cell_v.pore_solution_conductivity
-        # end
+        if(l_m_ep_v > params.cell_v.pore_solution_conductivity) #should be pore_solution_conductivity
+            l_m_ep_v = params.cell_v.pore_solution_conductivity
+        end
 
 
     else 
@@ -287,7 +289,7 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
     d[ ix0_h ] = s[ix1_h]
 
     
-    alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_h, l_m_ep_h)
+    alpha, beta, gamma, phi, xi = electroporation_coefficients(params.cell_v, l_m_ep_v)
 
     s[ialpha] = alpha
     s[ibeta] = beta

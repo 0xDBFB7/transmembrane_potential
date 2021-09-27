@@ -73,25 +73,13 @@ function current_to_conductivity(current, voltage, membrane_thickness, cell_radi
 end
 
 
-# function electroporation_coefficients(cell, l_m_ep)
-#     #correct all coefficients with electroporation current 
-#     alpha = cell.alpha# - l_m_ep * cell.alpha_ep
-#     beta = cell.beta# - l_m_ep * cell.beta_ep
-#     gamma = cell.gamma - l_m_ep * cell.gamma_ep
-#     phi = cell.phi# - l_m_ep * cell.phi_ep
-#     xi = cell.xi# - l_m_ep * cell.xi_ep
-
-#     return alpha, beta, gamma, phi, xi
-# end
-
-
 function electroporation_coefficients(cell, l_m_ep)
     #correct all coefficients with electroporation current 
-    alpha = cell.alpha + l_m_ep * cell.alpha_ep
-    beta = cell.beta + l_m_ep * cell.beta_ep
-    gamma = cell.gamma + l_m_ep * cell.gamma_ep
-    phi = cell.phi + l_m_ep * cell.phi_ep
-    xi = cell.xi + l_m_ep * cell.xi_ep
+    alpha = cell.alpha# - l_m_ep * cell.alpha_ep
+    beta = cell.beta# - l_m_ep * cell.beta_ep
+    gamma = cell.gamma - l_m_ep * cell.gamma_ep
+    phi = cell.phi# - l_m_ep * cell.phi_ep
+    xi = cell.xi# - l_m_ep * cell.xi_ep
 
     return alpha, beta, gamma, phi, xi
 end

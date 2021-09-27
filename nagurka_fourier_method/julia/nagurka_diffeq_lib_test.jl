@@ -111,69 +111,6 @@ function talele_validation()
 end
 
 
-@testset "Talele thesis analytic sinusoidal validation" begin
-
-end
-
-# @testset "Talele transmembrane potential validation" begin
-
-
-#     cell_v = cell_h = py_cell_to_julia_struct(compare_cell)
-
-#     end_time = 1e-6
-#     T0 = 1e-6
-#     # this is the "apparent" nondimensionalized end time to the algorithm
-#     t_f = end_time / T0
-
-#     edge_rise_time = 1e-9
-#     k = 1 / (edge_rise_time / T0)
-#     x0 = 0.01
-
-#     E = 52000
-
-#     peak = E * (cell_h.gamma / cell_h.xi)  # ((3/2) * (compare_cell.cell_diameter / 2)) # 52 kV/m * cell diameter scale factor
-
-#     ufun(t) = logistic_curve( t, peak, k, x0)
-#     d_ufun(t) = d_logistic_curve( t, peak, k, x0)
-#     d_d_ufun(t) = d_d_logistic_curve( t, peak, k, x0)
-
-    
-#     pore_solution_conductivity = 0.6 
-#     params = transmembrane_params(cell_v, cell_h, nothing, nothing, nothing, t_f, nothing, nothing, tl.pore_N0, tl.pore_alpha, 
-#                             tl.pore_q, tl.pore_V_ep, pore_solution_conductivity, true, T0, ufun, d_ufun, d_d_ufun)
-                            
-#     solution = solve_response(params)
-
-#     N_h_course = getindex.(solution.u, Int(iN_h)+1) # note: not subtracted from N0
-    
-#     plot_solution(solution)
-
-#     @gp :GP2 "set multiplot layout 2,1; set grid xtics ytics; set grid;"
-#     @gp :- :GP2 1 solution.t tal_ref_transmembrane_voltage_interpolate(solution.t * T0)
-#     @gp :- :GP2 1 solution.t no_ep_Vm_interpolate(solution.t * T0)
-#     @gp :- :GP2 1 solution.t getindex.(solution.u, Int(ix0_h)+1)
-#     @gp :- :GP2 2 solution.t tal_ref_pore_density_interpolate(solution.t * T0)
-    
-
-
-
-#     compare_cell.compute_step_response(solution.t*T0)
-    
-#     G_m = 1.9 # membrane conductance
-
-#     schwan_analytic_steady_state = schwan_steady_state_with_conductivities(E, G_m, compare_cell)
-
-#     @show schwan_analytic_steady_state
-
-#     # @gp :GP2 "set multiplot layout 2,1; set grid xtics ytics; set grid;"
-#     # @gp :- :GP2 1 solution.t getindex.(solution.u, Int(ix0_h)+1)
-#     # @gp :- :GP2 1 solution.t compare_cell.step_response * 52000
-
-#
-#     @test_broken isapprox(getindex.(solution.u, Int(ix0_h)+1)[end], schwan_analytic)
-#     @test_broken isapprox(maximum(N_h_course), 3.334e13)
-
-# end
 
 # @testset "DeBruin validation" begin
 function debruin_validation()
@@ -216,9 +153,88 @@ function debruin_validation()
     
 end
 
+function debruin_negative_validation()
+    # confirm symmetry 
+    # DeBruin's formulation doesn't explicitly include the permittivity & dielectric relaxation of the cell, 
+    # only the membrane capacitance.
+    cell_radius = 50e-6
+    E = -40000.0 # 400 V/cm to V/m
+    # compare_cell = tl.Cell((0.3), (0.001), (0.3), (0.001), (3e-7), (5), (cell_radius * 2), (5e-9))
+    compare_cell = tl.Cell((5.0), (0.001), (0.455), (0.001), (3e-7), (5), (cell_radius * 2), (5e-9), py"""np.array([])""")
+    compare_cell.pore_solution_conductivity = 0.13
 
+    end_time = 10e-6
+    
+    params = initialize_membrane_parameters(compare_cell, compare_cell, end_time, false)
+    params.control_function = init_step_function(params, E, 1e-9, 1e-8)
+    solution_no_ep = solve_response_integrator(params)
+
+    params = initialize_membrane_parameters(compare_cell, compare_cell, end_time, true)
+    params.control_function = init_step_function(params, E, 1e-9, 1e-8)
+    solution_ep = solve_response_integrator(params)
+
+    formatstring = "with lines dt 1 tit "
+    @gp :GP2 "set multiplot layout 1,1; set grid xtics ytics; set grid;"
+    @gp :- :GP2 1 solution_no_ep.t col(solution_no_ep, ix0_h) string(formatstring,"'No_ep'")
+    @gp :- :GP2 1 solution_ep.t col(solution_ep, ix0_h) string(formatstring,"'ep'")
+
+    plot_solution(solution_ep)
+    """
+    N is totally different.
+    """
+
+    save(term="png size 1500,1500",output="runs/flipped_sign_coefficient/flipped_sign_coefficient_no_limit_output.png")
+
+    @gp :GP3 "set multiplot layout 5,1; set grid xtics ytics; set grid;"
+    @gp :- :GP3 1 solution_ep.t getindex.(solution_ep.u, Int(ialpha)+1)
+    @gp :- :GP3 2 solution_ep.t getindex.(solution_ep.u, Int(ibeta)+1)
+    @gp :- :GP3 3 solution_ep.t getindex.(solution_ep.u, Int(igamma)+1)
+    @gp :- :GP3 4 solution_ep.t getindex.(solution_ep.u, Int(iphi)+1)
+    @gp :- :GP3 5 solution_ep.t getindex.(solution_ep.u, Int(ixi)+1)
+    
+end
+
+
+function virus_validation()
+    # confirm symmetry 
+    # DeBruin's formulation doesn't explicitly include the permittivity & dielectric relaxation of the cell, 
+    # only the membrane capacitance.
+    cell_radius = 50e-9
+    E = 30e6 # 400 V/cm to V/m
+    # compare_cell = tl.Cell((0.3), (0.001), (0.3), (0.001), (3e-7), (5), (cell_radius * 2), (5e-9))
+    compare_cell = tl.Cell((1.2), (80), (0.3), (80), (3e-7), (5), (cell_radius * 2), (5e-9), py"""np.array([])""")
+    compare_cell.pore_solution_conductivity = 1.2
+
+    end_time = 1e-6
+    
+    params = initialize_membrane_parameters(compare_cell, compare_cell, end_time, false)
+    params.control_function = init_step_function(params, E, 1e-9, 1e-8)
+    solution_no_ep = solve_response_integrator(params)
+
+    params = initialize_membrane_parameters(compare_cell, compare_cell, end_time, true)
+    params.control_function = init_step_function(params, E, 1e-9, 1e-8)
+    solution_ep = solve_response_integrator(params)
+
+    formatstring = "with lines dt 1 tit "
+    @gp :GP2 "set multiplot layout 1,1; set grid xtics ytics; set grid;"
+    @gp :- :GP2 1 solution_no_ep.t col(solution_no_ep, ix0_h) string(formatstring,"'No_ep'")
+    @gp :- :GP2 1 solution_ep.t col(solution_ep, ix0_h) string(formatstring,"'ep'")
+
+    plot_solution(solution_ep)
+
+    @gp :GP3 "set multiplot layout 5,1; set grid xtics ytics; set grid;"
+    @gp :- :GP3 1 solution_ep.t getindex.(solution_ep.u, Int(ialpha)+1)
+    @gp :- :GP3 2 solution_ep.t getindex.(solution_ep.u, Int(ibeta)+1)
+    @gp :- :GP3 3 solution_ep.t getindex.(solution_ep.u, Int(igamma)+1)
+    @gp :- :GP3 4 solution_ep.t getindex.(solution_ep.u, Int(iphi)+1)
+    @gp :- :GP3 5 solution_ep.t getindex.(solution_ep.u, Int(ixi)+1)
+    
+    @show dump(virus)
+end
 
 
 # kotnik_validation()
 # talele_validation()
-debruin_validation()
+# debruin_validation()
+# debruin_negative_validation() 
+virus_validation()

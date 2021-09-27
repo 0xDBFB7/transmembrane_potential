@@ -22,7 +22,7 @@ M = 10
 function evaluate_control(O) 
     # basetype(n) = Double64(n)
 
-    end_time = 10e-6
+    end_time = 1e-6
 
     a = O[1:M]
     b = O[M+1:(2*M)]
@@ -43,7 +43,7 @@ function evaluate_control(O)
     # d_d_X_tf /= (t_f*t_f)
 
     
-    virus.pore_solution_conductivity = 0.6
+    virus.pore_solution_conductivity = 0.15
     host_cell.pore_solution_conductivity = 0.6
     
     params = initialize_membrane_parameters(virus, host_cell, end_time, true)
@@ -62,11 +62,11 @@ function evaluate_control(O)
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0
     N_h_course = getindex.(solution.u, Int(iN_h)+1) .- tl.pore_N0
 
-    N_v_integral = integrate(solution.t, N_v_course)/params.t_f
-    N_h_integral = integrate(solution.t, N_h_course)/params.t_f
+    N_v_integral = NumericalIntegration.integrate(solution.t, N_v_course)/params.t_f
+    N_h_integral = NumericalIntegration.integrate(solution.t, N_h_course)/params.t_f
 
-    x0_v_integral = integrate(solution.t, getindex.(solution.u, Int(ix0_v)+1))/params.t_f
-    x0_h_integral = integrate(solution.t, getindex.(solution.u, Int(ix0_h)+1))/params.t_f
+    x0_v_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(ix0_v)+1))/params.t_f
+    x0_h_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(ix0_h)+1))/params.t_f
 
     return solution, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral
 end 
@@ -116,8 +116,19 @@ end
 # optimize_coefficients()
 
 # a,b = square_wave(M)
-Ostar = (ones((2*M)+7)) .* -1.0
+Ostar = (ones((2*M)+7)) .* -1.0 / (2*M) * 2.0
+
+# twiddling 
+
 Ostar[(2*M)+1:(2*M)+6] .= 0.0
 # Ostar[M+1:(2*M)] .= 0
 solution, _, _,_,_ = evaluate_control(Ostar)
 plot_solution(solution)
+solution_ep = solution
+@gp :GP3 "set multiplot layout 5,1; set grid xtics ytics; set grid;"
+@gp :- :GP3 1 solution_ep.t getindex.(solution_ep.u, Int(ialpha)+1)
+@gp :- :GP3 2 solution_ep.t getindex.(solution_ep.u, Int(ibeta)+1)
+@gp :- :GP3 3 solution_ep.t getindex.(solution_ep.u, Int(igamma)+1)
+@gp :- :GP3 4 solution_ep.t getindex.(solution_ep.u, Int(iphi)+1)
+@gp :- :GP3 5 solution_ep.t getindex.(solution_ep.u, Int(ixi)+1)
+@show virus.gamma_ep
