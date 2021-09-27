@@ -260,9 +260,9 @@ function transmembrane_diffeq(d,s,params::transmembrane_params,t)
         #     l_m_ep_h = params.cell_h.pore_solution_conductivity
         # end
         
-        if(l_m_ep_v > params.cell_v.pore_solution_conductivity) #should be pore_solution_conductivity
-            l_m_ep_v = params.cell_v.pore_solution_conductivity
-        end
+        # if(l_m_ep_v > params.cell_v.pore_solution_conductivity) #should be pore_solution_conductivity
+        #     l_m_ep_v = params.cell_v.pore_solution_conductivity
+        # end
 
 
     else 
