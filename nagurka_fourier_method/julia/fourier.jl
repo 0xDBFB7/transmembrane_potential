@@ -8,8 +8,8 @@ using BlackBoxOptim
 # uncertainty stuff discussed in the unreasonable effectiveness video might be useful
 using Printf
 
-M = 10
-
+#M = 10
+M = 5
 # pkg activate dev_nagurka
 
 # using dev version of OrdinaryDiffEq
@@ -65,19 +65,36 @@ function evaluate_control(O)
     N_v_integral = NumericalIntegration.integrate(solution.t, N_v_course)/params.t_f
     N_h_integral = NumericalIntegration.integrate(solution.t, N_h_course)/params.t_f
 
-    u0_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(iu0)+1))/params.t_f
+    u0_course = getindex.(solution.u, Int(iu0)+1)
+    u0_integral = NumericalIntegration.integrate(solution.t, u0_course)/params.t_f
 
-    x0_v_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(ix0_v)+1))/params.t_f
+    x0_v_course = getindex.(solution.u, Int(ix0_v)+1)
+    x0_v_integral = NumericalIntegration.integrate(solution.t, x0_v_course)/params.t_f
     x0_h_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(ix0_h)+1))/params.t_f
 
-    return solution, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral
+    
+
+    return solution, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral, N_v_course, N_h_course, u0_course, x0_v_course
 end 
 
 function cost_function(O) 
-    _, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral = evaluate_control(O)
+    _, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral, N_v_course, N_h_course, u0_course, x0_v_course = evaluate_control(O)
     # cost = -log(N_v_integral) + log(N_h_integral) #+ 1/N_v_integral
     # cost = -log(N_v_integral) + log(N_h_integral) #+ 1/N_v_integral
-    cost = -N_v_integral + N_h_integral + (0.1 - u0_integral)^2.0
+    # max(N_h_course)
+
+    # cost = -N_v_integral + N_h_integral + (0.1 - u0_integral)^2.0 
+    # this CF works really well, except the V pore density exceeds the limiter!
+
+    # cost = abs(1e20-maximum(N_v_course)) + maximum(N_h_course) + (0.1 - u0_integral)^2.0 
+    # this does not work, because on startup the pore value is so low that 1e20 is zero!
+
+    # cost = abs(16-log(N_v_integral)) + log(N_h_integral) + abs(1-maximum(abs.(x0_v_course)))#+ abs(2 - u0_integral)
+    # works well
+    cost = abs(40-log(N_v_integral)) + log(N_h_integral) + abs(1-maximum(abs.(x0_v_course)))#+ abs(2 - u0_integral)
+
+    # it's at the ends again 
+
     @printf("N_v: %.3e | N_h: %.3e | (%.3e) | x0_v: %.3e | x0_h: %.3e | (%.3e) | Cost: %.3e\n",ForwardDiff.value(N_v_integral), ForwardDiff.value(N_h_integral),
                                         (ForwardDiff.value(N_h_integral)/ForwardDiff.value(N_v_integral)),
                                         ForwardDiff.value(x0_v_integral), ForwardDiff.value(x0_h_integral), 
