@@ -162,7 +162,7 @@ function affect!(integrator)
 end
 
 
-function solve_response_integrator(params)
+function solve_response_integrator(params; progress_=true)
 
     condition(u,t,integrator) = (u[iN_v] > 1e25 || u[iN_h] > 1e25)
                         # pore_area_factor(u[iN_v], integrator.p.cell_h.cell_diameter / 2) > 0.9069 ||
@@ -175,7 +175,7 @@ function solve_response_integrator(params)
     initial_state_variables[iN_h] = tl.pore_N0
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params, callback=cb)
     solution = solve(prob, Tsit5(), dtmax = params.t_f / 200, maxiters= 1000000, dtmin=1e-20, 
-                                                            progress = true, progress_steps = 100)
+                                                            progress = progress_, progress_steps = 100)
     #Tsit5
     return solution
 end
@@ -200,7 +200,8 @@ end
 
 
 function initialize_membrane_parameters(cell_v, cell_h, end_time, pore_model_enabled::Bool)
-    T0 = 1e-6
+    # T0 = 1e-6
+    T0 = end_time
 
     julia_cell_v = py_cell_to_julia_struct(cell_v)
     julia_cell_h = py_cell_to_julia_struct(cell_h)
@@ -314,8 +315,11 @@ function plot_solution(solution)
     @gp :- 2 solution.t getindex.(solution.u, Int(iu1)+1) string(formatstring,"'u1'")
     @gp :- 3 solution.t getindex.(solution.u, Int(ix0_v)+1) string(formatstring,"'x0_v'")
     @gp :- 4 solution.t getindex.(solution.u, Int(ix0_h)+1) string(formatstring,"'x0_h'")
+
+    # @gp :- "set log"
     @gp :- 5 solution.t (getindex.(solution.u, Int(iN_v)+1).- tl.pore_N0) string(formatstring,"'N_v'")
     @gp :- 6 solution.t (getindex.(solution.u, Int(iN_h)+1).- tl.pore_N0) string(formatstring,"'N_h'")
+
     @gp :- 7 solution.t (getindex.(solution.u, Int(ilm_ep_v)+1)) string(formatstring,"' \\lambda_{ep V}'")
     @gp :- 8 solution.t (getindex.(solution.u, Int(ilm_ep_h)+1)) string(formatstring,"' \\lambda_{ep H}'")
     @gp :- 9 solution.t (getindex.(solution.u, Int(iI_ep_v)+1)) string(formatstring,"' \$ I_{ep V}\$'")

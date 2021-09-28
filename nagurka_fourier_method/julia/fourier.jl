@@ -8,8 +8,8 @@ using BlackBoxOptim
 # uncertainty stuff discussed in the unreasonable effectiveness video might be useful
 using Printf
 
-#M = 10
-M = 20
+M = 15
+# M = 20
 # pkg activate dev_nagurka
 
 # using dev version of OrdinaryDiffEq
@@ -22,7 +22,7 @@ M = 20
 function evaluate_control(O) 
     # basetype(n) = Double64(n)
 
-    end_time = 1e-6
+    end_time = 1e-9
 
     a = O[1:M]
     b = O[M+1:(2*M)]
@@ -58,7 +58,7 @@ function evaluate_control(O)
 
     params.control_function = init_fourier_parametrization(params, a, b, M, X_t0,
                                                  d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf)
-    solution = solve_response_integrator(params)
+    solution = solve_response_integrator(params, progress_=false)
 
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0
     N_h_course = getindex.(solution.u, Int(iN_h)+1) .- tl.pore_N0
@@ -70,15 +70,18 @@ function evaluate_control(O)
     u0_integral = NumericalIntegration.integrate(solution.t, u0_course)/params.t_f
 
     x0_v_course = getindex.(solution.u, Int(ix0_v)+1)
+    x0_h_course = getindex.(solution.u, Int(ix0_h)+1)
     x0_v_integral = NumericalIntegration.integrate(solution.t, x0_v_course)/params.t_f
     x0_h_integral = NumericalIntegration.integrate(solution.t, getindex.(solution.u, Int(ix0_h)+1))/params.t_f
 
 
-    return solution, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral, N_v_course, N_h_course, u0_course, x0_v_course
+    return solution, N_v_integral, N_h_integral, x0_v_integral, 
+                        x0_h_integral, u0_integral, N_v_course, N_h_course, u0_course, x0_v_course, x0_h_course
 end 
 
 function cost_function(O) 
-    _, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, u0_integral, N_v_course, N_h_course, u0_course, x0_v_course = evaluate_control(O)
+    _, N_v_integral, N_h_integral, x0_v_integral, x0_h_integral, 
+                    u0_integral, N_v_course, N_h_course, u0_course, x0_v_course, x0_h_course = evaluate_control(O)
     # cost = -log(N_v_integral) + log(N_h_integral) #+ 1/N_v_integral
     # cost = -log(N_v_integral) + log(N_h_integral) #+ 1/N_v_integral
     # max(N_h_course)
@@ -91,15 +94,21 @@ function cost_function(O)
 
     # cost = abs(16-log(N_v_integral)) + log(N_h_integral) + abs(1-maximum(abs.(x0_v_course)))#+ abs(2 - u0_integral)
     # works well
-    cost = abs(40-log(N_v_integral)) + log(N_h_integral) + abs(1-maximum(abs.(x0_v_course)))#+ abs(2 - u0_integral)
+    # cost = abs(40-log(N_v_integral)) + log(N_h_integral) + abs(1-maximum(abs.(x0_v_course)))#+ abs(2 - u0_integral)
+    # also works well. --fallback--
+    # cost = abs(40-log(N_v_integral)) + log(N_h_integral) - log(abs(x0_v_integral)) + log(abs(x0_h_integral)) + abs(1-maximum(abs.(x0_v_course)))
+    # gets stuck - x0_h integral descends until 
+    # cost = abs(40-log(N_v_integral)) + log(N_h_integral) + abs(maximum(abs.(x0_h_course))) + abs(1-maximum(abs.(x0_v_course)))
+    # great at et=1e-6, maybe not at 1e-7
+    cost = abs(20-log(N_v_integral)) + log(N_h_integral) + abs(maximum(abs.(x0_h_course))) + abs(1-maximum(abs.(x0_v_course)))
 
-    # it's at the ends again 
+    @printf("N_v: %.3e | N_h: %.3e | (%.3e) |\n ", ForwardDiff.value(N_v_integral), ForwardDiff.value(N_h_integral), (ForwardDiff.value(N_h_integral)/ForwardDiff.value(N_v_integral)))
+    @printf("x0_v: %.3e | x0_h: %.3e | (%.3e) |\n", ForwardDiff.value(x0_v_integral), ForwardDiff.value(x0_h_integral), (ForwardDiff.value(x0_h_integral)/ForwardDiff.value(x0_v_integral)))
+    @printf("peak x0_v: %.3e | peak x0_h: %.3e | (%.3e) |\n", abs(maximum(abs.(x0_v_course))), abs(maximum(abs.(x0_h_course))), abs(maximum(abs.(x0_h_course)))/abs(maximum(abs.(x0_v_course))))
+    @printf("| Cost: %.3e | it %i |\n\n", ForwardDiff.value(cost), length(convergence_trace))
 
-    @printf("N_v: %.3e | N_h: %.3e | (%.3e) | x0_v: %.3e | x0_h: %.3e | (%.3e) | Cost: %.3e\n",ForwardDiff.value(N_v_integral), ForwardDiff.value(N_h_integral),
-                                        (ForwardDiff.value(N_h_integral)/ForwardDiff.value(N_v_integral)),
-                                        ForwardDiff.value(x0_v_integral), ForwardDiff.value(x0_h_integral), 
-                                        (ForwardDiff.value(x0_h_integral)/ForwardDiff.value(x0_v_integral)),
-                                         ForwardDiff.value(cost))
+    append!(convergence_trace, ForwardDiff.value(cost))
+
     return cost
 end
 
@@ -110,11 +119,14 @@ function optimize_coefficients()#global_Ostar)
 
     # O0[(2*M)+1:(2*M)+6] .= 0.0
     O0[M+1:(2*M)] .= 0 #NelderMead
-    res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 10000, store_trace=true, show_trace=false))
+    res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 10000, store_trace=false, show_trace=false))
                                  #autodiff = :forward)
     # BFGS(); autodiff = :forward)
     Ostar = Optim.minimizer(res)
-    convergence_trace = Optim.f_trace(res)
+    # trace = Optim.trace(res)
+
+
+
     # interval_ = IntervalBox(-1e2..1e2, (2*M)+7)
     # _, Ostar = minimise(cost_function, interval_, tol=1e-2)
 
@@ -131,10 +143,11 @@ function optimize_coefficients()#global_Ostar)
 
     # solution, _, _,_,_ = evaluate_control(Ostar)
 
-    return Ostar, convergence_trace
+    return Ostar
 end
 
-Ostar, convergence_trace = optimize_coefficients()
+global convergence_trace = zeros(0)
+Ostar = optimize_coefficients()
 
 # a,b = square_wave(M)
 # Ostar = (ones((2*M)+7)) .* -1.0 / ((2*M) * 2.0)
