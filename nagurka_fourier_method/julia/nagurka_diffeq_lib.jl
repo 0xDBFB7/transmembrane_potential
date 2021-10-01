@@ -162,7 +162,7 @@ function affect!(integrator)
 end
 
 
-function solve_response_integrator(params; progress_=true)
+function solve_response_integrator(params; progress_=true, T=Float64)
 
     condition(u,t,integrator) = (u[iN_v] > 1e25 || u[iN_h] > 1e25)
                         # pore_area_factor(u[iN_v], integrator.p.cell_h.cell_diameter / 2) > 0.9069 ||
@@ -170,13 +170,13 @@ function solve_response_integrator(params; progress_=true)
     cb = DiscreteCallback(condition,affect!)
 
     tspan = (epsilon, params.t_f)
-    initial_state_variables = (zeros(length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
+    initial_state_variables = (zeros(T, length(instances(svars)))).+epsilon #  convert(Array{BigFloat},zeros(length(instances(svars))))
     initial_state_variables[iN_v] = tl.pore_N0 # / 1e7  # check if this should be scaled by area
     initial_state_variables[iN_h] = tl.pore_N0
     prob = ODEProblem(transmembrane_diffeq,initial_state_variables,tspan,params, callback=cb)
-    solution = solve(prob, Tsit5(), dtmax = params.t_f / 200, maxiters= 1000000, dtmin=1e-20, 
+    solution = solve(prob,  Tsit5(), dtmax = params.t_f / 200, maxiters= 1000000, dtmin=1e-20, 
                                                             progress = progress_, progress_steps = 100)
-    #Tsit5
+    
     return solution
 end
 
@@ -200,8 +200,8 @@ end
 
 
 function initialize_membrane_parameters(cell_v, cell_h, end_time, pore_model_enabled::Bool)
-    # T0 = 1e-6
-    T0 = end_time
+    T0 = 1e-6
+    # T0 = end_time
 
     julia_cell_v = py_cell_to_julia_struct(cell_v)
     julia_cell_h = py_cell_to_julia_struct(cell_h)

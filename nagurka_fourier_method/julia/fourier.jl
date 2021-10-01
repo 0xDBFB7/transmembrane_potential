@@ -8,7 +8,7 @@ using BlackBoxOptim
 # uncertainty stuff discussed in the unreasonable effectiveness video might be useful
 using Printf
 
-M = 15
+M = 20
 # M = 20
 # pkg activate dev_nagurka
 
@@ -19,10 +19,10 @@ M = 15
 # No reason to have coefficients on the N - it's just an integral, doesn't need to explode...
 # can leave out the decay term of the pore differential equation, since  b
 
-function evaluate_control(O) 
+function evaluate_control(O::AbstractVector{T}) where T
     # basetype(n) = Double64(n)
 
-    end_time = 1e-9
+    end_time = 1e-6
 
     a = O[1:M]
     b = O[M+1:(2*M)]
@@ -55,10 +55,9 @@ function evaluate_control(O)
     d_d_X_t0 += d_d_L_(epsilon, a, b, m, params.t_f)
     d_d_X_tf += d_d_L_(params.t_f, a, b, m, params.t_f)
 
-
     params.control_function = init_fourier_parametrization(params, a, b, M, X_t0,
                                                  d_X_t0, d_d_X_t0, X_tf, d_X_tf, d_d_X_tf)
-    solution = solve_response_integrator(params, progress_=false)
+    solution = solve_response_integrator(params, progress_=false, T=T)
 
     N_v_course = getindex.(solution.u, Int(iN_v)+1) .- tl.pore_N0
     N_h_course = getindex.(solution.u, Int(iN_h)+1) .- tl.pore_N0
@@ -115,12 +114,13 @@ end
 function optimize_coefficients()#global_Ostar) 
     # O0 = global_Ostar
     # O0 = (ones((2*M)+7))  # Double64. - needed for autodiff-based 
-    O0 = (ones((2*M)+7)) .* -1.0 / ((2*M) * 2.0)
+    O0 = (zeros((2*M)+7)) .* -1.0 / ((2*M) * 2.0) 
+    O0[M-1] = 1.0
 
     # O0[(2*M)+1:(2*M)+6] .= 0.0
     O0[M+1:(2*M)] .= 0 #NelderMead
-    res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 10000, store_trace=false, show_trace=false))
-                                 #autodiff = :forward)
+    res = optimize(cost_function, O0,  NelderMead(), Optim.Options(iterations = 5000, store_trace=false, show_trace=false),
+                                 autodiff = :forward)
     # BFGS(); autodiff = :forward)
     Ostar = Optim.minimizer(res)
     # trace = Optim.trace(res)
